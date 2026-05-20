@@ -60,7 +60,10 @@ fn fetch_lyrics_by_rust_api(
                 smtc_lyrics::MusicPlayer::SodaMusic
             }
         };
-        
+        let session = lyrix::smtc_lyrics::Session {
+            applemusic_token: None,
+            spotify_cookie: None,
+        };
         if gen_ref.load(std::sync::atomic::Ordering::Relaxed) != gen {
             crate::logger::warn("Lyrics", &format!("rust-api: abort gen={} (stale)", gen));
             return None;
@@ -68,7 +71,7 @@ fn fetch_lyrics_by_rust_api(
         crate::logger::info("Lyrics", &format!(
             "rust-api: trying '{}'", player.display_name()
         ));
-        match smtc_lyrics::get_lyrics_with_player(&player, title, artist_opt, album_opt, album_artist_opt, duration_ms_u32).await {
+        match smtc_lyrics::get_lyrics_with_player(&player, title, artist_opt, album_opt, album_artist_opt, duration_ms_u32, &session).await {
             Ok(data) => {
                 let ddata = if let Some(meta) = &data.track_metadata {
                     match meta.is_trial {
