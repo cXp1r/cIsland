@@ -30,8 +30,12 @@
 - [Lyrix](https://github.com/cXp1r/Lyrix) — 集成多平台歌词（网易云、QQ 音乐、酷狗、汽水音乐）
 
 ## TODO 
+
+- [ ] 下载链接跳转aria2c
 - [ ] agent hooks对接
+- [ ] todo list内容持久化
 - [ ] 倒计时日
+
 ## 技术栈
 
 | 层级 | 技术 |
