@@ -377,10 +377,14 @@ body {
 
 /* --- 时间 --- */
 
-#time-wrapper {
+#island-capsule #time-wrapper {
 
     justify-content: center;
 
+}
+
+#island-capsule.panel-expanded #default {
+    display: none;
 }
 
 

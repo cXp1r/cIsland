@@ -7,6 +7,7 @@ import {
 import {
   currentView,
   dragStarted, setDragStarted,
+  panelClickTimer, setPanelClickTimer,
   musicClickTimer, setMusicClickTimer,
   agentClickTimer, setAgentClickTimer,
   sadbClickTimer, setSadbClickTimer,
@@ -25,11 +26,35 @@ export function initCapsuleInteraction() {
   capsule.addEventListener("click", (e: MouseEvent) => {
     logd("Capsule",`click on view '${currentView}'`);
     const target = e.target as HTMLElement;
-    
+    console.log(target);
     // 如果刚刚发生了拖动，不触发点击
     if (dragStarted) {
       setDragStarted(false);
       return;
+    }
+    if (currentView === "time" ) {
+      if (!capsule.classList.contains("expanded") && !capsule.classList.contains("panel-expanded")) {
+        return;
+      }
+      e.stopPropagation();
+      if (panelClickTimer) {
+        clearTimeout(panelClickTimer);
+        setPanelClickTimer(null);
+        return;
+      }
+      setPanelClickTimer(window.setTimeout(() => {
+        setPanelClickTimer(null);
+        // 从 panel-expanded 退回 expanded
+        if (capsule.classList.contains("panel-expanded") && target instanceof HTMLDivElement) {
+          capsule.classList.remove("panel-expanded");
+          capsule.classList.add("expanded");
+          setIsExpandAnimating(true);
+          setSkipResizeSync(true);
+        } else {
+          capsule.classList.add("panel-expanded");
+          capsule.classList.remove("expanded");
+        }
+      }, 250));
     }
     // 音乐视图：单击展开/收起
     if (currentView === "lyric") {

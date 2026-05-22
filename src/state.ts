@@ -1,5 +1,9 @@
 import type { ViewMode, PrivacyUsagePayload } from "./types";
 
+// 大面板panel
+export let panelClickTimer: number | null = null; // 面板单击延时
+export function setPanelClickTimer(v: number | null) { musicClickTimer = v; }
+
 // --- 通知 / URL ---
 
 export let noticeTimer: number | null = null;

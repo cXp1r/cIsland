@@ -61,7 +61,6 @@ export function animateCapsule(toW: number, toH: number): void {
 
     el.style.width  = w + 'px'
     el.style.height = h + 'px'
-console.log(w);
     port2.postMessage({ w, h, lw, t, e })
 
     if (t < 1) raf = requestAnimationFrame(frame)
@@ -89,6 +88,8 @@ export function initrAF() {
               if (!el.classList.contains("sadb-expanded")){
                 let [toW, toH] = [140, 50];
                 if (el.classList.value == "") {
+                } else if (el.classList.contains("panel-expanded") || el.classList.contains("hooks-expanded")) {
+                  [toW, toH] = [900, 250];
                 } else if (el.classList.contains("music-expanded")) {
                   [toW, toH] = [380, 420];
                 } else if (el.classList.contains("agent-expanded")) {

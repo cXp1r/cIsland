@@ -6,13 +6,15 @@
 
     <meta charset="UTF-8" />
 
-    <link rel="stylesheet" href="themes/base.css" />
+    <link rel="stylesheet" href="src/css/base.css" />
 
-    <link rel="stylesheet" href="themes/email-base.css" />
+    <link rel="stylesheet" href="src/css/panel-base.css" />
 
-    <link rel="stylesheet" href="themes/agent-base.css" />
+    <link rel="stylesheet" href="src/css/email-base.css" />
 
-    <link rel="stylesheet" href="themes/classic.css" />
+    <link rel="stylesheet" href="src/css/agent-base.css" />
+
+    <link rel="stylesheet" href="src/css/classic.css" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -109,15 +111,69 @@
     <div id="view-holder" aria-hidden="true">
 
         <div id="time-wrapper" class="content-wrapper">
+            <div id="default">
+                <div id="date-text" class="time-side time-side-left">周三 · 03/11</div>
 
-            <div id="date-text" class="time-side time-side-left">周三 · 03/11</div>
+                <div id="time-text">00:00:00</div>
 
-            <div id="time-text">00:00:00</div>
+                <div id="weather-text" class="time-side time-side-right">天气获取中...</div>
+            </div>
+            <div id="panel" class="content-wrapper">
+                <!-- LEFT: Todo -->
+                <div class="panel">
+                    
+                    <div class="todo-row">
+                    <input type="text" id="todoInput" placeholder="新待办~" />
+                    <button id="todoAdd" aria-label="添加">
+                        <i class="ti ti-plus" aria-hidden="true"></i>
+                    </button>
+                    </div>
+                    <ul class="todo-list" id="todoList"></ul>
+                </div>
+                <!-- CENTER: Clock -->
+                <div class="panel">
+                    
+                    <div class="clock-body">
+                    <div class="clock-big">
+                        <span id="cH">--</span>:<span id="cM">--</span>:<span id="cS">--</span>
+                    </div>
+                    <div class="clock-date"    id="cDate">----</div>
+                    <div class="clock-weekday" id="cDay">----</div>
+                    <div class="ring-row">
+                        <svg width="64" height="64" viewBox="0 0 48 48" aria-hidden="true">
+                        <circle cx="24" cy="24" r="18" fill="none"
+                            stroke="rgba(128,128,128,0.2)" stroke-width="3.5"/>
+                        <circle id="dayRing" cx="24" cy="24" r="18" fill="none"
+                            stroke="rgba(128,128,128,0.55)" stroke-width="3.5"
+                            stroke-dasharray="113" stroke-dashoffset="113"
+                            stroke-linecap="round" transform="rotate(-90 24 24)"
+                            style="transition:stroke-dashoffset .5s"/>
+                        <text x="24" y="27" text-anchor="middle" font-size="9"
+                            fill="#fff" id="ringTxt">0%</text>
+                        </svg>
+                        <div class="ring-label">今日<br>进度</div>
+                    </div>
+                    </div>
+                </div>
 
-            <div id="weather-text" class="time-side time-side-right">天气获取中...</div>
-
+                <!-- RIGHT: Calendar -->
+                <div class="panel">
+                    
+                    <div class="cal-head">
+                    <button class="cal-nav" id="calPrev" aria-label="上月">
+                        <i class="ti ti-chevron-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="cal-month" id="calMonth"></span>
+                    <button class="cal-nav" id="calNext" aria-label="下月">
+                        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+                    </button>
+                    </div>
+                    <div class="cal-grid" id="calGrid"></div>
+                </div>
+            </div>
         </div>
 
+        
 
 
         <div id="lyric-area" class="content-wrapper">

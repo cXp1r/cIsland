@@ -28,7 +28,7 @@ export const weatherText = document.getElementById("weather-text") as HTMLDivEle
 
 
 
-
+export const panel = document.getElementById("panel") as  HTMLDivElement;
 
 
 
