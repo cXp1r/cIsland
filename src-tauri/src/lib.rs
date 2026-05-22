@@ -553,7 +553,6 @@ pub fn run() {
             let capsule_h_m = capsule_h.clone();
             let capsule_w_m = capsule_w.clone();
             let is_minimized_m = is_minimized.clone();
-            let offset_x_m = offset_x.clone();
             let offset_y_m = offset_y.clone();
             thread::spawn(move || {
                 let mut was_on_capsule = false;//穿透快照
