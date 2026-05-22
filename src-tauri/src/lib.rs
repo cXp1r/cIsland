@@ -227,7 +227,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             window::resize_raf, 
             window::start_drag, window::end_drag, window::drag_move,//三个移动函数
-            link_handler::open_url, link_handler::open_url_with_whitelist,//两个url跳转函数
+            link_handler::open_url, link_handler::open_url_with_whitelist, link_handler::is_downloadable,//两个url跳转函数
             window::get_pending_urls, window::set_interacting, window::dismiss_island, window::set_current_view,
             window::sync_window_size, window::set_minimized, window::show_context_menu,
             window::set_capsule_rect, window::open_email_window, window::set_expanded,
@@ -267,16 +267,10 @@ pub fn run() {
         ])
         .setup(|app| {
             let window = app.get_webview_window("main").unwrap();
-            
-            
-
-            
-            
-
             let hwnd = HWND(window.hwnd().unwrap().0);
             window::set_click_through(hwnd, true);
-
-
+            //初始化链接相关
+            let link_client = reqwest::Client::new();
             //加载配置
             let settings = settings::load_settings_from_file();
             //定位相关
@@ -386,6 +380,7 @@ pub fn run() {
             );
 
             app.manage(IslandState {
+                link_client,
                 offset_x: offset_x.clone(), offset_y: offset_y.clone(),
                 primary_monitor_info: primary_monitor_info.clone(),
                 monitor_info: monitor_info.clone(),
@@ -1462,6 +1457,7 @@ pub struct IslandState {
     pub agent_window_size: Arc<Mutex<String>>,
     // 自定义链接处理器
     pub link_handlers: Arc<Mutex<Vec<LinkHandler>>>,
+    pub link_client: reqwest::Client,
     // URL 域名白名单（可选）
     pub url_whitelist: Arc<Mutex<Vec<String>>>,
     pub weather_city: Arc<Mutex<String>>,
