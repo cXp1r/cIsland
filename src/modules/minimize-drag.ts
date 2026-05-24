@@ -30,35 +30,7 @@ export function applyIndicatorColor(color: string) {
 
 
 
-export function minimizeIsland() {
 
-  if (isMinimized || isMinimizeAnimating) return;
-
-  setIsMinimized(true);
-
-  setIsMinimizeAnimating(true);
-
-
-
-  capsule.classList.add("minimizing");
-
-
-
-  setTimeout(() => {
-
-    capsule.classList.remove("minimizing");
-
-    capsule.classList.add("minimized");
-
-    document.body.classList.add("minimized");
-
-    void invoke("set_minimized", { minimized: true });
-
-    setIsMinimizeAnimating(false);
-
-  }, 300);
-
-}
 
 
 
@@ -190,11 +162,7 @@ export function initMinimizeDrag() {
 
     const action = event.payload;
 
-    if (action === "minimize") {
-
-      minimizeIsland();
-
-    } else if (action === "settings") {
+    if (action === "settings") {
 
       // 延迟执行，确保菜单完全关闭后再打开设置窗口
 
