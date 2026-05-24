@@ -18,7 +18,6 @@ import {
   setUserChosenView,
   isPlaying,
   setIsExpandAnimating,
-  setSkipResizeSync,
 } from "../state";
 import { logi, logw } from "../logger";
 // ---------------------------------------------------------------------------
@@ -186,13 +185,12 @@ function animateViewSwitch(from: ViewMode, to: ViewMode) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// 胶囊 class 统一管理
-// ---------------------------------------------------------------------------
+
 let cl: string[] = ["lyric", "email"];
 let cll: string[] = ["lyric-collapsed", "email"]
 export function updateCapsuleSize() {
-  capsule.classList.value = "";
+  //只有expanded是全局走的
+  capsule.classList.value = capsule.classList.contains("expanded") ? "expanded" : "";
   const cls = cll[cl.indexOf(currentView)];
   if (cls) {
     capsule.classList.add(cls);
@@ -210,27 +208,23 @@ export function setView(mode: ViewMode, animated = true) {
   if (previous === "agent" && mode !== "agent" && capsule.classList.contains("agent-expanded")) {
     capsule.classList.remove("agent-expanded");
     window.setTimeout(() => {
-      void invoke("set_expanded", { expanded: false, width: 0, height: 0 });
+      void invoke("set_expanded", { expanded: false });
     }, 100);
   }
 
   // 如果从 lyric 展开态切走，收起
   if (previous === "lyric" && mode !== "lyric" && capsule.classList.contains("music-expanded")) {
-    setSkipResizeSync(true);
     setIsExpandAnimating(false);
     capsule.classList.remove("music-expanded");
-    void invoke("set_expanded", { expanded: false, width: 0, height: 0 });
-    window.setTimeout(() => { setSkipResizeSync(false); }, 500);
+    void invoke("set_expanded", { expanded: false });
   }
 
   // 如果从 sadb 切走，终止镜像并清理所有 sadb 态
   if (previous === "sadb" && mode !== "sadb") {
     void invoke("sadb_stop_mirroring");
-    capsule.style.width = "";
-    capsule.style.height = "";
     if (capsule.classList.contains("sadb-expanded")) {
       capsule.classList.remove("sadb-expanded");
-      void invoke("set_expanded", { expanded: false, width: 0, height:0});
+      void invoke("set_expanded", { expanded: false });
     }
     if (capsule.classList.contains("sadb-idle")) {
       capsule.classList.remove("sadb-idle");
@@ -247,10 +241,8 @@ export function setView(mode: ViewMode, animated = true) {
   }
 
   if (previous === "email" && mode !== "email" && capsule.classList.contains("email-expanded")) {
-    setSkipResizeSync(true);
     capsule.classList.remove("email-expanded");
-    void invoke("set_expanded", { expanded: false, width: 0, height: 0 });
-    window.setTimeout(() => { setSkipResizeSync(false); }, 360);
+    void invoke("set_expanded", { expanded: false });
   }
 
   
