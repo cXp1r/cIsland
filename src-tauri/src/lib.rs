@@ -313,6 +313,7 @@ pub fn run() {
             let clipboard_enabled = Arc::new(AtomicBool::new(settings.clipboard_enabled));
             let pending_url: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
             let shortcut_key = Arc::new(Mutex::new(settings.shortcut_key.clone()));
+            let hide_and_see_key = Arc::new(Mutex::new(settings.hide_and_see_key.clone()));
             let search_shortcut = Arc::new(Mutex::new(settings.search_shortcut.clone()));
             let lyric_mode = Arc::new(Mutex::new(settings.lyric_mode.clone()));
             let lyric_offset_enabled = Arc::new(AtomicBool::new(settings.lyric_offset_enabled));
@@ -401,6 +402,7 @@ pub fn run() {
                 clipboard_enabled: clipboard_enabled.clone(),
                 pending_url: pending_url.clone(),
                 shortcut_key: shortcut_key.clone(),
+                hide_and_see_key: hide_and_see_key.clone(),
                 search_shortcut: search_shortcut.clone(),
                 lyric_mode: lyric_mode.clone(),
                 lyric_offset_enabled: lyric_offset_enabled.clone(),
@@ -674,6 +676,29 @@ pub fn run() {
                         }
                     }
                 }).ok();
+            }
+
+            //快捷键显示/隐藏
+            {
+                use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+                let hide_key = settings.hide_and_see_key.clone();
+                let hwnd_hk = hwnd.0 as usize;
+                let _ = app.global_shortcut().on_shortcut(hide_key.as_str(), move |_app, _shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        use windows::Win32::Foundation::HWND;
+                        use windows::Win32::UI::WindowsAndMessaging::{
+                            ShowWindow, IsWindowVisible, SW_HIDE, SW_SHOWNOACTIVATE,
+                        };
+                        let hwnd = HWND(hwnd_hk as *mut _);
+                        unsafe {
+                            if IsWindowVisible(hwnd).as_bool() {
+                                let _ = ShowWindow(hwnd, SW_HIDE);
+                            } else {
+                                let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+                            }
+                        }
+                    }
+                });
             }
 
             // --- 麦克风/摄像头使用状态监控 ---
@@ -1424,6 +1449,7 @@ pub struct IslandState {
     pub clipboard_enabled: Arc<AtomicBool>,
     pub pending_url: Arc<Mutex<Vec<String>>>,
     pub shortcut_key: Arc<Mutex<String>>,
+    pub hide_and_see_key: Arc<Mutex<String>>,
     pub search_shortcut: Arc<Mutex<String>>,
     pub lyric_mode: Arc<Mutex<String>>, // "off" | "info" | "lyric"
     pub lyric_offset_enabled: Arc<AtomicBool>,

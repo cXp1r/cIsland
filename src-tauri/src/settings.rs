@@ -57,6 +57,8 @@ pub(crate) struct SettingsData {
     pub clipboard_enabled: bool,
     #[serde(default = "default_shortcut")]
     pub shortcut_key: String,
+    #[serde(default = "default_hide_and_see_shortcut")]
+    pub hide_and_see_key: String,
     #[serde(default = "default_search_shortcut")]
     pub search_shortcut: String,
     #[serde(default = "default_lyric_mode")]
@@ -171,6 +173,10 @@ fn default_shortcut() -> String {
     "Alt+O".to_string()
 }
 
+fn default_hide_and_see_shortcut() -> String {
+    "Alt+/".to_string()
+}
+
 fn default_search_shortcut() -> String {
     "Alt+Space".to_string()
 }
@@ -229,21 +235,14 @@ pub(crate) fn get_settings_path() -> PathBuf {
     path.push("settings.json");
     path
 }
-
-pub(crate) fn load_settings_from_file() -> SettingsData {
-    let path = get_settings_path();
-    if let Ok(content) = fs::read_to_string(&path) {
-        if let Ok(data) = serde_json::from_str::<SettingsData>(&content) {
-            return data;
-        }
-    }
-    // 文件不存在或解析失败，使用默认值并立即写入磁盘
-    let defaults = SettingsData {
+fn default_settings() -> SettingsData {
+    SettingsData {
         offset_x: 0,
         offset_y: 0,
         primary_monitor_info: get_primary_monitor_info(),
         clipboard_enabled: false,
         shortcut_key: default_shortcut(),
+        hide_and_see_key: default_hide_and_see_shortcut(),
         search_shortcut: default_search_shortcut(),
         lyric_mode: default_lyric_mode(),
         lyric_offset_enabled: default_lyric_offset_enabled(),
@@ -278,7 +277,17 @@ pub(crate) fn load_settings_from_file() -> SettingsData {
         email_port: default_email_port(),
         email_poll_interval_secs: default_email_poll_interval_secs(),
         email_shortcut: default_email_shortcut(),
-    };
+    }
+}
+pub(crate) fn load_settings_from_file() -> SettingsData {
+    let path = get_settings_path();
+    if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(data) = serde_json::from_str::<SettingsData>(&content) {
+            return data;
+        }
+    }
+    // 文件不存在或解析失败，使用默认值并立即写入磁盘
+    let defaults = default_settings();
     let _ = save_settings_to_file(&defaults);
     defaults
 }
@@ -304,6 +313,7 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         primary_monitor_info: state.primary_monitor_info.lock().unwrap().clone(),
         clipboard_enabled: state.clipboard_enabled.load(Ordering::Relaxed),
         shortcut_key: state.shortcut_key.lock().unwrap().clone(),
+        hide_and_see_key: state.hide_and_see_key.lock().unwrap().clone(),
         search_shortcut: state.search_shortcut.lock().unwrap().clone(),
         lyric_mode: state.lyric_mode.lock().unwrap().clone(),
         lyric_offset_enabled: state.lyric_offset_enabled.load(Ordering::Relaxed),
@@ -387,6 +397,7 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
         "clipboard_enabled": clipboard_enabled,
         "shortcut_key": shortcut,
         "search_shortcut": state.search_shortcut.lock().unwrap().clone(),
+        "hide_and_see_key": state.hide_and_see_key.lock().unwrap().clone(),
         "lyric_mode": lyric_mode,
         "lyric_offset_enabled": lyric_offset_enabled,
         "indicator_color": indicator_color,
@@ -423,6 +434,7 @@ pub fn save_settings(
     state: tauri::State<'_, IslandState>,
     clipboard_enabled: bool,
     shortcut_key: String,
+    hide_and_see_key: String,
     search_shortcut: String,
     lyric_mode: String,
     lyric_offset_enabled: Option<bool>,
@@ -490,6 +502,7 @@ pub fn save_settings(
     }
     state.clipboard_enabled.store(clipboard_enabled, Ordering::Relaxed);
     *state.shortcut_key.lock().unwrap() = shortcut_key.clone();
+    *state.hide_and_see_key.lock().unwrap() = hide_and_see_key.clone();
     *state.search_shortcut.lock().unwrap() = search_shortcut.clone();
     *state.lyric_mode.lock().unwrap() = lyric_mode.clone();
     if let Some(enabled) = lyric_offset_enabled {
@@ -550,7 +563,27 @@ pub fn save_settings(
             }
         }
     });
-
+    {
+        use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+        let hide_key = hide_and_see_key.clone();
+        let hwnd_hk = state.hwnd.0 as usize;
+        let _ = app.global_shortcut().on_shortcut(hide_key.as_str(), move |_app, _shortcut, event| {
+            if event.state == ShortcutState::Pressed {
+                use windows::Win32::Foundation::HWND;
+                use windows::Win32::UI::WindowsAndMessaging::{
+                    ShowWindow, IsWindowVisible, SW_HIDE, SW_SHOWNOACTIVATE,
+                };
+                let hwnd = HWND(hwnd_hk as *mut _);
+                unsafe {
+                    if IsWindowVisible(hwnd).as_bool() {
+                        let _ = ShowWindow(hwnd, SW_HIDE);
+                    } else {
+                        let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+                    }
+                }
+            }
+        });
+    }
     // 搜索快捷键（从设置读取键位）
     {
         let hwnd_val = state.hwnd;
