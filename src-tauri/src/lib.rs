@@ -14,7 +14,7 @@ mod sadb;
 mod email;
 mod cc;
 mod tools;
-
+mod model;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU32, AtomicI32, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
@@ -372,7 +372,6 @@ pub fn run() {
             let latest_email_uid: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
             let email_shortcut = Arc::new(Mutex::new(settings.email_shortcut.clone()));
             let cached_email_metas: Arc<Mutex<Vec<email::EmailMeta>>> = Arc::new(Mutex::new(email::load_email_metas()));
-            let cc_routes: Arc<Mutex<Vec<cc::CcRoute>>> = Arc::new(Mutex::new(settings.cc.clone()));
             
             media::update_smtc_whitelist(
                 smtc_whitelist_enabled.load(Ordering::Relaxed),
@@ -442,7 +441,6 @@ pub fn run() {
                 latest_email_uid: latest_email_uid.clone(),
                 email_shortcut: email_shortcut.clone(),
                 cached_email_metas: cached_email_metas.clone(),
-                cc_routes: cc_routes.clone(),
             });
 
             // --- 系统托盘 ---
@@ -847,14 +845,10 @@ pub fn run() {
             });
 
             // --- Claude Code 本地通知服务器 ---
-            let win_cc = window.clone();
-            let noti_cc = is_notifying.clone();
-            let exp_cc = is_expanded.clone();
-            let cc_routes_t = cc_routes.clone();
-            thread::spawn(move || {
-                cc::start_server(win_cc, noti_cc, exp_cc, cc_routes_t);
+            std::thread::spawn(|| {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(cc::start_interprocess_server());
             });
-
             // --- 天气后台线程 ---
             let win_weather = window.clone();
             let weather_city_t = weather_city.clone();
@@ -1485,8 +1479,6 @@ pub struct IslandState {
     pub latest_email_uid: Arc<Mutex<Option<String>>>,
     pub email_shortcut: Arc<Mutex<String>>,
     pub cached_email_metas: Arc<Mutex<Vec<email::EmailMeta>>>,
-    // Claude Code 通知路由
-    pub cc_routes: Arc<Mutex<Vec<cc::CcRoute>>>,
     // ADB / 屏幕镜像 相关
     pub(crate) sadb_session: tokio::sync::Mutex<Option<sadb::SessionHandle>>,
     pub sadb_ip: Arc<Mutex<String>>,
