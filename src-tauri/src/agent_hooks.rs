@@ -1,3 +1,4 @@
+#![allow(unused)]
 use interprocess::local_socket::{
     GenericNamespaced, ListenerOptions,
     tokio::prelude::*,

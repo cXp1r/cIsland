@@ -1,6 +1,5 @@
+#![allow(unused)]
 use serde::Deserialize;
-
-// ─── Main Claude struct ───────────────────────────────────────────────────────
 
 #[derive(Deserialize, Debug)]
 pub struct Claude {
