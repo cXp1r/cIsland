@@ -1,6 +1,6 @@
 [package]
 name = "dynamic-island"
-version = "0.9.0"
+version = "0.10.0"
 description = "a dynamic island for windows"
 authors = ["Coding_w", "cXp1r"]
 edition = "2021"
@@ -42,7 +42,8 @@ mailparse = "0.15"
 encoding_rs = "0.8"
 lyrix = "26.5.0"
 display-info = "0.5"
-interprocess = "2.4.2"
+interprocess = { version = "2.4.2", features = ["tokio"] }
+uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [
