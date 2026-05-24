@@ -15,8 +15,9 @@ const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
   }
   return (x: number) => x <= 0 ? 0 : x >= 1 ? 1 : calcY(solveT(x))
 }
-
 const easing = ease(0.25, 1, 0.5, 1)
+
+
 const { port1, port2 } = new MessageChannel()
 
 
@@ -35,7 +36,7 @@ port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t:
       width: data.w,
       height: data.h + 10,
       lwidth: data.lw,
-      ewidth: targetW,   // 用模块级变量
+      ewidth: targetW,
       reposition: 1,
       smaller: data.smaller,
       t: data.t,
@@ -57,13 +58,11 @@ export function animateCapsule(toW: number, toH: number): void {
   
   cancelAnimationFrame(raf)
 
-  // 从当前实际样式读取起点，而不是依赖外部 fromW/fromH
   const startW = parseFloat(el.style.width) || fromW
   const startH = parseFloat(el.style.height) || fromH
   let smaller = startH > toH;
   const start = performance.now()
   let lw = startW
-  //let lh = startH
   function frame(now: number): void {
     
     const t = Math.min((now - start) / 350, 1)
@@ -73,7 +72,7 @@ export function animateCapsule(toW: number, toH: number): void {
 
     el.style.width  = w + 'px'
     el.style.height = h + 'px'
-    port2.postMessage({ w, h, lw, t, e: easing(t), gen, smaller })
+    port2.postMessage({ w, h, lw, t, e, gen, smaller })
 
     if (t < 1) {
       raf = requestAnimationFrame(frame)
@@ -86,46 +85,43 @@ export function animateCapsule(toW: number, toH: number): void {
 
 
 
-// 在 initrAF 里预热，页面加载时就触发一次
-export function initrAF() {
-  // 预热 Tauri IPC
-  void invoke('resize_raf', {
-    width: 0, height: 0, lwidth: 0,
-    ewidth: 0, reposition: 0, d: 0, e: 0,
-  })
 
+export function initrAF() { 
   // 预热 MessageChannel
-  //实则两个相近态的dx<100时建议统一,否则动画会出现割裂
-  port2.postMessage({ w: 0, h: 0, lw: 0, t: 0, e: 0 })
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.attributeName === 'class') {
-              if (!el.classList.contains("sadb-expanded")){
-                let [toW, toH] = [140, 50];
-                if (el.classList.value == "") {
-                } else if (el.classList.contains("panel-expanded") || el.classList.contains("hooks-expanded")) {
-                  [toW, toH] = [900, 250];
-                } else if (el.classList.contains("music-expanded")) {
-                  [toW, toH] = [380, 420];
-                } else if (el.classList.contains("agent-expanded")) {
-                  [toW, toH] = [640, 620];
-                } else if (el.classList.contains("sadb-idle")) {
-                  [toW, toH] = [380, 420];
-                } else if (el.classList.contains("email-expanded")) {
-                  const style = getComputedStyle(document.documentElement);
-                  [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
-                } else if (el.classList.contains("expanded")) {
-                  [toW, toH] = [380, 74];
-                } else if (el.classList.contains("lyric-collapsed")) {
-                  [toW, toH] = [380, 50];
-                }
-                animateCapsule(toW, toH);
-              }
+  port2.postMessage({ w: 0, h: 0, lw: 0, t: 0, e: 0, gen: 0, smaller: false });
+  // 实则两个相近态的dx<100时建议统一,否则动画会出现割裂
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.attributeName === 'class') {
+        if (!el.classList.contains("sadb-expanded")){
+          let [toW, toH] = [140, 50];
+          if (el.classList.value == "") {
+          } else if (el.classList.contains("panel-expanded") || el.classList.contains("hooks-expanded")) {
+            [toW, toH] = [900, 250];
+          } else if (el.classList.contains("music-expanded")) {
+            [toW, toH] = [380, 420];
+          } else if (el.classList.contains("agent-expanded")) {
+            [toW, toH] = [640, 620];
+          } else if (el.classList.contains("sadb-idle")) {
+            [toW, toH] = [380, 420];
+          } else if (el.classList.contains("email-expanded")) {
+            const style = getComputedStyle(document.documentElement);
+            [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
+          } else if (el.classList.contains("expanded")) {
+            [toW, toH] = [330, 74];
+            if (el.classList.contains("lyric-collapsed")) {
+              toW = 380;
             }
+          } else if (el.classList.contains("lyric-collapsed")) {
+            [toW, toH] = [380, 50];
+          }
+          animateCapsule(toW, toH);
         }
-        })
-    observer.observe(el, {
-        attributes: true,
-        attributeFilter: ['class']  // 只监听 class，不监听其他属性
-    })
+      }
+    }
+  });
+  observer.observe(el, {
+    attributes: true,
+    attributeFilter: ['class']  // 只监听 class，不监听其他属性
+  });
 }
