@@ -152,12 +152,14 @@ pub(crate) fn ease_out_cubic(t: f64) -> f64 {
 pub(crate) fn anim_next_id(anim_id: &Arc<AtomicU64>, label: &str) -> u64 {
     let gen = anim_id.fetch_add(1, Ordering::Relaxed) + 1;
     let caller = std::panic::Location::caller();
-    logger::debug("WindowAnim", &format!(
-        "anim_next_id: label={label}, gen={gen}, caller={}:{}:{}",
-        caller.file(),
-        caller.line(),
-        caller.column(),
-    ));
+    if !label.is_empty() {
+        logger::debug("WindowAnim", &format!(
+            "anim_next_id: label={label}, gen={gen}, caller={}:{}:{}",
+            caller.file(),
+            caller.line(),
+            caller.column(),
+        ));
+    }
     gen
 }
 
@@ -180,28 +182,31 @@ pub(crate) fn anim_is_current(anim_id: &Arc<AtomicU64>, my_gen: u64, label: &str
 
 #[track_caller]
 pub(crate) fn anim_finish_if_current(anim_id: &Arc<AtomicU64>, my_gen: u64, label: &str) -> bool {
-    match anim_id.compare_exchange(my_gen, 0, Ordering::Relaxed, Ordering::Relaxed) {
+    let (res,r) = match anim_id.compare_exchange(my_gen, 0, Ordering::Relaxed, Ordering::Relaxed) {
         Ok(_) => {
             let caller = std::panic::Location::caller();
-            logger::debug("WindowAnim", &format!(
+            
+            (&format!(
                 "anim_idle: label={label}, gen={my_gen}, caller={}:{}:{}",
                 caller.file(),
                 caller.line(),
                 caller.column(),
-            ));
-            true
+            ),true)
         }
         Err(current_gen) => {
             let caller = std::panic::Location::caller();
-            logger::debug("WindowAnim", &format!(
+            (&format!(
                 "anim_finish_skipped: label={label}, gen={my_gen}, current_gen={current_gen}, caller={}:{}:{}",
                 caller.file(),
                 caller.line(),
                 caller.column(),
-            ));
-            false
+            ),false)
         }
+    };
+    if !label.is_empty() {
+        logger::debug("WindowAnim", res);
     }
+    r
 }
 
 pub(crate) fn get_cursor_pos() -> Option<(i32, i32)> {
@@ -218,9 +223,16 @@ pub(crate) fn get_window_rect(hwnd: HWND) -> Option<windows::Win32::Foundation::
 }
 
 #[tauri::command]
-pub(crate) fn set_capsule_rect(state: tauri::State<'_, IslandState>, width: u64, height: u64) {
+pub(crate) fn set_capsule_current_rect(state: tauri::State<'_, IslandState>, width: u64, height: u64) {
     state.capsule_w.store(width, Ordering::Relaxed);
     state.capsule_h.store(height, Ordering::Relaxed);
+    //打日志吃io性能,不打了.有报错自己把这里去掉注释看
+    //logger::debug(TAG,&format!("recieve size from webview, width: {}, height: {}", width, height));
+}
+#[tauri::command]
+pub(crate) fn set_capsule_target_rect(state: tauri::State<'_, IslandState>, width: u64, height: u64) {
+    state.capsule_tw.store(width, Ordering::Relaxed);
+    state.capsule_th.store(height, Ordering::Relaxed);
     //打日志吃io性能,不打了.有报错自己把这里去掉注释看
     //logger::debug(TAG,&format!("recieve size from webview, width: {}, height: {}", width, height));
 }
@@ -245,6 +257,7 @@ pub(crate) fn snap_back(window: &tauri::WebviewWindow, from_x: f64, from_y: f64,
     let start = Instant::now();
     loop {
         if !anim_is_current(&anim_id, my_gen, "snap_back") {
+            logger::debug(TAG, "snap_back skipped");
             return false;
         }
         let elapsed = start.elapsed().as_secs_f64() * 1000.0;
@@ -315,7 +328,7 @@ pub fn start_drag(state: tauri::State<'_, IslandState>) {
 
 #[tauri::command]
 pub fn drag_move(window: tauri::WebviewWindow, state: tauri::State<'_, IslandState>, dx: i32, dy: i32) {
-    let gen = anim_next_id(&state.move_anim_id, "drag_move");
+    let gen = anim_next_id(&state.move_anim_id, "");
     if let Ok(pos) = window.outer_position() {
         let scale = window.scale_factor().unwrap_or(1.0);
         let logical_x = pos.x as f64 / scale;
@@ -328,7 +341,7 @@ pub fn drag_move(window: tauri::WebviewWindow, state: tauri::State<'_, IslandSta
             logical_y + dy as f64,
         ));
     }
-    anim_finish_if_current(&state.move_anim_id, gen, "drag_move");
+    anim_finish_if_current(&state.move_anim_id, gen, "");
 }
 
 #[tauri::command]
@@ -345,11 +358,10 @@ pub fn end_drag(window: tauri::WebviewWindow, state: tauri::State<'_, IslandStat
 
         return;
     }
-
     let scale = window.scale_factor().unwrap_or(1.0);
     // 按当前实际窗口宽度重算居中 X，避免 resize-handle 改过宽度后偏移
-    let capsule_w = state.capsule_w.load(Ordering::Relaxed) as f64;
-    let capsule_h = state.capsule_h.load(Ordering::Relaxed) as f64;
+    let capsule_w = state.capsule_tw.load(Ordering::Relaxed) as f64;
+    let capsule_h = state.capsule_th.load(Ordering::Relaxed) as f64;
     let target_x = state.offset_x.load(Ordering::Relaxed) as f64 * scale + state.screen_x.load(Ordering::Relaxed) as f64 * scale + (state.screen_w.load(Ordering::Relaxed) as f64 * scale - capsule_w) / 2.0;
     let target_y = state.offset_y.load(Ordering::Relaxed) as f64 * scale + state.screen_y.load(Ordering::Relaxed) as f64 * scale;
     logger::debug(TAG, &format!("end_drag snap_back: capsule=({capsule_w:.1}x{capsule_h:.1}), target=({target_x:.1},{target_y:.1})"));
@@ -438,8 +450,7 @@ pub fn show_context_menu(app: tauri::AppHandle, window: tauri::WebviewWindow) {
         let Ok(h_menu) = CreatePopupMenu() else { return };
 
         // 添加菜单项
-        let _ = AppendMenuW(h_menu, MF_STRING, 1, windows::core::w!("收起"));
-        let _ = AppendMenuW(h_menu, MF_STRING, 2, windows::core::w!("设置"));
+        let _ = AppendMenuW(h_menu, MF_STRING, 1, windows::core::w!("设置"));
 
         // 显示菜单并跟踪选择（阻塞直到用户选择或取消）
         let cmd = TrackPopupMenu(
@@ -460,9 +471,6 @@ pub fn show_context_menu(app: tauri::AppHandle, window: tauri::WebviewWindow) {
     // 避免在当前 command 上下文中创建窗口导致死锁。
     match cmd_id {
         1 => {
-            let _ = app.emit("context-menu-action", "minimize");
-        }
-        2 => {
             thread::spawn(move || {
                 // 短暂延迟确保主线程 command 调用完全返回
                 thread::sleep(Duration::from_millis(50));
@@ -515,10 +523,16 @@ pub fn set_current_view(state: tauri::State<'_, IslandState>, view: String) {
     
 }
 
-
-
 #[tauri::command]
-pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWindow, height: f64, width: f64, lwidth: f64, ewidth: f64, reposition: Option<u8>) {
+pub fn start_raf(state: tauri::State<'_, IslandState>) -> u64{ 
+    anim_next_id(&state.move_anim_id, "raf")
+}
+#[tauri::command]
+pub fn end_raf(state: tauri::State<'_, IslandState>, gen: u64) -> bool {
+    anim_finish_if_current(&state.move_anim_id, gen, "raf")
+}
+#[tauri::command]
+pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWindow, height: f64, width: f64, lwidth: f64, ewidth: f64, t: f64, smaller: bool, reposition: Option<u8>) {
     let Ok(pos) = window.outer_position() else {
         logger::error(TAG, "set_expanded failed: outer_position unavailable");
         return;
@@ -536,37 +550,38 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
     let window_height = height.max(min_h);
     let choice = reposition.unwrap_or(0);
 
-    //println!("{:?} {:?} {:?} {temp_x}",state.screen_w.load(Ordering::Relaxed), state.screen_x.load(Ordering::Relaxed), state.screen_y.load(Ordering::Relaxed));
+    
     let offset_x = (state.offset_x.load(Ordering::Relaxed) as f64 * scale) as i32;
     let offset_y = (state.offset_y.load(Ordering::Relaxed) as f64 * scale) as i32;
 
-    let temp_x = pos.x + lwidth / 2 - width / 2; // 不加 offset~
+    let temp_x = pos.x + lwidth / 2 - width / 2; 
 
     let (target_x, target_y) = match choice {
-        0 => (temp_x, pos.y), // 不加 offset~
+        0 => (temp_x, pos.y),
         1 => {
             let home_x = state.screen_x.load(Ordering::Relaxed)
                 + offset_x  // 只有 home 加 offset~
                 + ((state.screen_w.load(Ordering::Relaxed) as f64 * scale - ewidth as f64) / 2.0) as i32;
             let home_y = state.screen_y.load(Ordering::Relaxed) + offset_y; // 同理~
             
-            if ewidth >= lwidth || pos.y == home_y {
-                (temp_x, pos.y) // 不加 offset~
+            if !smaller {
+                (temp_x, pos.y)
             } else {
-                let ratio = if lwidth != ewidth {
-                    (width - ewidth) as f64 / (lwidth - ewidth) as f64
+                if lwidth != ewidth {
+                    logger::debug("rAF", "snap-back: width-based ratio");
+                    let r = (width - ewidth) as f64 / (lwidth - ewidth) as f64;
+                    let x1 = home_x + ((pos.x - home_x) as f64 * r).round() as i32;
+                    let y1 = home_y + ((pos.y - home_y) as f64 * r).round() as i32;
+                    (x1, y1)
                 } else {
-                    1.0
-                };
-                let x1 = home_x + ((pos.x - home_x) as f64 * ratio).round() as i32;
-                let y1 = home_y + ((pos.y - home_y) as f64 * ratio).round() as i32;
-                (x1, y1)
+                    logger::debug("rAF", "snap-back: eased by t");
+                    (home_x + ((pos.x - home_x) as f64 * (1.0-t)).round() as i32, home_y + ((pos.y - home_y) as f64 * (1.0-t)).round() as i32)
+                }
             }
         },
         _ => (pos.x, pos.y),
     };
-    logger::debug("rAF", &format!("rAF: target_x={}, target_y={}, window_width={}, window_height={} lwindow_width={}, ewindow_width={}", target_x, target_y, width, height, lwidth, ewidth));
-    
+    logger::debug("rAF", &format!("({}, {}) -> ({}, {})", pos.x, pos.y, target_x, target_y));
     unsafe {
         let _ = SetWindowPos(
             window.hwnd().unwrap(),
@@ -585,8 +600,6 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
 pub fn set_expanded(
     state: tauri::State<'_, IslandState>,
     expanded: bool,
-    _width: u64,
-    _height: u64,
 ) {
     state.is_expanded.store(expanded, Ordering::Relaxed);
     let v = state.current_view.lock().unwrap().as_str().to_string();
