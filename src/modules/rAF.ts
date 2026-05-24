@@ -27,19 +27,31 @@ const el = document.getElementById('island-capsule')!
 let rect = el.getBoundingClientRect()
 let fromW = Math.round(rect.width)
 let fromH = Math.round(rect.height)
-port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number }>) => {
-  void invoke('resize_raf', {
-    width: data.w,
-    height: data.h + 10,
-    lwidth: data.lw,
-    ewidth: targetW,   // 用模块级变量
-    reposition: 1,
-    d: data.t,
-    e: data.e,
-  })
+port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number, gen: number, smaller: boolean }>) => {
+  if (data.t >= 1) {
+    void invoke('end_raf', { gen: data.gen ?? 1});
+  } else {
+    void invoke('resize_raf', {
+      width: data.w,
+      height: data.h + 10,
+      lwidth: data.lw,
+      ewidth: targetW,   // 用模块级变量
+      reposition: 1,
+      smaller: data.smaller,
+      t: data.t,
+    })
+  }
+  
 }
+//高减小作为缩小的判定
 export function animateCapsule(toW: number, toH: number): void {
   if (toW === targetW && toH === targetH) return
+  void invoke('set_capsule_target_rect', { height: toH, width: toW });
+  let gen = 0;
+  invoke<number>('start_raf').then((u: number) => {
+    gen = u;
+  });
+  
   targetW = toW
   targetH = toH
   
@@ -48,7 +60,7 @@ export function animateCapsule(toW: number, toH: number): void {
   // 从当前实际样式读取起点，而不是依赖外部 fromW/fromH
   const startW = parseFloat(el.style.width) || fromW
   const startH = parseFloat(el.style.height) || fromH
-
+  let smaller = startH > toH;
   const start = performance.now()
   let lw = startW
   //let lh = startH
@@ -61,9 +73,11 @@ export function animateCapsule(toW: number, toH: number): void {
 
     el.style.width  = w + 'px'
     el.style.height = h + 'px'
-    port2.postMessage({ w, h, lw, t, e })
+    port2.postMessage({ w, h, lw, t, e: easing(t), gen, smaller })
 
-    if (t < 1) raf = requestAnimationFrame(frame)
+    if (t < 1) {
+      raf = requestAnimationFrame(frame)
+    }
     lw = w
   }
 
@@ -81,6 +95,7 @@ export function initrAF() {
   })
 
   // 预热 MessageChannel
+  //实则两个相近态的dx<100时建议统一,否则动画会出现割裂
   port2.postMessage({ w: 0, h: 0, lw: 0, t: 0, e: 0 })
     const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
@@ -100,9 +115,9 @@ export function initrAF() {
                   const style = getComputedStyle(document.documentElement);
                   [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
                 } else if (el.classList.contains("expanded")) {
-                  [toW, toH] = [330, 74];
+                  [toW, toH] = [380, 74];
                 } else if (el.classList.contains("lyric-collapsed")) {
-                  [toW, toH] = [340, 50];
+                  [toW, toH] = [380, 50];
                 }
                 animateCapsule(toW, toH);
               }
