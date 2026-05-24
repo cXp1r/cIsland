@@ -10,6 +10,7 @@ const TAG = "Settings";
 type SettingsResponse = {
   clipboard_enabled: boolean;
   shortcut_key: string;
+  hide_and_see_key: string;
   search_shortcut: string;
   lyric_mode: string;
   lyric_ws_enabled: boolean;
@@ -113,6 +114,7 @@ const INFLINK_URL = "https://docs.pyisland.com/guide/qa/ncm-music.html";
 const clipboardToggle = document.getElementById("clipboard-toggle") as HTMLInputElement;
 const shortcutInput = document.getElementById("shortcut-input") as HTMLInputElement;
 const searchShortcutInput = document.getElementById("search-shortcut-input") as HTMLInputElement;
+const hideAndSeeInput = document.getElementById("hide-and-see-input") as HTMLInputElement;
 const lyricModeSelect = document.getElementById("lyric-mode") as HTMLSelectElement;
 const lyricOffsetEnabledToggle = document.getElementById("lyric-offset-enabled") as HTMLInputElement;
 const indicatorColorInput = document.getElementById("indicator-color") as HTMLInputElement;
@@ -178,6 +180,7 @@ async function loadSettings() {
   clipboardToggle.checked = settings.clipboard_enabled;
   shortcutInput.value = settings.shortcut_key;
   searchShortcutInput.value = settings.search_shortcut;
+  hideAndSeeInput.value = settings.hide_and_see_key;
   lyricModeSelect.value = settings.lyric_mode || "lyric";
   lyricOffsetEnabledToggle.checked = settings.lyric_offset_enabled ?? true;
   indicatorColorInput.value = settings.indicator_color || "#2edb67";
@@ -260,129 +263,69 @@ function showStatus(msg: string, isError = false, durationMs = 2600) {
   }, durationMs);
 }
 
-shortcutInput.addEventListener("click", () => {
-  isRecording = true;
-  shortcutInput.value = shortcutHint;
-  shortcutInput.classList.add("recording");
-});
+function setupShortcutRecorder(input: HTMLInputElement) {
+  input.addEventListener("click", () => {
+    isRecording = true;
+    input.value = shortcutHint;
+    input.classList.add("recording");
+  });
 
-shortcutInput.addEventListener("blur", () => {
-  if (!isRecording) return;
-  isRecording = false;
-  shortcutInput.classList.remove("recording");
-  void loadSettings();
-});
-
-shortcutInput.addEventListener("keydown", (e: KeyboardEvent) => {
-  if (!isRecording) return;
-  e.preventDefault();
-
-  const parts: string[] = [];
-  if (e.ctrlKey) parts.push("Ctrl");
-  if (e.altKey) parts.push("Alt");
-  if (e.shiftKey) parts.push("Shift");
-  if (e.metaKey) parts.push("Super");
-
-  const ignored = ["Control", "Alt", "Shift", "Meta"];
-  if (!ignored.includes(e.key)) {
-    parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
-    shortcutInput.value = parts.join("+");
-    shortcutInput.classList.remove("recording");
+  input.addEventListener("blur", () => {
+    if (!isRecording) return;
     isRecording = false;
-  }
-});
+    input.classList.remove("recording");
+    void loadSettings();
+  });
 
-// 搜索快捷键录制
-searchShortcutInput.addEventListener("click", () => {
-  isRecording = true;
-  searchShortcutInput.value = shortcutHint;
-  searchShortcutInput.classList.add("recording");
-});
+  input.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (!isRecording) return;
+    e.preventDefault();
 
-searchShortcutInput.addEventListener("blur", () => {
-  if (!isRecording) return;
-  isRecording = false;
-  searchShortcutInput.classList.remove("recording");
-  void loadSettings();
-});
+    const parts: string[] = [];
+    if (e.ctrlKey) parts.push("Ctrl");
+    if (e.altKey) parts.push("Alt");
+    if (e.shiftKey) parts.push("Shift");
+    if (e.metaKey) parts.push("Super");
 
-searchShortcutInput.addEventListener("keydown", (e: KeyboardEvent) => {
-  if (!isRecording) return;
-  e.preventDefault();
+    const ignored = ["Control", "Alt", "Shift", "Meta"];
+    if (!ignored.includes(e.key)) {
+      parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
+      input.value = parts.join("+");
+      input.classList.remove("recording");
+      isRecording = false;
+    }
+  });
+}
 
-  const parts: string[] = [];
-  if (e.ctrlKey) parts.push("Ctrl");
-  if (e.altKey) parts.push("Alt");
-  if (e.shiftKey) parts.push("Shift");
-  if (e.metaKey) parts.push("Super");
-
-  const ignored = ["Control", "Alt", "Shift", "Meta"];
-  if (!ignored.includes(e.key)) {
-    parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
-    searchShortcutInput.value = parts.join("+");
-    searchShortcutInput.classList.remove("recording");
-    isRecording = false;
-  }
-});
-
-// 邮箱快捷键录制
-emailShortcutInput.addEventListener("click", () => {
-  isRecording = true;
-  emailShortcutInput.value = shortcutHint;
-  emailShortcutInput.classList.add("recording");
-});
-
-emailShortcutInput.addEventListener("blur", () => {
-  if (!isRecording) return;
-  isRecording = false;
-  emailShortcutInput.classList.remove("recording");
-  void loadSettings();
-});
-
-emailShortcutInput.addEventListener("keydown", (e: KeyboardEvent) => {
-  if (!isRecording) return;
-  e.preventDefault();
-
-  const parts: string[] = [];
-  if (e.ctrlKey) parts.push("Ctrl");
-  if (e.altKey) parts.push("Alt");
-  if (e.shiftKey) parts.push("Shift");
-  if (e.metaKey) parts.push("Super");
-
-  const ignored = ["Control", "Alt", "Shift", "Meta"];
-  if (!ignored.includes(e.key)) {
-    parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
-    emailShortcutInput.value = parts.join("+");
-    emailShortcutInput.classList.remove("recording");
-    isRecording = false;
-  }
-});
+[shortcutInput, hideAndSeeInput, searchShortcutInput, emailShortcutInput].forEach(setupShortcutRecorder);
 
 // 歌词偏移补偿总开关及按播放器子页的所有交互，集中在 settings-lyric-offset 模块处理
 initLyricOffset();
-
+function check_shortcut(e: HTMLInputElement) {
+  if(!e) return false;
+  const value = e.value.trim();
+  if (!value || value === shortcutHint ) {
+    return false;
+  }
+  return value;
+}
 saveBtn.addEventListener("click", async () => {
-  const shortcut = shortcutInput.value.trim();
-  if (!shortcut || shortcut === shortcutHint) {
-    showStatus("请先设置快捷键", true);
-    return;
-  }
+  const results = [shortcutInput, hideAndSeeInput, searchShortcutInput, emailShortcutInput]
+    .map((e: HTMLInputElement) => check_shortcut(e));
+  if (results.some(q => !q)) return;
+  const [q1, q2, q3, q4] = results;
 
-  const searchShortcut = searchShortcutInput.value.trim();
-  if (!searchShortcut || searchShortcut === shortcutHint) {
-    searchShortcutInput.value = "Alt+Space";
-  }
 
   try {
     //保存逻辑
-    console.log(parseInt(offsetY.value))
     await invoke("save_settings", {
       offsetX: parseInt(offsetX.value) || 0,
       offsetY: parseInt(offsetY.value) || 0,
       monitorId:  document.querySelector('.screen-div.selected')?.id,
       clipboardEnabled: clipboardToggle.checked,
-      shortcutKey: shortcut,
-      searchShortcut: searchShortcutInput.value,
+      shortcutKey: q1,
+      hideAndSeeKey: q2,
+      searchShortcut: q3,
       lyricMode: lyricModeSelect.value,
       lyricOffsetEnabled: lyricOffsetEnabledToggle.checked,
       indicatorColor: indicatorColorInput.value,
@@ -400,7 +343,7 @@ saveBtn.addEventListener("click", async () => {
       emailAuth: emailAuthInput.value.trim(),
       emailAddress: emailAddressInput.value.trim(),
       emailPort: parseInt(emailPortInput.value) || 993,
-      emailShortcut: emailShortcutInput.value.trim() || "Ctrl+Alt+E",
+      emailShortcut: q4,
     });
 
     // 保存 AI 设置
