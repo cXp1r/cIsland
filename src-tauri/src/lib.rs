@@ -225,12 +225,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            window::resize_raf, 
+            window::resize_raf, window::start_raf, window::end_raf,
             window::start_drag, window::end_drag, window::drag_move,//三个移动函数
             link_handler::open_url, link_handler::open_url_with_whitelist, link_handler::is_downloadable,//两个url跳转函数
             window::get_pending_urls, window::set_interacting, window::dismiss_island, window::set_current_view,
             window::sync_window_size, window::set_minimized, window::show_context_menu,
-            window::set_capsule_rect, window::open_email_window, window::set_expanded,
+            window::set_capsule_current_rect, window::set_capsule_target_rect, window::open_email_window, window::set_expanded,
             settings::open_settings, settings::get_settings, settings::save_settings,
             settings::get_lyric_offset_players, settings::set_lyric_offset_for_player,
             settings::set_lyric_offset_enabled, settings::delete_lyric_offset_player,
@@ -282,10 +282,13 @@ pub fn run() {
 
             let capsule_w: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
             let capsule_h: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
+            let capsule_tw: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
+            let capsule_th: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 
             let screen_w = primary_monitor_info.lock().unwrap().width;
             let screen_x = primary_monitor_info.lock().unwrap().x;
             let screen_y = primary_monitor_info.lock().unwrap().y;
+
 
             let _ = window.set_position(tauri::LogicalPosition::new(offset_x as f64 + screen_x as f64 * scale + (screen_w as f64 * scale - WIN_W) / 2.0, offset_y as f64 + screen_y as f64 * scale));
             let _ = window.set_size(tauri::LogicalSize::new(WIN_W, WIN_H_DEFAULT));
@@ -385,6 +388,7 @@ pub fn run() {
                 monitor_info: monitor_info.clone(),
                 capsule_w: capsule_w.clone(),
                 capsule_h: capsule_h.clone(),
+                capsule_tw, capsule_th,
                 sadb_session: tokio::sync::Mutex::new(None),
                 sadb_ip: Arc::new(Mutex::new(settings.sadb_ip.clone())),
                 sadb_port: Arc::new(Mutex::new(settings.sadb_port)),
@@ -1411,6 +1415,8 @@ pub struct IslandState {
     pub monitor_info: Arc<Mutex<Vec<MonitorInfo>>>,
     pub capsule_w: Arc<AtomicU64>,
     pub capsule_h: Arc<AtomicU64>,
+    pub capsule_tw: Arc<AtomicU64>,
+    pub capsule_th: Arc<AtomicU64>,
     pub is_notifying: Arc<AtomicBool>,
     pub is_expanded: Arc<AtomicBool>,
     pub is_dragging: Arc<AtomicBool>,
