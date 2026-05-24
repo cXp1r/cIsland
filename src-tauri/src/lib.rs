@@ -229,7 +229,7 @@ pub fn run() {
             window::start_drag, window::end_drag, window::drag_move,//三个移动函数
             link_handler::open_url, link_handler::open_url_with_whitelist, link_handler::is_downloadable,//两个url跳转函数
             window::get_pending_urls, window::set_interacting, window::dismiss_island, window::set_current_view,
-            window::sync_window_size, window::set_minimized, window::show_context_menu,
+            window::sync_window_size, window::show_context_menu,
             window::set_capsule_current_rect, window::set_capsule_target_rect, window::open_email_window, window::set_expanded,
             settings::open_settings, settings::get_settings, settings::save_settings,
             settings::get_lyric_offset_players, settings::set_lyric_offset_for_player,
@@ -343,7 +343,6 @@ pub fn run() {
             let sadb_mirroring = Arc::new(AtomicBool::new(false));
             let music_expanded = Arc::new(AtomicBool::new(false));
             let is_music = Arc::new(AtomicBool::new(false));
-            let is_minimized = Arc::new(AtomicBool::new(false));
             let expand_anim_id = Arc::new(AtomicU64::new(0));
             let move_anim_id = Arc::new(AtomicU64::new(0));
             let indicator_color = Arc::new(Mutex::new(settings.indicator_color.clone()));
@@ -415,7 +414,6 @@ pub fn run() {
                 sadb_idle: sadb_idle.clone(),
                 sadb_mirroring: sadb_mirroring.clone(),
                 music_expanded: music_expanded.clone(),
-                is_minimized: is_minimized.clone(),
                 expand_anim_id: expand_anim_id.clone(),
                 move_anim_id: move_anim_id.clone(),
                 screen_w, screen_x, screen_y, hwnd, scale,
@@ -551,7 +549,6 @@ pub fn run() {
             let hwnd_raw = hwnd.0 as usize;
             let capsule_h_m = capsule_h.clone();
             let capsule_w_m = capsule_w.clone();
-            let is_minimized_m = is_minimized.clone();
             let offset_y_m = offset_y.clone();
             thread::spawn(move || {
                 let mut was_on_capsule = false;//穿透快照
@@ -568,14 +565,13 @@ pub fn run() {
                         let current_scale = win_m.scale_factor().unwrap_or(1.0).max(0.1);
                         let fmx = (mx as f64 - rect.left as f64) / current_scale;
                         let fmy = (my as f64 - rect.top as f64) / current_scale;
-                        let minimized = is_minimized_m.load(Ordering::Relaxed);
-                        let dw = capsule_w_m.load(Ordering::Relaxed).max(if minimized { 60 } else { 1 }) as f64;
-                        let dh = capsule_h_m.load(Ordering::Relaxed).max(if minimized { 4 } else { 1 }) as f64;
+                        let dw = capsule_w_m.load(Ordering::Relaxed) as f64;
+                        let dh = capsule_h_m.load(Ordering::Relaxed) as f64;
                         //logger::debug("LIB", &format!("{} {} {} {}",win_x + (win_w - dw) / 2.0 , win_x + (win_w + dw) / 2.0, win_y , win_y + dh));
                         // 大于左起的x 
                         let capsule_left = 0.0;
                         let capsule_right = capsule_left + dw;
-                        let hit_top = if minimized { 5.0 } else { 10.0 };
+                        let hit_top = 10.0;
                         let on_capsule = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= hit_top) && (fmy <= hit_top + dh);
                         let hit_on_capsule = on_capsule || drag_m.load(Ordering::Relaxed);
 
@@ -588,7 +584,7 @@ pub fn run() {
                             window::set_click_through(hwnd, true);
                             was_on_capsule = false;
                         }
-                        if !minimized && (!is_expanded_m.load(Ordering::Relaxed) || was_in_zone) {
+                        if !is_expanded_m.load(Ordering::Relaxed) || was_in_zone {
                             let in_zone = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= - offset_y_m.load(Ordering::Relaxed) as f64) && (fmy <= 10.0);
                             if in_zone && !was_in_zone {
                                 logger::debug("HitTest", "in_zone");
@@ -1461,7 +1457,6 @@ pub struct IslandState {
     pub email_expanded: Arc<AtomicBool>,
     pub agent_expanded: Arc<AtomicBool>,
     pub music_expanded: Arc<AtomicBool>,
-    pub is_minimized: Arc<AtomicBool>,
     pub expand_anim_id: Arc<AtomicU64>,
     pub move_anim_id: Arc<AtomicU64>,
     pub screen_w: Arc<AtomicU32>,// /100

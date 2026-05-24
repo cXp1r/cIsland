@@ -429,13 +429,7 @@ pub fn sync_window_size(
     }
 }
 
-#[tauri::command]
-pub fn set_minimized(state: tauri::State<'_, IslandState>, minimized: bool) {
-    state.is_minimized.store(minimized, Ordering::Relaxed);
-    if state.email_expanded.load(Ordering::Relaxed) {
-        return;
-    }
-}
+
 
 #[tauri::command]
 pub fn show_context_menu(app: tauri::AppHandle, window: tauri::WebviewWindow) {
