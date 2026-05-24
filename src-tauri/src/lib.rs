@@ -12,7 +12,7 @@ mod updater;
 mod ceverything;
 mod sadb;
 mod email;
-mod cc;
+mod agent_hooks;
 mod tools;
 mod model;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU32, AtomicI32, Ordering};
@@ -847,7 +847,7 @@ pub fn run() {
             // --- Claude Code 本地通知服务器 ---
             std::thread::spawn(|| {
                 let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(cc::start_interprocess_server());
+                rt.block_on(agent_hooks::start_interprocess_server());
             });
             // --- 天气后台线程 ---
             let win_weather = window.clone();
