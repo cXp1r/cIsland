@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, emailPanel, emailResizeHandle } from "../dom";
-import { currentView, setSkipResizeSync } from "../state";
+import { currentView } from "../state";
 
 const EMAIL_DEFAULT_W = 820;
 const EMAIL_DEFAULT_H = 620;
@@ -70,7 +70,6 @@ export function initEmailResize() {
     resizeStartY = e.screenY;
     resizeStartW = emailViewW;
     resizeStartH = emailViewH;
-    setSkipResizeSync(true);
     capsule.style.transition = "none";
     emailPanel.style.pointerEvents = "none";
   });
@@ -96,7 +95,6 @@ export function initEmailResize() {
     resizing = false;
     capsule.style.transition = "";
     emailPanel.style.pointerEvents = "";
-    setSkipResizeSync(false);
     const size = getEmailWindowSize();
     try { await invoke("sync_window_size", { width: size.width, height: size.height, reposition: false }); } catch { /* ignore */ }
   });

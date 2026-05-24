@@ -35,7 +35,7 @@ export function initResizeObserver() {
     const target = minimized ? collapsedIndicator : el;
     const width = target?.offsetWidth || 0;
     const height = target?.offsetHeight || 0;
-    void invoke('set_capsule_rect', { height, width });
+    void invoke('set_capsule_current_rect', { height, width });
   };
   const bodyObserver = new ResizeObserver(() => {
     if (timer !== null) {

@@ -6,7 +6,6 @@ import {
   sadbCanvas, sadbBtnStart, sadbBtnStop, sadbStatus,
   sadbDeviceName, sadbResolution, sadbFps,
 } from "../dom";
-import { setSkipResizeSync } from "../state";
 import { loge, logd, logi, logw } from "../logger";
 
 const TAG: string = "SADB";
@@ -712,7 +711,6 @@ export function initSadb() {
     resizing = true;
     resizeStartX = e.screenX;
     resizeStartScale = sadbScale;
-    setSkipResizeSync(true);
     capsule.style.transition = "none";
     logi("[sadb-resize]", "mousedown: screenX=%d, scale=%.3f, initCapW=%d, initCapH=%d, capW=%d, capH=%d",
       e.screenX, sadbScale, initCapW, initCapH, capsule.offsetWidth, capsule.offsetHeight);
@@ -756,7 +754,6 @@ export function initSadb() {
     if (!resizing) return;
     resizing = false;
     capsule.style.transition = "";
-    setSkipResizeSync(false);
     const { capW: fw, capH: fh } = getScaledSize();
     const bodyPad = parseFloat(getComputedStyle(document.body).paddingTop) || 5;
     logi("[sadb-resize]", "mouseup: scale=%d/1000, sync %dx%d", Math.round(sadbScale * 1000), fw, fh + bodyPad + 5);
