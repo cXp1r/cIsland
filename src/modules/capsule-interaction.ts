@@ -12,7 +12,6 @@ import {
   agentClickTimer, setAgentClickTimer,
   sadbClickTimer, setSadbClickTimer,
   isExpandAnimating, setIsExpandAnimating,
-  setSkipResizeSync,
   currentSongTitle, currentArtistName, currentThumbnailUrl,
   emailClickTimer,
   setEmailClickTimer,
@@ -20,7 +19,7 @@ import {
 import { switchToNextView } from "./view-switcher";
 import { fetchAndUpdateVolume } from "./music-controls";
 import { showContextMenu } from "./minimize-drag";
-import { logd, logi } from "../logger";
+import { logd } from "../logger";
 
 export function initCapsuleInteraction() {
   capsule.addEventListener("click", (e: MouseEvent) => {
@@ -42,15 +41,16 @@ export function initCapsuleInteraction() {
         setPanelClickTimer(null);
         return;
       }
+      
       setPanelClickTimer(window.setTimeout(() => {
         setPanelClickTimer(null);
-        // 从 panel-expanded 退回 expanded
+        if (isExpandAnimating) return;
         if (capsule.classList.contains("panel-expanded") && target instanceof HTMLDivElement) {
           capsule.classList.remove("panel-expanded");
           capsule.classList.add("expanded");
           setIsExpandAnimating(true);
-          setSkipResizeSync(true);
-        } else {
+        } else if (currentView === "time" ) {
+          setIsExpandAnimating(false);
           capsule.classList.add("panel-expanded");
           capsule.classList.remove("expanded");
         }
@@ -81,7 +81,6 @@ export function initCapsuleInteraction() {
         setIsExpandAnimating(true);
         const willExpand = !capsule.classList.contains("music-expanded");
         if (willExpand) {
-          setSkipResizeSync(true);
           capsule.classList.add("music-expanded");
           musicPanelSong.textContent = currentSongTitle || "";
           musicPanelArtist.textContent = currentArtistName || "";
@@ -90,14 +89,12 @@ export function initCapsuleInteraction() {
             musicPanelCoverImg.style.backgroundImage = `url(${currentThumbnailUrl})`;
           }
           fetchAndUpdateVolume();
-          const bodyPad = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
-          void invoke("set_expanded", { expanded: true, width: 0, height: 420 + bodyPad + 5 });
-          window.setTimeout(() => { setSkipResizeSync(false); setIsExpandAnimating(false); }, 400);
+          void invoke("set_expanded", { expanded: true });
+          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         } else {
-          setSkipResizeSync(true);
           capsule.classList.remove("music-expanded");
-          void invoke("set_expanded", { expanded: false, width: 0, height: 420 });
-          window.setTimeout(() => { setSkipResizeSync(false); setIsExpandAnimating(false); }, 500);
+          void invoke("set_expanded", { expanded: false });
+          window.setTimeout(() => { setIsExpandAnimating(false); }, 500);
         }
       }, 250));
       return;
@@ -127,20 +124,19 @@ export function initCapsuleInteraction() {
         if (isExpandAnimating) return;
         setIsExpandAnimating(true);
         if (!capsule.classList.contains("agent-expanded")) {
-          setSkipResizeSync(true);
           capsule.classList.add("agent-expanded");
-          void invoke("set_expanded", { expanded: true, width: 520, height: 550 });
-          window.setTimeout(() => { setSkipResizeSync(false); setIsExpandAnimating(false); }, 400);
+          void invoke("set_expanded", { expanded: true });
+          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         } else {
-          setSkipResizeSync(true);
+          ;
           const agentArea = document.getElementById("agent-area");
           if (agentArea) agentArea.classList.add("collapsing");
           window.setTimeout(() => {
             capsule.classList.remove("agent-expanded");
-            void invoke("set_expanded", { expanded: false, width: 0, height: 640 });
+            void invoke("set_expanded", { expanded: false });
             window.setTimeout(() => {
               if (agentArea) agentArea.classList.remove("collapsing");
-              setSkipResizeSync(false);
+              
               setIsExpandAnimating(false);
             }, 50);
           }, 100);
@@ -161,10 +157,10 @@ export function initCapsuleInteraction() {
           setSadbClickTimer(null);
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          setSkipResizeSync(true);
+          ;
           capsule.classList.remove("sadb-idle");
-          void invoke("set_expanded", { expanded: false ,width: 0, height: 0});
-          window.setTimeout(() => { setSkipResizeSync(false); setIsExpandAnimating(false); }, 400);
+          void invoke("set_expanded", { expanded: false });
+          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         }, 250));
         return;
       }
@@ -176,10 +172,10 @@ export function initCapsuleInteraction() {
         setSadbClickTimer(null);
         if (isExpandAnimating) return;
         setIsExpandAnimating(true);
-        setSkipResizeSync(true);
+        ;
         capsule.classList.add("sadb-idle");
-        void invoke("set_expanded", { expanded: true, width: 0, height: 430});
-        window.setTimeout(() => { setSkipResizeSync(false); setIsExpandAnimating(false); }, 400);
+        void invoke("set_expanded", { expanded: true });
+        window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
       }, 250));
       return;
     }
@@ -193,15 +189,10 @@ export function initCapsuleInteraction() {
       setEmailClickTimer(window.setTimeout(() => {
         if (capsule.classList.contains("email-expanded")){
           capsule.classList.remove("email-expanded");
-          void invoke('set_expanded', { expanded: false, width: 0, height: 0 });
+          void invoke('set_expanded', { expanded: false });
           return;
         }
-        const rootStyles = getComputedStyle(document.documentElement);
-
-        const emailW = parseFloat(rootStyles.getPropertyValue("--email-view-w").trim().replace("px", ".0"));
-        const emailH = parseFloat(rootStyles.getPropertyValue("--email-view-h").trim().replace("px", ".0"));
-        logi("Interaction", emailW, emailH);
-        void invoke('set_expanded', { expanded: true, width: emailW, height: emailH + 10});
+        void invoke('set_expanded', { expanded: true });
         capsule.classList.add("email-expanded");
       }, 250));
     }
@@ -212,26 +203,13 @@ export function initCapsuleInteraction() {
     if (target.closest(".url-item") || target.closest("#notice-area") || target.closest(".media-btn") || target.closest(".view-dot") || target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn") || target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop") || target.closest("#sadb-canvas")) {
       return;
     }
-    // 取消 agent 单击延时
-    if (agentClickTimer) {
-      clearTimeout(agentClickTimer);
-      setAgentClickTimer(null);
-    }
-    // 取消 music 单击延时
-    if (musicClickTimer) {
-      clearTimeout(musicClickTimer);
-      setMusicClickTimer(null);
-    }
-    // 取消 sadb 单击延时
-    if (sadbClickTimer) {
-      clearTimeout(sadbClickTimer);
-      setSadbClickTimer(null);
-    }
-
-    if (emailClickTimer) {
-      clearTimeout(emailClickTimer);
-      setEmailClickTimer(null);
-    }
+    [panelClickTimer, agentClickTimer, musicClickTimer, sadbClickTimer, emailClickTimer]
+      .forEach(t => t && clearTimeout(t));
+    setPanelClickTimer(null);
+    setAgentClickTimer(null);
+    setMusicClickTimer(null);
+    setSadbClickTimer(null);
+    setEmailClickTimer(null);
     e.stopPropagation();
     switchToNextView();
   });
