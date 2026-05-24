@@ -27,12 +27,15 @@
 - [Lyrix](https://github.com/cXp1r/Lyrix) — 集成多平台歌词（网易云、QQ 音乐、酷狗、汽水音乐）
 
 ## TODO 
-- [ ] 快捷键隐藏
-- [ ] 修复ai无法使用问题
-- [ ] 下载链接跳转aria2c
-- [ ] agent hooks对接
 - [ ] todo list内容持久化
+- [ ] 下载链接跳转aria2c
 - [ ] 倒计时日
+- [ ] 修复ai无法使用问题
+- [ ] 设置部分重构
+- [ ] agent hooks对接
+
+## 已完成
+- [x] 快捷键隐藏
 
 ## 技术栈
 
