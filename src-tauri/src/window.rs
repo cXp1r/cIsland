@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, LogicalSize, Manager};
 use serde::{Deserialize, Serialize};
 use windows::Win32::Foundation::HWND;
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -274,51 +274,6 @@ pub(crate) fn snap_back(window: &tauri::WebviewWindow, from_x: f64, from_y: f64,
 }
 
 
-/// 动画插值窗口尺寸和位置，duration_ms 与 CSS transition 同步
-#[track_caller]
-pub(crate) fn animate_resize(
-    window: &tauri::WebviewWindow,
-    from_x: f64, from_y: f64, from_w: f64, from_h: f64,
-    to_x: f64, to_y: f64, to_w: f64, to_h: f64,
-    duration_ms: f64,
-    anim_id: Arc<AtomicU64>,
-) -> bool {
-
-    let my_gen = anim_next_id(&anim_id, "animate_resize");
-    let scale = window.scale_factor().unwrap_or(1.0);
-    let hwnd = HWND(window.hwnd().unwrap().0);
-    let start = Instant::now();
-    loop {
-        if !anim_is_current(&anim_id, my_gen, "animate_resize") {
-            return false;
-        }
-        let elapsed = start.elapsed().as_secs_f64() * 1000.0;
-        let p = (elapsed / duration_ms).min(1.0);
-
-        let t = ease_out_cubic(p);
-
-        let cur_w = from_w + (to_w - from_w) * t;
-        let cur_h = from_h + (to_h - from_h) * t;
-        let cur_x = from_x + (to_x - from_x) * t;
-        let cur_y = from_y + (to_y - from_y) * t;
-
-        unsafe {
-            let _ = SetWindowPos(
-                hwnd, None,
-                (cur_x * scale).round() as i32,
-                (cur_y * scale).round() as i32,
-                (cur_w * scale).round() as i32,
-                (cur_h * scale).round() as i32,
-                SWP_NOZORDER | SWP_NOACTIVATE,
-            );
-        }
-
-        if p >= 1.0 { break; }
-        thread::sleep(Duration::from_millis(SNAP_FRAME_MS));
-    }
-    anim_finish_if_current(&anim_id, my_gen, "animate_resize")
-}
-
 #[tauri::command]
 pub fn start_drag(state: tauri::State<'_, IslandState>) {
     state.is_dragging.store(true, Ordering::Relaxed);
@@ -362,8 +317,8 @@ pub fn end_drag(window: tauri::WebviewWindow, state: tauri::State<'_, IslandStat
     // 按当前实际窗口宽度重算居中 X，避免 resize-handle 改过宽度后偏移
     let capsule_w = state.capsule_tw.load(Ordering::Relaxed) as f64;
     let capsule_h = state.capsule_th.load(Ordering::Relaxed) as f64;
-    let target_x = state.offset_x.load(Ordering::Relaxed) as f64 * scale + state.screen_x.load(Ordering::Relaxed) as f64 * scale + (state.screen_w.load(Ordering::Relaxed) as f64 * scale - capsule_w) / 2.0;
-    let target_y = state.offset_y.load(Ordering::Relaxed) as f64 * scale + state.screen_y.load(Ordering::Relaxed) as f64 * scale;
+    let target_x = state.offset_x.load(Ordering::Relaxed) as f64 * scale + state.screen_x.load(Ordering::Relaxed) as f64 + (state.screen_w.load(Ordering::Relaxed) as f64 / scale - capsule_w) / 2.0;
+    let target_y = state.offset_y.load(Ordering::Relaxed) as f64 * scale + state.screen_y.load(Ordering::Relaxed) as f64;
     logger::debug(TAG, &format!("end_drag snap_back: capsule=({capsule_w:.1}x{capsule_h:.1}), target=({target_x:.1},{target_y:.1})"));
 
     if let Ok(pos) = window.outer_position() {
@@ -381,52 +336,28 @@ pub fn sync_window_size(
     state: tauri::State<'_, IslandState>,
     width: f64,
     height: f64,
-    reposition: Option<bool>,
 ) {
-    let current_view = state.current_view.lock().unwrap().clone();
-
     let new_w = width;
     let new_h = height;
-
-    let should_reposition = reposition.unwrap_or(false)
-        && (state.sadb_mirroring.load(Ordering::Relaxed) || current_view == "email");
     logger::debug(TAG, &format!(
-        "sync_window_size: input=({width:.1}x{height:.1}), target=({new_w:.1}x{new_h:.1}), should_reposition={should_reposition}, view={current_view}, reposition={reposition:?}",
+        "sync_window_size: input=({width:.1}x{height:.1}), target=({new_w:.1}x{new_h:.1})",
     ));
+    let scale = window.scale_factor().unwrap_or(1.0);
+    let (from_w, from_h) = window
+        .inner_size()
+        .map(|s| (s.width as f64 / scale, s.height as f64 / scale))
+        .unwrap_or((new_w, new_h));
+    let (from_x, from_y) = window
+        .outer_position()
+        .map(|p| (p.x as f64 / scale, p.y as f64 / scale))
+        .unwrap_or((0.0, TOP_MARGIN));
 
-    if should_reposition {
+    let target_x = (state.screen_w.load(Ordering::Relaxed) as f64 * scale - new_w) / 2.0;
+    let target_y = from_y; // 纵向不动
 
-        let scale = window.scale_factor().unwrap_or(1.0);
-        let (from_w, from_h) = window
-            .inner_size()
-            .map(|s| (s.width as f64 / scale, s.height as f64 / scale))
-            .unwrap_or((new_w, new_h));
-        let (from_x, from_y) = window
-            .outer_position()
-            .map(|p| (p.x as f64 / scale, p.y as f64 / scale))
-            .unwrap_or((0.0, TOP_MARGIN));
-
-        let target_x = (state.screen_w.load(Ordering::Relaxed) as f64 * scale - new_w) / 2.0;
-        let target_y = from_y; // 纵向不动
-
-        let w = window.clone();
-        let anim_id = state.expand_anim_id.clone();
-        thread::spawn(move || {
-            animate_resize(
-                &w,
-                from_x, from_y, from_w, from_h,
-                target_x, target_y, new_w, new_h,
-                250.0, anim_id,
-            );
-        });
-    } else {
-        let gen = anim_next_id(&state.expand_anim_id, "sync_window_size_set_size");
-        if !anim_is_current(&state.expand_anim_id, gen, "sync_window_size_set_size") {
-            return;
-        }
-        let _ = window.set_size(tauri::LogicalSize::new(new_w, new_h));
-        anim_finish_if_current(&state.expand_anim_id, gen, "sync_window_size_set_size");
-    }
+    let w = window.clone();
+    let anim_id = state.expand_anim_id.clone();
+    let _ = window.set_size(LogicalSize::new(width, height));
 }
 
 
@@ -533,50 +464,49 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
     };
     let scale = window.scale_factor().unwrap_or(1.0);
 
-    let width = (width * scale).round() as i32;
-    let height = (height * scale).round() as i32;
-    let lwidth = (lwidth * scale).round() as i32;
-    let ewidth = (ewidth * scale).round() as i32;
-    
-    let min_w = (640.0 * scale).round() as i32;
-    let min_h = (480.0 * scale).round() as i32;
-    let window_width = width.max(min_w);
-    let window_height = height.max(min_h);
+    // 把物理像素的 pos 转回逻辑像素，后续全程逻辑像素~
+    let pos_x = pos.x as f64 / scale;
+    let pos_y = pos.y as f64 / scale;
+
+    let min_size = 640.0_f64;
+    let window_width = width.max(min_size);
+    let window_height = height.max(min_size);
     let choice = reposition.unwrap_or(0);
 
-    
-    let offset_x = (state.offset_x.load(Ordering::Relaxed) as f64 * scale) as i32;
-    let offset_y = (state.offset_y.load(Ordering::Relaxed) as f64 * scale) as i32;
+    let offset_x = state.offset_x.load(Ordering::Relaxed) as f64;
+    let offset_y = state.offset_y.load(Ordering::Relaxed) as f64;
 
-    let temp_x = pos.x + lwidth / 2 - width / 2; 
+    let temp_x = pos_x + lwidth / 2.0 - width / 2.0;
 
     let (target_x, target_y) = match choice {
-        0 => (temp_x, pos.y),
+        0 => (temp_x, pos_y),
         1 => {
-            let home_x = state.screen_x.load(Ordering::Relaxed)
-                + offset_x  // 只有 home 加 offset~
-                + ((state.screen_w.load(Ordering::Relaxed) as f64 * scale - ewidth as f64) / 2.0) as i32;
-            let home_y = state.screen_y.load(Ordering::Relaxed) + offset_y; // 同理~
-            
+            let home_x = state.screen_x.load(Ordering::Relaxed) as f64 / scale
+                + offset_x
+                + (state.screen_w.load(Ordering::Relaxed) as f64 / scale - ewidth) / 2.0;
+            let home_y = state.screen_y.load(Ordering::Relaxed) as f64 / scale + offset_y;
             if !smaller {
-                (temp_x, pos.y)
+                (temp_x, pos_y)
             } else {
                 if lwidth != ewidth {
                     logger::debug("rAF", "snap-back: width-based ratio");
-                    let r = (width - ewidth) as f64 / (lwidth - ewidth) as f64;
-                    let x1 = home_x + ((pos.x - home_x) as f64 * r).round() as i32;
-                    let y1 = home_y + ((pos.y - home_y) as f64 * r).round() as i32;
+                    let r = (width - ewidth) / (lwidth - ewidth);
+                    let x1 = home_x + (pos_x - home_x) * r;
+                    let y1 = home_y + (pos_y - home_y) * r;
                     (x1, y1)
                 } else {
                     logger::debug("rAF", "snap-back: eased by t");
-                    (home_x + ((pos.x - home_x) as f64 * (1.0-t)).round() as i32, home_y + ((pos.y - home_y) as f64 * (1.0-t)).round() as i32)
+                    (home_x + (pos_x - home_x) * (1.0 - t), home_y + (pos_y - home_y) * (1.0 - t))
                 }
             }
         },
-        _ => (pos.x, pos.y),
+        _ => (pos_x, pos_y),
     };
-    logger::debug("rAF", &format!("({}, {}) -> ({}, {})", pos.x, pos.y, target_x, target_y));
-    unsafe {
+
+    logger::debug("rAF", &format!("({}, {}) -> ({}, {})", pos_x, pos_y, target_x, target_y));
+    let _ = window.set_position(tauri::LogicalPosition::new(target_x, target_y));
+    let _ = window.set_size(tauri::LogicalSize::new(window_width, window_height));
+    /*unsafe {
         let _ = SetWindowPos(
             window.hwnd().unwrap(),
             None,
@@ -586,7 +516,9 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
             window_height,
             SWP_NOZORDER | SWP_NOACTIVATE,
         );
-    }
+    }*/
+
+   
 }
 
 //统一封装函数之通用展开设置

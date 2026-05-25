@@ -290,7 +290,7 @@ pub fn run() {
             let screen_y = primary_monitor_info.lock().unwrap().y;
 
 
-            let _ = window.set_position(tauri::LogicalPosition::new(offset_x as f64 + screen_x as f64 * scale + (screen_w as f64 * scale - WIN_W) / 2.0, offset_y as f64 + screen_y as f64 * scale));
+            let _ = window.set_position(tauri::LogicalPosition::new(offset_x as f64 + screen_x as f64 * scale + (screen_w as f64 / scale - WIN_W) / 2.0, offset_y as f64 + screen_y as f64 * scale));
             let _ = window.set_size(tauri::LogicalSize::new(WIN_W, WIN_H_DEFAULT));
 
             //统一遮蔽
@@ -691,7 +691,7 @@ pub fn run() {
                                 let _ = ShowWindow(hwnd, SW_HIDE);
                             } else {
                                 let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
-                            }
+                                    }
                         }
                     }
                 });
