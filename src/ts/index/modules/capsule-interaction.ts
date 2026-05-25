@@ -43,10 +43,8 @@ export function initCapsuleInteraction() {
         setPanelClickTimer(null);
         if (capsule.classList.contains("panel-expanded") && target instanceof HTMLDivElement) {
           capsule.classList.remove("panel-expanded");
-          capsule.classList.add("expanded");
         } else {
           capsule.classList.add("panel-expanded");
-          capsule.classList.remove("expanded");
         }
       }, 250));
     }

@@ -72,14 +72,9 @@ export function setLastPrivacyUsage(v: PrivacyUsagePayload) { lastPrivacyUsage =
 
 // --- 最小化 / 展开动画 ---
 
-export let isMinimized = false;
-export function setIsMinimized(v: boolean) { isMinimized = v; }
-
 export let isExpandAnimating = false; // 展开/收起动画进行中，防止重复触发
 export function setIsExpandAnimating(v: boolean) { isExpandAnimating = v; }
 
-export let isMinimizeAnimating = false; // 最小化/恢复动画进行中
-export function setIsMinimizeAnimating(v: boolean) { isMinimizeAnimating = v; }
 
 // --- 展开态多行歌词的 FLIP 过渡状态：key（文本+重复序号）→ 行 DOM ---
 
