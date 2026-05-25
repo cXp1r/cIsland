@@ -1,9 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, searchInput, searchNextBtn, searchPageLabel, searchPrevBtn, searchResults } from "../dom";
-import { currentView, isMinimized } from "../state";
+import { currentView } from "../state";
 import { setView } from "./view-switcher";
-import { expandFromMinimized } from "./minimize-drag";
 import { loge } from "../logger";
 import type { ViewMode } from "../types";
 
@@ -215,12 +214,6 @@ function doSearch(query: string) {
 export function activateSearch() {
   if (isDismissingSearch) return;
 
-  // 如果窗口处于收起状态（小绿条），先展开再激活搜索
-  if (isMinimized) {
-    expandFromMinimized();
-    setTimeout(() => activateSearch(), 350);
-    return;
-  }
 
   // Remember where we came from so we can go back
   if (currentView !== "search") {

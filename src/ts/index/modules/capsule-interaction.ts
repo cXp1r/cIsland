@@ -18,7 +18,7 @@ import {
 } from "../state";
 import { switchToNextView } from "./view-switcher";
 import { fetchAndUpdateVolume } from "./music-controls";
-import { showContextMenu } from "./minimize-drag";
+import { showContextMenu } from "./drag";
 import { logd } from "../logger";
 
 export function initCapsuleInteraction() {

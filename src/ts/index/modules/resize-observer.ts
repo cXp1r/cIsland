@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, collapsedIndicator } from "../dom";
 import { setLyricMode } from "../state";
-import { applyIndicatorColor } from "./minimize-drag";
+import { applyIndicatorColor } from "./drag";
 
 export function initResizeObserver() {
   let timer: number | null = null;
