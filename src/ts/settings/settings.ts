@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize, LogicalPosition } from "@tauri-apps/api/window";
 import { initLyricOffset } from "./settings-lyric-offset";
-import { loge } from "./logger";
+import { loge } from "../index/logger";
 import { MonitorInfo, setScreenData, init } from "./screens-frame";
 const TAG = "Settings";
 

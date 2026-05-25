@@ -16,6 +16,7 @@
       <nav class="nav-list">
         <div class="nav-item active" data-page="general">常规设置</div>
         <div class="nav-item" data-page="screens">屏幕设置</div>
+        <div class="nav-item" data-page="tools">工具设置</div>
         <div class="nav-item" data-page="music">音乐</div>
         <div class="nav-item" data-page="weather">天气</div>
         <div class="nav-item" data-page="ai">AI Agent</div>
@@ -136,6 +137,95 @@
             </div>
           </div>
         </div>
+
+        <!-- 工具设置页面 -->
+        <div class="page" id="page-tools">
+          <div class="setting-group">
+            <div class="setting-group-title">aria2c</div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>网易云音乐用户第一次使用请先去插件管理安装插件</h3>
+                <p>音乐依赖SMTC协议和开放api</p>
+              </div>
+              <div class="setting-control">
+                <button type="button" class="btn" data-nav-to="plugins">去插件管理</button>
+              </div>
+            </div>
+            
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>歌词显示模式</h3>
+                <p>控制收起状态下的音乐展示策略。</p>
+              </div>
+              <div class="setting-control">
+                <select id="lyric-mode" class="select">
+                  <option value="lyric">显示歌词</option>
+                  <option value="info">仅歌曲信息</option>
+                  <option value="off">关闭</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>歌词偏移补偿</h3>
+                <p>补偿请求歌词或 SMTC 带来的延迟，默认启用。</p>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="lyric-offset-enabled" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>按播放器配置歌词补偿</h3>
+                <p>每个播放器单独存储，默认 0ms；进入后点 ±0.5s 即时生效（范围 ±3s）。</p>
+              </div>
+              <div class="setting-control">
+                <button type="button" class="btn" data-nav-to="lyric-offset">打开</button>
+              </div>
+            </div>
+
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>歌词获取方式: 内置库</h3>
+                <p>已经转移其他方法至此获取方式</p>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>SMTC 白名单</h3>
+                <p>只允许白名单中的 app_id 命中 SMTC（适合多播放器环境）。</p>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="smtc-whitelist-enabled" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-item" id="smtc-whitelist-content-group" style="display: block; border: none; padding: 0;">
+              <div class="setting-label" style="margin-bottom: 12px;">
+                <p>小白勿动</p>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input id="smtc-whitelist-input" class="input" type="text" placeholder="输入 app_id，如 cloudmusic.exe" style="flex:1;" />
+                <button id="smtc-whitelist-add-btn" class="btn btn-primary">添加</button>
+              </div>
+              <div id="smtc-whitelist-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+
+            
+          </div>
+        </div>
+        
         <!-- 音乐页面 -->
         <div class="page" id="page-music">
           <div class="setting-group">
@@ -721,6 +811,7 @@
 const pageInfo = {
   general:          { title: "常规设置",     desc: "配置快捷键和外观选项。" },
   screens:          { title: "屏幕设置",     desc: "多屏幕定位,偏移和缩放" },
+  tools:          { title: "工具设置",     desc: "配置辅助工具" },
   music:            { title: "音乐",          desc: "配置音乐歌词显示策略。" },
   "lyric-offset":   { title: "歌词补偿·按播放器", desc: "每个播放器单独存储补偿时长，点 ± 立即生效。" },
   weather:          { title: "天气",          desc: "配置天气显示位置。" },
@@ -759,7 +850,7 @@ document.querySelectorAll("[data-nav-to]").forEach(btn => {
   btn.addEventListener("click", () => navigateTo(btn.dataset.navTo ?? ""));
 });
   </script>
-  <script type="module" src="src/settings.ts"></script>
-  <script type="module" src="src/screens-frame.ts"></script>
+  <script type="module" src="src/ts/settings/settings.ts"></script>
+  <script type="module" src="src/ts/settings/screens-frame.ts"></script>
 </body>
 </html>
