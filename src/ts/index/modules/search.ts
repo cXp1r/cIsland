@@ -345,8 +345,11 @@ export function initSearch() {
   // Backend shortcut toggle
   listen("activate-search", () => {
     if (currentView === "search") {
+      
       dismissSearch();
+      capsule.classList.add("search");
     } else {
+      capsule.classList.remove("search");
       activateSearch();
     }
   });
