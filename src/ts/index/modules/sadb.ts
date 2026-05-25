@@ -7,6 +7,7 @@ import {
   sadbDeviceName, sadbResolution, sadbFps,
 } from "../dom";
 import { loge, logd, logi, logw } from "../logger";
+import { animateCapsule } from "./rAF";
 
 const TAG: string = "SADB";
 
@@ -208,8 +209,7 @@ async function autoFitWindow() {
   initCapH = Math.round((initCapW - chrome.x) / phoneAR + chrome.y);
   sadbScale = 1.0;
   const { capW, capH } = getScaledSize();
-  capsule.style.width = `${capW}px`;
-  capsule.style.height = `${capH}px`;
+  animateCapsule(capW, capH);
   requestAnimationFrame(updateDrawRect);
   const bodyPad = parseFloat(getComputedStyle(document.body).paddingTop) || 5;
   logd(TAG, "reach sync_window_size")
@@ -501,8 +501,6 @@ function stopStream() {
   if (inSadbView) {
     capsule.classList.remove("sadb-expanded");
     capsule.classList.add("sadb-idle");
-    capsule.style.width = "";
-    capsule.style.height = "";
     invoke("set_expanded", { expanded: false }).catch(() => {});
   }
   invoke("sadb_stop_mirroring").catch((e) => loge(TAG, "sadb_stop_mirroring failed:", e)).finally(() => {
