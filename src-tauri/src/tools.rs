@@ -3,14 +3,15 @@ use std::io::{self, Cursor};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 
 use crate::CREATE_NO_WINDOW;
 
 const PLATFORM_TOOLS_URL: &str = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
 const PLATFORM_TOOLS_ZIP_NAME: &str = "platform-tools-latest-windows.zip";
+const TAG: &str = "Tools";
+
 
 #[derive(Debug, Serialize)]
 pub struct AdbCheckResult {
@@ -289,5 +290,55 @@ pub fn tools_download_and_install_adb(install_dir: String) -> Result<AdbInstallR
         install_dir,
         adb_path: adb_path.to_string_lossy().into_owned(),
         downloaded_zip: downloaded_zip.to_string_lossy().into_owned(),
+    })
+}
+#[derive(Debug, Deserialize)]
+pub struct GithubResult {
+    pub tag_name: String,
+    pub name: String,
+    pub body: Option<String>,
+    pub published_at: Option<String>,
+    pub assets: Vec<Asserts>,
+}
+#[derive(Debug, Deserialize)]
+pub struct Asserts {
+    pub name: String,
+    pub content_type: String,
+    pub browser_download_url: String,
+    pub size: u64,
+}
+
+pub fn get_latest_release(url: &str) -> Result<GithubResult, String> {
+    let client = crate::shared_http_client();
+    let resp = client
+        .get(url)
+        .header("User-Agent", "DynamicIsland-Updater")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .map_err(|e| {
+            let msg = format!("请求失败: {}", e);
+            crate::logger::warn(TAG, &msg);
+            msg
+        })?;
+
+    let status = resp.status();
+    crate::logger::info(TAG, &format!("GitHub API 响应: {}", status));
+
+    if !status.is_success() {
+        let body = resp.text().unwrap_or_else(|_| "<无法读取响应体>".to_string());
+        let msg = format!("GitHub API 返回错误: {} | body: {}", status, body);
+        crate::logger::warn(TAG, &msg);
+        let friendly = if status.as_u16() == 403 && body.contains("rate limit") {
+            "GitHub API 请求频率超限（每小时 60 次），请稍后再试".to_string()
+        } else {
+            format!("GitHub API 返回错误: {}", status)
+        };
+        return Err(friendly);
+    }
+
+    resp.json().map_err(|e| {
+        let msg = format!("解析 JSON 失败: {}", e);
+        crate::logger::warn(TAG, &msg);
+        msg
     })
 }

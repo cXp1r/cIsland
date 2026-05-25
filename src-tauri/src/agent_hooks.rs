@@ -14,6 +14,8 @@ use crate::logger;
 //model全部存别的地方了,方便维护
 use crate::model::agent::claude::Claude;
 
+const TAG: &str = "IPC";
+
 
 type ConnMap = Mutex<HashMap<String, WriteHalf<LocalSocketStream>>>;
 
@@ -36,7 +38,7 @@ pub async fn start_interprocess_server() {
     let name = match "灯灯侑侑天下第一".to_ns_name::<GenericNamespaced>() {
         Ok(n) => n,
         Err(e) => {
-            logger::error("IPC", &format!("这tm有人抢我IPC名字?: {}", e.to_string()));
+            logger::error(TAG, &format!("这tm有人抢我IPC名字?: {}", e.to_string()));
             return;
         },
     };
@@ -44,18 +46,18 @@ pub async fn start_interprocess_server() {
     let listener = match opts.create_tokio() {
         Ok(l) => l,
         Err(e) => {
-            logger::error("IPC", &e.to_string());
+            logger::error(TAG, &e.to_string());
             return;
         },
     };
 
-    println!("IPC server listening...");
+    logger::info(TAG, "IPC server start");
 
     loop {
         let conn = match listener.accept().await {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("Failed to accept connection: {}", e);
+                logger::error(TAG, &e.to_string());
                 continue;
             }
         };

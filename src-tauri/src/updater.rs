@@ -65,49 +65,16 @@ pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result
         current_version
     ));
 
-    let client = crate::shared_http_client();
-    let resp = client
-        .get(api_url)
-        .header("User-Agent", "DynamicIsland-Updater")
-        .header("Accept", "application/vnd.github+json")
-        .send()
-        .map_err(|e| {
-            let msg = format!("请求失败: {}", e);
-            crate::logger::warn("Updater", &msg);
-            msg
-        })?;
+    let release = crate::tools::get_latest_release(api_url)?;
 
-    let status = resp.status();
-    crate::logger::info("Updater", &format!("GitHub API 响应: {}", status));
-
-    if !status.is_success() {
-        let body = resp.text().unwrap_or_else(|_| "<无法读取响应体>".to_string());
-        let msg = format!("GitHub API 返回错误: {} | body: {}", status, body);
-        crate::logger::warn("Updater", &msg);
-        let friendly = if status.as_u16() == 403 && body.contains("rate limit") {
-            "GitHub API 请求频率超限（每小时 60 次），请稍后再试".to_string()
-        } else {
-            format!("GitHub API 返回错误: {}", status)
-        };
-        return Err(friendly);
-    }
-
-    let json: serde_json::Value = resp.json().map_err(|e| {
-        let msg = format!("解析 JSON 失败: {}", e);
-        crate::logger::warn("Updater", &msg);
-        msg
-    })?;
-
-    let tag = json["tag_name"].as_str().ok_or("无法获取 tag_name")?;
+    let tag = &release.tag_name;
     let latest_version = if tag.starts_with("tauri-v") {
         tag.trim_start_matches("tauri-v").to_string()
     } else if is_preview {
-        let assets_arr = json["assets"].as_array().ok_or("无法获取 assets")?;
-        let mut ver = tag.to_string();
-        for asset in assets_arr {
-            let name = asset["name"].as_str().unwrap_or("");
-            if name.starts_with("DynamicIsland_") && name.ends_with(".exe") {
-                let stripped = name.trim_start_matches("DynamicIsland_");
+        let mut ver = tag.clone();
+        for asset in &release.assets {
+            if asset.name.starts_with("DynamicIsland_") && asset.name.ends_with(".exe") {
+                let stripped = asset.name.trim_start_matches("DynamicIsland_");
                 if let Some(v) = stripped.split('_').next() {
                     ver = v.to_string();
                 }
@@ -119,22 +86,17 @@ pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result
         tag.trim_start_matches('v').to_string()
     };
 
-    let release_notes = json["body"].as_str().unwrap_or("").to_string();
-    let published_at = json["published_at"].as_str().unwrap_or("").to_string();
+    let release_notes = release.body.unwrap_or_default();
+    let published_at = release.published_at.unwrap_or_default();
 
     // 查找 .exe 安装包的下载地址
-    let assets = json["assets"].as_array().ok_or("无法获取 assets")?;
     let mut download_url = String::new();
     let mut file_size: u64 = 0;
 
-    for asset in assets {
-        let name = asset["name"].as_str().unwrap_or("");
-        if name.ends_with(".exe") {
-            download_url = asset["browser_download_url"]
-                .as_str()
-                .unwrap_or("")
-                .to_string();
-            file_size = asset["size"].as_u64().unwrap_or(0);
+    for asset in &release.assets {
+        if asset.name.ends_with(".exe") {
+            download_url = asset.browser_download_url.clone();
+            file_size = asset.size;
             break;
         }
     }
