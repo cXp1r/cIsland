@@ -1,5 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from "@tauri-apps/api/event";
+import { capsule } from "../dom";
 
+//import { getAvailableViews, setView, updateSwitcherUI, updateCapsuleSize } from "./view-switcher";
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
   const calcX = (t: number) => 3 * p1x * t * (1-t)**2 + 3 * p2x * t**2 * (1-t) + t**3
   const calcY = (t: number) => 3 * p1y * t * (1-t)**2 + 3 * p2y * t**2 * (1-t) + t**3
@@ -24,8 +27,7 @@ const { port1, port2 } = new MessageChannel()
 let raf: number
 let targetW: number = 0
 let targetH: number = 0
-const el = document.getElementById('island-capsule')!
-let rect = el.getBoundingClientRect()
+let rect = capsule.getBoundingClientRect()
 let fromW = Math.round(rect.width)
 let fromH = Math.round(rect.height)
 port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number, gen: number, smaller: boolean }>) => {
@@ -58,8 +60,8 @@ export function animateCapsule(toW: number, toH: number): void {
   
   cancelAnimationFrame(raf)
 
-  const startW = parseFloat(el.style.width) || fromW
-  const startH = parseFloat(el.style.height) || fromH
+  const startW = parseFloat(capsule.style.width) || fromW
+  const startH = parseFloat(capsule.style.height) || fromH
   let smaller = startH > toH;
   const start = performance.now()
   let lw = startW
@@ -70,8 +72,8 @@ export function animateCapsule(toW: number, toH: number): void {
     const w = (Math.round(startW + (toW - startW) * e) + 1) & ~1
     const h = (Math.round(startH + (toH - startH) * e) + 1) & ~1
 
-    el.style.width  = w + 'px'
-    el.style.height = h + 'px'
+    capsule.style.width  = w + 'px'
+    capsule.style.height = h + 'px'
     port2.postMessage({ w, h, lw, t, e, gen, smaller })
 
     if (t < 1) {
@@ -87,32 +89,40 @@ export function animateCapsule(toW: number, toH: number): void {
 
 
 export function initrAF() { 
+   listen<boolean>("set-expand", (event) => {
+    if (event.payload) {
+      if (capsule.classList.contains("email-expanded") || capsule.classList.contains("agent-expanded") || capsule.classList.contains("music-expanded")) return;
+      capsule.classList.add("expanded");
+    } else {
+      capsule.classList.remove("expanded");
+    }
+  });
   // 预热 MessageChannel
   port2.postMessage({ w: 0, h: 0, lw: 0, t: 0, e: 0, gen: 0, smaller: false });
   // 实则两个相近态的dx<100时建议统一,否则动画会出现割裂
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.attributeName === 'class') {
-        if (!el.classList.contains("sadb-expanded")){
+        if (!capsule.classList.contains("sadb-expanded")){
           let [toW, toH] = [140, 50];
-          if (el.classList.value == "") {
-          } else if (el.classList.contains("panel-expanded") || el.classList.contains("hooks-expanded")) {
-            [toW, toH] = [900, 250];
-          } else if (el.classList.contains("music-expanded")) {
+          if (capsule.classList.value == "") {
+          } else if (capsule.classList.contains("panel-expanded") || capsule.classList.contains("hooks-expanded")) {
+            [toW, toH] = [700, 220];
+          } else if (capsule.classList.contains("music-expanded")) {
             [toW, toH] = [380, 420];
-          } else if (el.classList.contains("agent-expanded")) {
+          } else if (capsule.classList.contains("agent-expanded")) {
             [toW, toH] = [640, 620];
-          } else if (el.classList.contains("sadb-idle")) {
+          } else if (capsule.classList.contains("sadb-idle")) {
             [toW, toH] = [380, 420];
-          } else if (el.classList.contains("email-expanded")) {
+          } else if (capsule.classList.contains("email-expanded")) {
             const style = getComputedStyle(document.documentElement);
             [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
-          } else if (el.classList.contains("expanded")) {
+          } else if (capsule.classList.contains("expanded")) {
             [toW, toH] = [330, 74];
-            if (el.classList.contains("lyric-collapsed")) {
+            if (capsule.classList.contains("lyric-collapsed")) {
               toW = 380;
             }
-          } else if (el.classList.contains("lyric-collapsed")) {
+          } else if (capsule.classList.contains("lyric-collapsed")) {
             [toW, toH] = [380, 50];
           }
           animateCapsule(toW, toH);
@@ -120,7 +130,7 @@ export function initrAF() {
       }
     }
   });
-  observer.observe(el, {
+  observer.observe(capsule, {
     attributes: true,
     attributeFilter: ['class']  // 只监听 class，不监听其他属性
   });
