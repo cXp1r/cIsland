@@ -330,34 +330,19 @@ pub fn end_drag(window: tauri::WebviewWindow, state: tauri::State<'_, IslandStat
     }
 }
 
+//接管右下角拖动函数
 #[tauri::command]
 pub fn sync_window_size(
     window: tauri::WebviewWindow,
-    state: tauri::State<'_, IslandState>,
     width: f64,
     height: f64,
 ) {
-    let new_w = width;
-    let new_h = height;
+    let new_w = width + 20.0;
+    let new_h = height + 20.0;
     logger::debug(TAG, &format!(
-        "sync_window_size: input=({width:.1}x{height:.1}), target=({new_w:.1}x{new_h:.1})",
+        "sync_window_size: target=({new_w:.1}x{new_h:.1})",
     ));
-    let scale = window.scale_factor().unwrap_or(1.0);
-    let (from_w, from_h) = window
-        .inner_size()
-        .map(|s| (s.width as f64 / scale, s.height as f64 / scale))
-        .unwrap_or((new_w, new_h));
-    let (from_x, from_y) = window
-        .outer_position()
-        .map(|p| (p.x as f64 / scale, p.y as f64 / scale))
-        .unwrap_or((0.0, TOP_MARGIN));
-
-    let target_x = (state.screen_w.load(Ordering::Relaxed) as f64 * scale - new_w) / 2.0;
-    let target_y = from_y; // 纵向不动
-
-    let w = window.clone();
-    let anim_id = state.expand_anim_id.clone();
-    let _ = window.set_size(LogicalSize::new(width, height));
+    let _ = window.set_size(LogicalSize::new(new_w, new_h));
 }
 
 
