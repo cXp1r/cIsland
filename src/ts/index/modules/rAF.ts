@@ -67,7 +67,7 @@ export function animateCapsule(toW: number, toH: number): void {
   let lw = startW
   function frame(now: number): void {
     
-    const t = Math.min((now - start) / 350, 1)
+    const t = Math.min((now - start) / 300, 1)
     const e = easing(t)
     const w = (Math.round(startW + (toW - startW) * e) + 1) & ~1
     const h = (Math.round(startH + (toH - startH) * e) + 1) & ~1
