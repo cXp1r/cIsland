@@ -32,9 +32,6 @@ export function initCapsuleInteraction() {
       return;
     }
     if (currentView === "time" ) {
-      if (!capsule.classList.contains("expanded") && !capsule.classList.contains("panel-expanded")) {
-        return;
-      }
       e.stopPropagation();
       if (panelClickTimer) {
         clearTimeout(panelClickTimer);
@@ -44,13 +41,10 @@ export function initCapsuleInteraction() {
       
       setPanelClickTimer(window.setTimeout(() => {
         setPanelClickTimer(null);
-        if (isExpandAnimating) return;
         if (capsule.classList.contains("panel-expanded") && target instanceof HTMLDivElement) {
           capsule.classList.remove("panel-expanded");
           capsule.classList.add("expanded");
-          setIsExpandAnimating(true);
-        } else if (currentView === "time" ) {
-          setIsExpandAnimating(false);
+        } else {
           capsule.classList.add("panel-expanded");
           capsule.classList.remove("expanded");
         }

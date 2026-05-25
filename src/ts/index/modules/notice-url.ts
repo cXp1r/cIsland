@@ -1,7 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
-import { capsule, noticeArea } from "../dom";
-import { isMinimized, userChosenView, setUserChosenView } from "../state";
-import { getAvailableViews, setView, updateSwitcherUI, updateCapsuleSize } from "./view-switcher";
+import { noticeArea } from "../dom";
+import { userChosenView, setUserChosenView } from "../state";
+import { getAvailableViews, setView } from "./view-switcher";
 
 // 从 notice-queue 重新导出，保持其他模块 import 路径不变
 export { showNotice } from "./notice-queue";
@@ -24,20 +24,6 @@ export function restoreUserView() {
 }
 
 export function initNoticeUrl() {
-  // 展开 / 收起（鼠标悬停、后端指令等）
-  listen<boolean>("set-expand", (event) => {
-    if (event.payload) {
-      if (capsule.classList.contains("email-expanded") || capsule.classList.contains("agent-expanded") || capsule.classList.contains("music-expanded")) return;
-      if (isMinimized) return;
-      capsule.classList.add("expanded");
-      updateSwitcherUI();
-    } else {
-      capsule.classList.remove("expanded");
-      updateCapsuleSize();
-      dismissOverlays();
-    }
-  });
-
   // reset-view
   listen("reset-view", () => { restoreUserView(); });
 }
