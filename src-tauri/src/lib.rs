@@ -33,7 +33,6 @@ use link_handler::LinkHandler;
 use crate::window::MonitorInfo;
 
 pub(crate) const WIN_W: f64 = 140.0;
-pub(crate) const TOP_MARGIN: f64 = 0.0;
 pub(crate) const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // ── 胶囊尺寸（与 base.css :root 变量对应） ──

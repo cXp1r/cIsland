@@ -6,7 +6,7 @@ use tauri::{Emitter, LogicalSize, Manager};
 use serde::{Deserialize, Serialize};
 use windows::Win32::Foundation::HWND;
 use windows::Win32::UI::WindowsAndMessaging::*;
-use crate::{logger, IslandState, TOP_MARGIN, SNAP_DURATION_MS, SNAP_FRAME_MS};
+use crate::{logger, IslandState, SNAP_DURATION_MS, SNAP_FRAME_MS};
 use display_info::DisplayInfo;
 
 
