@@ -4,7 +4,6 @@ import { getCurrentWindow, LogicalSize, LogicalPosition } from "@tauri-apps/api/
 import { initLyricOffset } from "./settings-lyric-offset";
 import { init, setScreenData } from "./screens-frame";
 import { showStatus } from "./settings-shared";
-import { initAdb, initAdbPathAutoFill, getAdbValues } from "./settings-adb";
 import { initAi, loadAiSettings, getAiValues } from "./settings-ai";
 import { initBetterncm } from "./settings-betterncm";
 import { initLinkHandlers, getLinkHandlers } from "./settings-link-handler";
@@ -14,7 +13,7 @@ import { initBlacklist } from "./settings-blacklist";
 import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
-import { adb1, adbPath, aria2c1, aria2cThread, aria2cPath, initTools } from "./tools";
+import { saveToolsSettings, initTools } from "./tools";
 const TAG = "Settings";
 
 const clipboardToggle = document.getElementById("clipboard-toggle") as HTMLInputElement;
@@ -79,7 +78,6 @@ async function loadSettings() {
   }
 
   void loadAiSettings();
-  void initAdbPathAutoFill();
 }
 
 function setupShortcutRecorder(input: HTMLInputElement) {
@@ -136,8 +134,6 @@ saveBtn.addEventListener("click", async () => {
   const [q1, q2, q3, q4] = results;
 
   try {
-    const adbValues = getAdbValues();
-
     await invoke("save_settings", {
       offsetX: parseInt(offsetX.value) || 0,
       offsetY: parseInt(offsetY.value) || 0,
@@ -154,8 +150,6 @@ saveBtn.addEventListener("click", async () => {
       logLevel: logLevelSelect ? logLevelSelect.value : undefined,
       logFilterTags: getLogFilterTags(),
       logFilterInvert: logFilterInvertToggle ? logFilterInvertToggle.checked : undefined,
-      sadbIp: adbValues.sadbIp,
-      sadbPort: adbValues.sadbPort,
       emailPollIntervalSecs: Math.max(1, parseInt(emailPollIntervalInput.value) || 1),
       emailUsername: emailUsernameInput.value.trim(),
       emailAuth: emailAuthInput.value.trim(),
@@ -164,13 +158,7 @@ saveBtn.addEventListener("click", async () => {
       emailShortcut: q4,
     });
 
-    await invoke('save_tools_settings', {
-      adbInstallDir: adb1.value,
-      adbPath: adbPath.value,
-      aria2cInstallDir: aria2c1.value,
-      aria2cPath: aria2cPath.value,
-      aria2cThread: parseInt(aria2cThread.value) <= 0 ? 4 : (parseInt(aria2cThread.value) > 16 ? 16 : parseInt(aria2cThread.value)),
-    });
+    await saveToolsSettings();
 
     // 保存 AI 设置
     const aiValues = getAiValues();
@@ -289,7 +277,6 @@ document.addEventListener("mouseup", () => {
 void loadSettings();
 
 initTools();
-initAdb();
 initAi();
 initBetterncm();
 initLinkHandlers();

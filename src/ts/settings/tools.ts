@@ -18,6 +18,10 @@ const adbInitBtn = document.getElementById("adb-init-btn") as HTMLButtonElement;
 const adbCheckBtn = document.getElementById("adb-check-btn") as HTMLButtonElement;
 const adbTestBtn = document.getElementById("adb-devices-btn") as HTMLButtonElement;
 
+export const sadbIpInput = document.getElementById("sadb-ip") as HTMLInputElement;
+export const sadbPortInput = document.getElementById("sadb-port") as HTMLInputElement;
+
+
 const adbKillServerBtn = document.getElementById("adb-kill-server-btn") as HTMLButtonElement;
 const adbResult = document.getElementById("adb-check-result") as HTMLInputElement;
 
@@ -50,7 +54,7 @@ const modules = {
     },
 };
 
-function setResult(e: HTMLInputElement, t: string, i = false) {
+export function setResult(e: HTMLInputElement, t: string, i = false) {
     e.textContent = t;
     e.style.color = i ? "#ff6f7f" : "var(--text)";
 }
@@ -237,5 +241,17 @@ export function initTools(): void {
                 }
             });
         });
+    });
+}
+
+export async function saveToolsSettings() {
+    await invoke('save_tools_settings', {
+        sadbIp: sadbIpInput.value.trim(),
+        sadbPort:  parseInt(sadbPortInput.value) <= 0 ? 5555 : (parseInt(sadbPortInput.value) >= 65535 ? 5555 : parseInt(aria2cThread.value)),
+        adbInstallDir: adb1.value,
+        adbPath: adbPath.value,
+        aria2cInstallDir: aria2c1.value,
+        aria2cPath: aria2cPath.value,
+        aria2cThread: parseInt(aria2cThread.value) <= 0 ? 4 : (parseInt(aria2cThread.value) > 16 ? 16 : parseInt(aria2cThread.value)),
     });
 }
