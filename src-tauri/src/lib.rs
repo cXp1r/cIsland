@@ -20,6 +20,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
+use std::path::PathBuf;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
@@ -56,7 +57,19 @@ pub(crate) const SNAP_DURATION_MS: f64 = 300.0;
 pub(crate) const SNAP_FRAME_MS: u64 = 16;
 const PRIVACY_POLL_MS: u64 = 1200;
 
-
+pub(crate) fn get_path() -> PathBuf {
+    dirs::config_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("dynamic-island")       
+}
+#[tauri::command]
+fn get_workspace() -> String {
+    dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("dynamic-island")
+        .to_string_lossy()
+        .to_string()   
+}
 
 /// 全局复用的 HTTP client，天气处调用
 pub(crate) fn shared_http_client() -> &'static reqwest::blocking::Client {
@@ -64,7 +77,7 @@ pub(crate) fn shared_http_client() -> &'static reqwest::blocking::Client {
     CLIENT.get_or_init(|| {
         reqwest::blocking::Client::builder()
             .connect_timeout(Duration::from_secs(2))
-            .timeout(Duration::from_secs(4))
+            .timeout(Duration::from_secs(10))
             .pool_max_idle_per_host(4)
             .build()
             .expect("failed to create http client")
@@ -259,8 +272,10 @@ pub fn run() {
             sadb::sadb_send_keycode, sadb::sadb_inject_text,
             sadb::sadb_set_clipboard,
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
-            tools::tools_check_adb, tools::tools_check_adb_devices, tools::tools_kill_adb_server, tools::tools_find_adb_in_path, tools::tools_download_adb,
-            tools::tools_extract_adb, tools::tools_download_and_install_adb,
+            get_workspace,
+            tools::tools_download_and_install_from_github, tools::find_path_by_where,//两个通用函数
+            tools::tools_check_adb, tools::tools_check_adb_devices, tools::tools_kill_adb_server,
+            tools::tools_download_and_install_adb,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,
             email::fetch_email_uid_list, email::fetch_email_metas_by_uids, email::fetch_email_bodies_by_uids, email::fetch_email_metas_and_bodies_by_uids, email::fetch_email_body_by_uid, email::read_email_body_by_uid,
         ])
@@ -599,7 +614,7 @@ pub fn run() {
                             } 
                         }
                     }
-                    thread::sleep(Duration::from_millis(33));
+                    thread::sleep(Duration::from_millis(100));
                 }
             });
 

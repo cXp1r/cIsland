@@ -1,16 +1,22 @@
 use std::fs::{self, File};
-use std::io::{self, Cursor};
+use std::io::{self, Cursor, Read};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 
-use crate::CREATE_NO_WINDOW;
+use crate::{CREATE_NO_WINDOW, logger};
 
 const PLATFORM_TOOLS_URL: &str = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
-const PLATFORM_TOOLS_ZIP_NAME: &str = "platform-tools-latest-windows.zip";
 const TAG: &str = "Tools";
+
+use std::sync::LazyLock;
+use regex::Regex;
+static RE0: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(aria2-[\d\.]+)-win-64bit[^\.]+.zip").unwrap()
+});
+
 
 
 #[derive(Debug, Serialize)]
@@ -22,23 +28,14 @@ pub struct AdbCheckResult {
     stderr: String,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ToolDownloadResult {
-    path: String,
-    bytes: u64,
-}
 
 #[derive(Debug, Serialize)]
-pub struct AdbInstallResult {
+pub struct InstallResult {
     install_dir: String,
-    adb_path: String,
+    path: String,
     downloaded_zip: String,
 }
 
-#[derive(Debug, Serialize)]
-pub struct AdbPathResult {
-    adb_path: String,
-}
 
 #[derive(Debug, Serialize)]
 pub struct AdbDeviceInfo {
@@ -138,36 +135,7 @@ fn run_adb_kill_server(adb_path: &str) -> Result<AdbCommandResult, String> {
     })
 }
 
-fn download_platform_tools_zip(download_dir: &Path) -> Result<ToolDownloadResult, String> {
-    fs::create_dir_all(download_dir).map_err(|e| format!("failed to create download dir: {}", e))?;
-    let zip_path = download_dir.join(PLATFORM_TOOLS_ZIP_NAME);
 
-    let mut resp = crate::shared_http_client()
-        .get(PLATFORM_TOOLS_URL)
-        .send()
-        .map_err(|e| format!("failed to download platform-tools: {}", e))?;
-
-    if !resp.status().is_success() {
-        return Err(format!("platform-tools download failed: HTTP {}", resp.status()));
-    }
-
-    let mut file = File::create(&zip_path).map_err(|e| format!("failed to create zip file: {}", e))?;
-    let bytes = resp
-        .copy_to(&mut file)
-        .map_err(|e| format!("failed to save platform-tools zip: {}", e))?;
-
-    Ok(ToolDownloadResult {
-        path: zip_path.to_string_lossy().into_owned(),
-        bytes,
-    })
-}
-
-fn extract_zip(zip_path: &Path, install_dir: &Path) -> Result<(), String> {
-    fs::create_dir_all(install_dir).map_err(|e| format!("failed to create install dir: {}", e))?;
-    let file = File::open(zip_path).map_err(|e| format!("failed to open zip: {}", e))?;
-    let mut archive = ZipArchive::new(file).map_err(|e| format!("failed to read zip: {}", e))?;
-    extract_archive(&mut archive, install_dir)
-}
 
 fn extract_archive<R: io::Read + io::Seek>(archive: &mut ZipArchive<R>, install_dir: &Path) -> Result<(), String> {
     for i in 0..archive.len() {
@@ -176,7 +144,14 @@ fn extract_archive<R: io::Read + io::Seek>(archive: &mut ZipArchive<R>, install_
             .enclosed_name()
             .map(PathBuf::from)
             .ok_or_else(|| format!("unsafe zip entry path: {}", entry.name()))?;
-        let out_path = install_dir.join(enclosed_name);
+
+        let stripped: PathBuf = enclosed_name
+            .components()
+            .skip(1)
+            .collect();
+
+        let out_path = install_dir.join(stripped);
+        println!("{out_path:?}");
 
         if entry.is_dir() {
             fs::create_dir_all(&out_path).map_err(|e| format!("failed to create dir {}: {}", out_path.display(), e))?;
@@ -193,30 +168,31 @@ fn extract_archive<R: io::Read + io::Seek>(archive: &mut ZipArchive<R>, install_
     Ok(())
 }
 
-fn adb_path_in_install_dir(install_dir: &Path) -> PathBuf {
-    install_dir.join("platform-tools").join("adb.exe")
-}
 
-fn find_adb_in_path() -> Result<PathBuf, String> {
+
+#[tauri::command]
+pub fn find_path_by_where(name: &str) -> Result<String, String> {
     let output = Command::new("where")
-        .arg("adb")
+        .arg(name)
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("failed to run where adb: {}", e))?;
+        .map_err(|e| format!("failed to run where {}: {}", name, e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
     if !output.status.success() {
-        return Err(format!("adb not found in PATH: {}", stderr.trim()));
+        return Err(format!("not found in PATH: {}", stderr.trim()));
     }
 
-    stdout
+    Ok(stdout
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
         .map(PathBuf::from)
         .find(|path| path.exists())
-        .ok_or_else(|| "adb not found in PATH".to_string())
+        .ok_or_else(|| "not found in PATH".to_string())?
+        .to_string_lossy()
+        .to_string())
 }
 
 #[tauri::command]
@@ -237,65 +213,102 @@ pub fn tools_kill_adb_server(adb_path: Option<String>) -> Result<AdbCommandResul
     run_adb_kill_server(&adb_path)
 }
 
-#[tauri::command]
-pub fn tools_find_adb_in_path() -> Result<AdbPathResult, String> {
-    let adb_path = find_adb_in_path()?;
-    Ok(AdbPathResult {
-        adb_path: adb_path.to_string_lossy().into_owned(),
-    })
-}
 
 #[tauri::command]
-pub fn tools_download_adb(download_dir: String) -> Result<ToolDownloadResult, String> {
-    download_platform_tools_zip(Path::new(&download_dir))
-}
 
-#[tauri::command]
-pub fn tools_extract_adb(zip_path: String, install_dir: String) -> Result<String, String> {
-    let install_dir = Path::new(&install_dir);
-    extract_zip(Path::new(&zip_path), install_dir)?;
-    Ok(adb_path_in_install_dir(install_dir).to_string_lossy().into_owned())
-}
+pub fn tools_download_and_install_adb(
+    install_dir: String
+) -> Result<InstallResult, String> {
 
-#[tauri::command]
-pub fn tools_download_and_install_adb(install_dir: String) -> Result<AdbInstallResult, String> {
     let install_dir_path = Path::new(&install_dir);
-    fs::create_dir_all(install_dir_path).map_err(|e| format!("failed to create install dir: {}", e))?;
 
-    let resp = crate::shared_http_client()
+    // 🌿 清理旧目录
+    if install_dir_path.exists() {
+        logger::debug(TAG, "文件已存在, 清空中");
+
+        for entry in fs::read_dir(install_dir_path)
+            .map_err(|e| format!("failed to read install dir: {}", e))?
+        {
+            let entry = entry.map_err(|e| format!("failed to read dir entry: {}", e))?;
+            let path = entry.path();
+
+            if path.is_dir() {
+                fs::remove_dir_all(&path)
+                    .map_err(|e| format!("failed to remove dir {}: {}", path.display(), e))?;
+            } else {
+                fs::remove_file(&path)
+                    .map_err(|e| format!("failed to remove file {}: {}", path.display(), e))?;
+            }
+        }
+    }
+
+    fs::create_dir_all(install_dir_path)
+        .map_err(|e| format!("failed to create install dir: {}", e))?;
+
+    // 🌙 下载
+    let mut resp = crate::shared_http_client()
         .get(PLATFORM_TOOLS_URL)
         .send()
         .map_err(|e| format!("failed to download platform-tools: {}", e))?;
 
     if !resp.status().is_success() {
-        return Err(format!("platform-tools download failed: HTTP {}", resp.status()));
+        return Err(format!(
+            "platform-tools download failed: HTTP {}",
+            resp.status()
+        ));
     }
 
-    let bytes = resp
-        .bytes()
-        .map_err(|e| format!("failed to read platform-tools zip: {}", e))?;
-    let downloaded_zip = install_dir_path.join(PLATFORM_TOOLS_ZIP_NAME);
-    fs::write(&downloaded_zip, &bytes).map_err(|e| format!("failed to save platform-tools zip: {}", e))?;
+    println!("1");
 
-    let cursor = Cursor::new(bytes);
-    let mut archive = ZipArchive::new(cursor).map_err(|e| format!("failed to read platform-tools zip: {}", e))?;
+    // 🌿 ⭐ 核心改造：流式读取（替代 .bytes()）
+    let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024 * 1024);
+    let mut temp = [0u8; 8192];
+
+    loop {
+        let n = resp
+            .read(&mut temp)
+            .map_err(|e| format!("stream read failed: {}", e))?;
+
+        if n == 0 {
+            break;
+        }
+
+        buf.extend_from_slice(&temp[..n]);
+    }
+
+    println!("2");
+
+    // 🌿 解压
+    let cursor = std::io::Cursor::new(buf);
+    let mut archive = ZipArchive::new(cursor)
+        .map_err(|e| format!("archive: failed to read platform-tools zip: {}", e))?;
+
     extract_archive(&mut archive, install_dir_path)?;
 
-    let adb_path = adb_path_in_install_dir(install_dir_path);
+    println!("3");
+
+    // 🌙 校验 adb.exe
+    let adb_path = install_dir_path.join("adb.exe");
+
     if !adb_path.exists() {
-        return Err(format!("adb.exe not found after install: {}", adb_path.display()));
+        return Err(format!(
+            "adb.exe not found after install: {}",
+            adb_path.display()
+        ));
     }
 
-    Ok(AdbInstallResult {
+    Ok(InstallResult {
         install_dir,
-        adb_path: adb_path.to_string_lossy().into_owned(),
-        downloaded_zip: downloaded_zip.to_string_lossy().into_owned(),
+        path: adb_path.to_string_lossy().into_owned(),
+        downloaded_zip: "".to_string(),
     })
 }
+
+
+
 #[derive(Debug, Deserialize)]
 pub struct GithubResult {
     pub tag_name: String,
-    pub name: String,
     pub body: Option<String>,
     pub published_at: Option<String>,
     pub assets: Vec<Asserts>,
@@ -341,4 +354,66 @@ pub fn get_latest_release(url: &str) -> Result<GithubResult, String> {
         crate::logger::warn(TAG, &msg);
         msg
     })
+}
+
+//以下为aria2c相关
+#[tauri::command]
+pub fn tools_download_and_install_from_github(idir: String, name: String) -> Result<InstallResult, String> {
+    let (check, exe) = match name.as_str() {
+        "aria2" => {
+            (&RE0, "aria2c.exe")
+        },
+        _ => return Err("Unknown name".into()),
+    };
+    let install_dir_path = Path::new(&idir);
+    // 清除已存在文件~
+    if install_dir_path.exists() {
+        logger::debug(TAG, "文件已存在, 清空中");
+        for entry in fs::read_dir(install_dir_path)
+            .map_err(|e| format!("failed to read install dir: {}", e))?
+        {
+            let entry = entry.map_err(|e| format!("failed to read dir entry: {}", e))?;
+            let path = entry.path();
+            if path.is_dir() {
+                fs::remove_dir_all(&path)
+                    .map_err(|e| format!("failed to remove dir {}: {}", path.display(), e))?;
+            } else {
+                fs::remove_file(&path)
+                    .map_err(|e| format!("failed to remove file {}: {}", path.display(), e))?;
+            }
+        }
+    }
+    fs::create_dir_all(install_dir_path).map_err(|e| format!("failed to create install dir: {}", e))?;
+
+    let gr = get_latest_release("https://api.github.com/repos/aria2/aria2/releases/latest")?;
+    for a in &gr.assets {
+        if !a.content_type.ends_with("zip") { continue };
+        if check.is_match(&a.name) {
+            let resp = crate::shared_http_client()
+                .get(&a.browser_download_url)
+                .send()
+                .map_err(|e| format!("failed to download {}: {}", name, e))?;
+
+            if !resp.status().is_success() {
+                return Err(format!("{} download failed: HTTP {}", name, resp.status()));
+            }
+
+            let bytes = resp
+                .bytes()
+                .map_err(|e| format!("failed to read {} zip: {}", name, e))?;
+
+            let cursor = Cursor::new(bytes);
+            let mut archive = ZipArchive::new(cursor).map_err(|e| format!("failed to read {} zip: {}", name, e))?;
+            extract_archive(&mut archive, install_dir_path)?;
+            return Ok(InstallResult {
+                install_dir: idir.clone(),
+                path: install_dir_path
+                    .join(exe)
+                    .to_string_lossy()
+                    .to_string(),
+                downloaded_zip: "".to_string(),
+            })
+        }
+    }
+    return Err("候选项里没有预期程序(包)".into())
 }
