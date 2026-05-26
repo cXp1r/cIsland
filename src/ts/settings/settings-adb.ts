@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./settings-shared";
-import type { AdbCheckResult, AdbDevicesResult, AdbCommandResult, AdbInstallResult, AdbPathResult } from "./types";
+import type { AdbCheckResult, AdbDevicesResult, AdbCommandResult, InstallResult, AdbPathResult } from "./types";
 
 const sadbIpInput = document.getElementById("sadb-ip") as HTMLInputElement;
 const sadbPortInput = document.getElementById("sadb-port") as HTMLInputElement;
@@ -61,15 +61,15 @@ export function initAdb(): void {
     setAdbResult("正在下载 Android platform-tools 并解压，请稍候...");
 
     try {
-      const result = await invoke<AdbInstallResult>("tools_download_and_install_adb", {
+      const result = await invoke<InstallResult>("tools_download_and_install_adb", {
         installDir,
       });
       adbInstallDirInput.value = result.install_dir;
-      adbPathInput.value = result.adb_path;
+      adbPathInput.value = result.path;
       setAdbResult([
         "初始化完成",
         `安装目录: ${result.install_dir}`,
-        `ADB 路径: ${result.adb_path}`,
+        `ADB 路径: ${result.path}`,
         `下载文件: ${result.downloaded_zip}`,
         "请点击「保存设置」保留该配置。",
       ].join("\n"));
@@ -90,11 +90,11 @@ export function initAdb(): void {
     setAdbResult("正在从系统 PATH 查找 adb...");
 
     try {
-      const result = await invoke<AdbPathResult>("tools_find_adb_in_path");
-      adbPathInput.value = result.adb_path;
+      const adb_path = await invoke<string>("find_path_by_where", {name: "adb"});
+      adbPathInput.value = adb_path;
       setAdbResult([
         "已从 PATH 找到 ADB",
-        `ADB 路径: ${result.adb_path}`,
+        `ADB 路径: ${adb_path}`,
         "请点击「保存设置」保留该配置。",
       ].join("\n"));
       showStatus("已从 PATH 获取 ADB 路径，请保存设置", false, 5000);

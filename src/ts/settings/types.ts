@@ -84,11 +84,7 @@ export type AdbCommandResult = {
   stderr: string;
 };
 
-export type AdbInstallResult = {
-  install_dir: string;
-  adb_path: string;
-  downloaded_zip: string;
-};
+
 
 export type AdbPathResult = {
   adb_path: string;
@@ -110,4 +106,10 @@ export type UpdateInfo = {
   download_url: string;
   published_at: string;
   file_size: number;
+};
+
+export type InstallResult = {
+  install_dir: string;
+  path: string;
+  downloaded_zip: string;
 };

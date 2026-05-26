@@ -14,6 +14,7 @@ import { initBlacklist } from "./settings-blacklist";
 import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
+import { initTools } from "./tools";
 
 const TAG = "Settings";
 
@@ -282,6 +283,7 @@ document.addEventListener("mouseup", () => {
 
 void loadSettings();
 
+initTools();
 initAdb();
 initAi();
 initBetterncm();
