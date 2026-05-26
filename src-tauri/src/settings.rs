@@ -112,10 +112,6 @@ pub(crate) struct SettingsData {
     pub sadb_ip: String,
     #[serde(default = "default_sadb_port")]
     pub sadb_port: u16,
-    #[serde(default = "default_adb_install_dir")]
-    pub adb_install_dir: String,
-    #[serde(default)]
-    pub adb_path: String,
     #[serde(default)]
     pub email_username: String,
     #[serde(default)]
@@ -129,9 +125,15 @@ pub(crate) struct SettingsData {
     #[serde(default = "default_email_shortcut")]
     pub email_shortcut: String,
     #[serde(default)]
+    pub adb_install_dir: String,
+    #[serde(default)]
+    pub adb_path: String,
+    #[serde(default)]
     pub aria2c_thread: u8,
     #[serde(default)]
     pub aria2c_path: String,
+    #[serde(default)]
+    pub aria2c_install_dir: String,
 }
 
 
@@ -145,16 +147,6 @@ fn default_email_port() -> u16 {
 
 fn default_sadb_port() -> u16 {
     5555
-}
-
-fn default_adb_install_dir() -> String {
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("dynamic-island")
-        .join("tools")
-        .join("adb")
-        .to_string_lossy()
-        .into_owned()
 }
 
 fn default_show_preview_toggle() -> bool {
@@ -273,7 +265,7 @@ fn default_settings() -> SettingsData {
         log_filter_invert: default_log_filter_invert(),
         sadb_ip: String::new(),
         sadb_port: default_sadb_port(),
-        adb_install_dir: default_adb_install_dir(),
+        adb_install_dir: String::new(),
         adb_path: String::new(),
         email_username: String::new(),
         email_auth: String::new(),
@@ -281,6 +273,7 @@ fn default_settings() -> SettingsData {
         email_port: default_email_port(),
         email_poll_interval_secs: default_email_poll_interval_secs(),
         email_shortcut: default_email_shortcut(),
+        aria2c_install_dir: String::new(),
         aria2c_path: String::new(),
         aria2c_thread: 4,
     }
@@ -354,6 +347,7 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         email_port: ec_port,
         email_poll_interval_secs: state.email_poll_interval_secs.load(Ordering::Relaxed),
         email_shortcut: state.email_shortcut.lock().unwrap().clone(),
+        aria2c_install_dir: state.aria2c_install_dir.lock().unwrap().clone(),
         aria2c_path: state.aria2c_path.lock().unwrap().clone(),
         aria2c_thread: state.aria2c_thread.load(Ordering::Relaxed),
     }
@@ -391,8 +385,6 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
     let smtc_app_whitelist = state.smtc_app_whitelist.lock().unwrap().clone();
     let sadb_ip = state.sadb_ip.lock().unwrap().clone();
     let sadb_port = *state.sadb_port.lock().unwrap();
-    let adb_install_dir = state.adb_install_dir.lock().unwrap().clone();
-    let adb_path = state.adb_path.lock().unwrap().clone();
     let email_poll_interval_secs = state.email_poll_interval_secs.load(Ordering::Relaxed);
     let email_cfg = state.email_config.lock().unwrap();
     let email_username = email_cfg.username.clone();
@@ -421,8 +413,6 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
         "log_filter_invert": crate::logger::get_filter_invert(),
         "sadb_ip": sadb_ip,
         "sadb_port": sadb_port,
-        "adb_install_dir": adb_install_dir,
-        "adb_path": adb_path,
         "email_poll_interval_secs": email_poll_interval_secs,
         "email_username": email_username,
         "email_auth": email_auth,
@@ -433,6 +423,21 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
         "primary_monitor_info": state.primary_monitor_info.lock().unwrap().clone(),
         "offset_x": state.offset_x.load(Ordering::Relaxed),
         "offset_y": state.offset_y.load(Ordering::Relaxed),
+    })
+}
+
+#[tauri::command]
+pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
+    let adb_install_dir = state.adb_install_dir.lock().unwrap().clone();
+    let adb_path = state.adb_path.lock().unwrap().clone();
+    let aria2c_path = state.aria2c_path.lock().unwrap().clone();
+    let aria2c_thread = state.aria2c_thread.load(Ordering::Relaxed);
+    serde_json::json!({
+        "adb_install_dir": adb_install_dir,
+        "adb_path": adb_path,
+        "aria2c_install_dir":  state.aria2c_install_dir.lock().unwrap().clone(),
+        "aria2c_path": aria2c_path,
+        "aria2c_thread": aria2c_thread,
     })
 }
 
@@ -720,6 +725,7 @@ pub fn save_tools_settings(
     adb_install_dir: Option<String>,
     adb_path: Option<String>,
     aria2c_thread: Option<u8>,
+    aria2c_install_dir: Option<String>,
     aria2c_path: Option<String>,
     
 ) {
@@ -732,6 +738,10 @@ pub fn save_tools_settings(
         settings_data.aria2c_path = aria2c_path.clone();
         *state.aria2c_path.lock().unwrap() = aria2c_path;
     }
+    if let Some(aria2c_install_dir) = aria2c_install_dir {
+        settings_data.aria2c_install_dir = aria2c_install_dir.clone();
+        *state.aria2c_install_dir.lock().unwrap() = aria2c_install_dir;
+    }
     if let Some(dir) = adb_install_dir {
         settings_data.adb_install_dir = dir.clone();
         *state.adb_install_dir.lock().unwrap() = dir;
@@ -741,6 +751,8 @@ pub fn save_tools_settings(
         *state.adb_path.lock().unwrap() = path;
     }
 }
+
+
 // ===== 歌词补偿（按播放器） =====
 
 /// 返回 settings 页子页需要的状态：开关、步进、范围、各播放器 offset、当前命中 app_id

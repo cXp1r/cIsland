@@ -264,7 +264,7 @@ pub fn run() {
             settings::get_smtc_whitelist_enabled, settings::set_smtc_whitelist_enabled,
             settings::get_preview_updates, settings::set_preview_updates,
             settings::get_show_preview_toggle, settings::set_show_preview_toggle,
-            settings::save_tools_settings,
+            settings::save_tools_settings, settings::get_tools_settings,
             updater::get_app_version, updater::check_for_updates, updater::download_and_install_update,
             logger::get_log_path, logger::open_log_dir, logger::get_log_level_num,
             logger::get_log_level, logger::set_log_level,
@@ -275,7 +275,8 @@ pub fn run() {
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
             get_workspace,
             tools::tools_download_and_install_from_github, tools::find_path_by_where,//两个通用函数
-            tools::tools_check_adb, tools::tools_check_adb_devices, tools::tools_kill_adb_server,
+            tools::check, 
+            tools::tools_check_adb_devices, tools::tools_kill_adb_server,
             tools::tools_download_and_install_adb,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,
             email::fetch_email_uid_list, email::fetch_email_metas_by_uids, email::fetch_email_bodies_by_uids, email::fetch_email_metas_and_bodies_by_uids, email::fetch_email_body_by_uid, email::read_email_body_by_uid,
@@ -391,6 +392,7 @@ pub fn run() {
             let email_shortcut = Arc::new(Mutex::new(settings.email_shortcut.clone()));
             let cached_email_metas: Arc<Mutex<Vec<email::EmailMeta>>> = Arc::new(Mutex::new(email::load_email_metas()));
             
+            let aria2c_install_dir = Arc::new(Mutex::new(settings.aria2c_install_dir));
             let aria2c_thread = Arc::new(AtomicU8::new(settings.aria2c_thread));
             let aria2c_path = Arc::new(Mutex::new(settings.aria2c_path));
             media::update_smtc_whitelist(
@@ -409,8 +411,6 @@ pub fn run() {
                 sadb_session: tokio::sync::Mutex::new(None),
                 sadb_ip: Arc::new(Mutex::new(settings.sadb_ip.clone())),
                 sadb_port: Arc::new(Mutex::new(settings.sadb_port)),
-                adb_install_dir: Arc::new(Mutex::new(settings.adb_install_dir.clone())),
-                adb_path: Arc::new(Mutex::new(settings.adb_path.clone())),
                 is_notifying: is_notifying.clone(),
                 is_expanded: is_expanded.clone(),
                 is_dragging: is_dragging.clone(),
@@ -462,7 +462,10 @@ pub fn run() {
                 latest_email_uid: latest_email_uid.clone(),
                 email_shortcut: email_shortcut.clone(),
                 cached_email_metas: cached_email_metas.clone(),
+                adb_install_dir: Arc::new(Mutex::new(settings.adb_install_dir.clone())),
+                adb_path: Arc::new(Mutex::new(settings.adb_path.clone())),
                 aria2c_thread: aria2c_thread.clone(),
+                aria2c_install_dir: aria2c_install_dir.clone(),
                 aria2c_path: aria2c_path.clone(),
             });
 
@@ -1537,6 +1540,7 @@ pub struct IslandState {
     /// 镜像流正常推送中（视频帧在传输），用于允许拖动不回弹
     pub sadb_mirroring: Arc<AtomicBool>,
 
+    pub aria2c_install_dir: Arc<Mutex<String>>,
     pub aria2c_path: Arc<Mutex<String>>,
     pub aria2c_thread: Arc<AtomicU8>,//上限16,下限1
 }

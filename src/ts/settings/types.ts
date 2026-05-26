@@ -21,8 +21,6 @@ export type SettingsResponse = {
   log_filter_invert: boolean;
   sadb_ip: string;
   sadb_port: number;
-  adb_install_dir: string;
-  adb_path: string;
   email_poll_interval_secs: number;
   email_username: string;
   email_auth: string;
@@ -34,6 +32,13 @@ export type SettingsResponse = {
   offset_x: number;
   offset_y: number;
 };
+
+export type ToolsSettingsResponse = {
+  adb_install_dir: string;
+  adb_path: string;
+  aria2c_path: string;
+  aria2c_thread: number;
+}
 
 export type AISettingsResponse = {
   api_url: string;
@@ -56,9 +61,8 @@ export type PluginMarketRepairResult = {
   archive_patched: boolean;
 };
 
-export type AdbCheckResult = {
+export type CheckResult = {
   ok: boolean;
-  adb_path: string;
   version: string;
   stdout: string;
   stderr: string;

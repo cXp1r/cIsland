@@ -4,23 +4,13 @@ import type { AdbCheckResult, AdbDevicesResult, AdbCommandResult, InstallResult,
 
 const sadbIpInput = document.getElementById("sadb-ip") as HTMLInputElement;
 const sadbPortInput = document.getElementById("sadb-port") as HTMLInputElement;
-const adbInstallDirInput = document.getElementById("adb-install-dir") as HTMLInputElement;
-const adbPathInput = document.getElementById("adb-path") as HTMLInputElement;
-const adbPathFromPathBtn = document.getElementById("adb-path-from-path-btn") as HTMLButtonElement;
-const adbInitBtn = document.getElementById("adb-init-btn") as HTMLButtonElement;
-const adbCheckBtn = document.getElementById("adb-check-btn") as HTMLButtonElement;
-const adbDevicesBtn = document.getElementById("adb-devices-btn") as HTMLButtonElement;
-const adbConnectDeviceBtn = document.getElementById("adb-connect-device-btn") as HTMLButtonElement;
-const adbKillServerBtn = document.getElementById("adb-kill-server-btn") as HTMLButtonElement;
-const adbCheckResult = document.getElementById("adb-check-result") as HTMLDivElement;
+
 
 export function getAdbValues() {
   return {
     sadbIp: sadbIpInput.value.trim(),
     sadbPort: parseInt(sadbPortInput.value) || 5555,
-    adbInstallDir: adbInstallDirInput.value.trim(),
-    adbPath: adbPathInput.value.trim(),
-  };
+  }
 }
 
 function resolveAdbPathForCommand(): string | null {

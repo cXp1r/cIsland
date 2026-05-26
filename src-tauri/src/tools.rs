@@ -20,9 +20,8 @@ static RE0: LazyLock<Regex> = LazyLock::new(|| {
 
 
 #[derive(Debug, Serialize)]
-pub struct AdbCheckResult {
+pub struct CheckResult {
     ok: bool,
-    adb_path: String,
     version: String,
     stdout: String,
     stderr: String,
@@ -60,12 +59,17 @@ pub struct AdbCommandResult {
     stderr: String,
 }
 
-fn run_adb_version(adb_path: &str) -> Result<AdbCheckResult, String> {
-    let output = Command::new(adb_path)
-        .arg("version")
+#[tauri::command]
+pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
+    let arg = match tag {
+        _ => "--version",
+    };
+    println!("{} {}", path, arg);
+    let output = Command::new(path)
+        .arg(arg)
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("failed to run adb version: {}", e))?;
+        .map_err(|e| format!("failed to run {} {}: {}",path, arg, e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -75,15 +79,16 @@ fn run_adb_version(adb_path: &str) -> Result<AdbCheckResult, String> {
         .unwrap_or_default()
         .trim()
         .to_string();
-
-    Ok(AdbCheckResult {
+    let i = CheckResult {
         ok: output.status.success(),
-        adb_path: adb_path.to_string(),
         version,
         stdout,
         stderr,
-    })
+    };
+    println!("{i:?}");
+    Ok(i)
 }
+
 
 fn run_adb_devices(adb_path: &str) -> Result<AdbDevicesResult, String> {
     let output = Command::new(adb_path)
@@ -151,7 +156,7 @@ fn extract_archive<R: io::Read + io::Seek>(archive: &mut ZipArchive<R>, install_
             .collect();
 
         let out_path = install_dir.join(stripped);
-        println!("{out_path:?}");
+
 
         if entry.is_dir() {
             fs::create_dir_all(&out_path).map_err(|e| format!("failed to create dir {}: {}", out_path.display(), e))?;
@@ -195,11 +200,7 @@ pub fn find_path_by_where(name: &str) -> Result<String, String> {
         .to_string())
 }
 
-#[tauri::command]
-pub fn tools_check_adb(adb_path: Option<String>) -> Result<AdbCheckResult, String> {
-    let adb_path = adb_path.unwrap_or_else(|| "adb".to_string());
-    run_adb_version(&adb_path)
-}
+
 
 #[tauri::command]
 pub fn tools_check_adb_devices(adb_path: Option<String>) -> Result<AdbDevicesResult, String> {
@@ -222,7 +223,6 @@ pub fn tools_download_and_install_adb(
 
     let install_dir_path = Path::new(&install_dir);
 
-    // 🌿 清理旧目录
     if install_dir_path.exists() {
         logger::debug(TAG, "文件已存在, 清空中");
 
@@ -245,7 +245,7 @@ pub fn tools_download_and_install_adb(
     fs::create_dir_all(install_dir_path)
         .map_err(|e| format!("failed to create install dir: {}", e))?;
 
-    // 🌙 下载
+
     let mut resp = crate::shared_http_client()
         .get(PLATFORM_TOOLS_URL)
         .send()
@@ -258,9 +258,6 @@ pub fn tools_download_and_install_adb(
         ));
     }
 
-    println!("1");
-
-    // 🌿 ⭐ 核心改造：流式读取（替代 .bytes()）
     let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024 * 1024);
     let mut temp = [0u8; 8192];
 
@@ -276,18 +273,12 @@ pub fn tools_download_and_install_adb(
         buf.extend_from_slice(&temp[..n]);
     }
 
-    println!("2");
-
-    // 🌿 解压
     let cursor = std::io::Cursor::new(buf);
     let mut archive = ZipArchive::new(cursor)
         .map_err(|e| format!("archive: failed to read platform-tools zip: {}", e))?;
 
     extract_archive(&mut archive, install_dir_path)?;
 
-    println!("3");
-
-    // 🌙 校验 adb.exe
     let adb_path = install_dir_path.join("adb.exe");
 
     if !adb_path.exists() {
@@ -360,9 +351,12 @@ pub fn get_latest_release(url: &str) -> Result<GithubResult, String> {
 #[tauri::command]
 pub fn tools_download_and_install_from_github(idir: String, name: String) -> Result<InstallResult, String> {
     let (check, exe) = match name.as_str() {
-        "aria2" => {
+        "aria2c" => {
             (&RE0, "aria2c.exe")
         },
+        "adb" => {
+            return tools_download_and_install_adb(idir);
+        }
         _ => return Err("Unknown name".into()),
     };
     let install_dir_path = Path::new(&idir);

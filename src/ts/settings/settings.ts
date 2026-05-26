@@ -14,7 +14,7 @@ import { initBlacklist } from "./settings-blacklist";
 import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
-import { aria2cThread, aria2cPath, initTools } from "./tools";
+import { adb1, adbPath, aria2c1, aria2cThread, aria2cPath, initTools } from "./tools";
 const TAG = "Settings";
 
 const clipboardToggle = document.getElementById("clipboard-toggle") as HTMLInputElement;
@@ -165,8 +165,9 @@ saveBtn.addEventListener("click", async () => {
     });
 
     await invoke('save_tools_settings', {
-      adbInstallDir: adbValues.adbInstallDir,
-      adbPath: adbValues.adbPath,
+      adbInstallDir: adb1.value,
+      adbPath: adbPath.value,
+      aria2cInstallDir: aria2c1.value,
       aria2cPath: aria2cPath.value,
       aria2cThread: parseInt(aria2cThread.value) <= 0 ? 4 : (parseInt(aria2cThread.value) > 16 ? 16 : parseInt(aria2cThread.value)),
     });

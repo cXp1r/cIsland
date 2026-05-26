@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./settings-shared";
-import { InstallResult } from "./types";
+import { CheckResult, InstallResult, ToolsSettingsResponse } from "./types";
 
-const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
+export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
 export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
 export const aria2cThread = document.getElementById("aria2c-thread") as HTMLInputElement
 const aria2cGetPathBtn = document.getElementById("aria2c-get-path-btn") as HTMLButtonElement
@@ -10,6 +10,18 @@ const aria2cInitBtn = document.getElementById("aria2c-init-btn") as HTMLButtonEl
 const aria2cCheckBtn = document.getElementById("aria2c-check-btn") as HTMLButtonElement
 const aria2cTestBtn = document.getElementById("aria2c-test-btn") as HTMLButtonElement
 const aria2cResult = document.getElementById("aria2c-check-result") as HTMLInputElement
+
+export const adb1 = document.getElementById("adb-install-dir") as HTMLInputElement;
+export const adbPath = document.getElementById("adb-path") as HTMLInputElement;
+const adbGetPathBtn = document.getElementById("adb-path-from-path-btn") as HTMLButtonElement;
+const adbInitBtn = document.getElementById("adb-init-btn") as HTMLButtonElement;
+const adbCheckBtn = document.getElementById("adb-check-btn") as HTMLButtonElement;
+const adbTestBtn = document.getElementById("adb-connect-device-btn") as HTMLButtonElement;
+const adbKillServerBtn = document.getElementById("adb-kill-server-btn") as HTMLButtonElement;
+const adbResult = document.getElementById("adb-check-result") as HTMLInputElement;
+
+//需要单独添加
+const adbDeviceBtn = document.getElementById("adb-devices-btn") as HTMLButtonElement;
 
 let WORKSPACE: string | null = null;
 
@@ -19,28 +31,54 @@ const modules = {
         installDir: aria2c1,
         initBtn: aria2cInitBtn,
         getPathBtn: aria2cGetPathBtn,
+        testBtn: aria2cTestBtn,
+        checkBtn: aria2cCheckBtn,
         path: aria2cPath,
         result: aria2cResult,
         name: "aria2c",
     },
+    adb: {
+        installDir: adb1,
+        initBtn: adbInitBtn,
+        getPathBtn: adbGetPathBtn,
+        testBtn: adbTestBtn,
+        checkBtn: adbCheckBtn,
+        path: adbPath,
+        result: adbResult,
+        name: "adb",
+    },
 };
-
-function setResult(e: HTMLInputElement, t: string, i = false) {
+let rtimer: number | null = null;
+function setResult(e: HTMLInputElement, t: string, i = false, s = 3000) {
     e.textContent = t;
     e.style.color = i ? "#ff6f7f" : "var(--text)";
+    if (rtimer) {
+        rtimer = null;
+    }
+    rtimer = (window.setTimeout(()=>{
+        e.textContent = "待操作"
+    }, s));
 }
 function sanitize(v: string) {
-    return v.replace(/[^a-zA-Z0-9_]/g, "");
+    return v.replace(/[^a-zA-Z0-9_/\\\:]/g, "");
 }
 
 
 export function initTools(): void {
     //小巧思
+    invoke<ToolsSettingsResponse>('get_tools_settings').then((r) => {
+        console.log(r);
+        adbPath.value = r.adb_path;
+        adb1.value = r.adb_install_dir;
+        aria2cPath.value = r.aria2c_path;
+        aria2cThread.value = r.aria2c_thread.toString();
+    })
+
     invoke<string>('get_workspace').then((res) => {
         WORKSPACE = res;
         
         Object.entries(modules).forEach(([name, ui]) => {
-            ui.installDir.value = WORKSPACE + "\\" + ui.name;
+            ui.installDir.value = ui.installDir.value == "" ? WORKSPACE + "\\" + ui.name : ui.installDir.value;
             ui.installDir.addEventListener("input", () => {
                 ui.installDir.value = sanitize(ui.installDir.value);
             });
@@ -48,8 +86,8 @@ export function initTools(): void {
                 const installDir = ui.installDir.value.trim();
                 
                 if (!installDir) {
-                    setResult(ui.result, "请先填写 ADB 工具安装目录。", true);
-                    showStatus("请先填写 ADB 工具安装目录", true);
+                    setResult(ui.result, `请先填写 ${ui.name} 工具安装目录。`, true);
+                    showStatus(`请先填写 ${ui.name} 工具安装目录`, true);
                     return;
                 }
                 
@@ -58,7 +96,7 @@ export function initTools(): void {
                 try {
                     const result = await invoke<InstallResult>('tools_download_and_install_from_github', {
                         idir: installDir,
-                        name: 'aria2',
+                        name: ui.name,
                     });
                     setResult(
                         ui.result,[
@@ -126,6 +164,71 @@ export function initTools(): void {
                 } finally {
 
                     ui.path.disabled = false;
+                }
+            });
+            ui.testBtn.addEventListener("click", async () => {
+                ui.testBtn.disabled = true;
+
+                setResult(
+                    ui.result,
+                    `正在测试 ${ui.name}...`
+                );
+
+                try {
+                    const testOpt = await invoke<string>(
+                        "test_" + ui.name
+                    );
+                    
+                    setResult(
+                        ui.result,
+                        `${ui.name} opt: ${testOpt}`
+                    );
+                } catch (e) {
+                    setResult(
+                        ui.result,
+                        `测试失败: ${String(e)}`,
+                        true
+                    );
+                } finally {
+
+                    ui.testBtn.disabled = false;
+                }
+            });
+            ui.checkBtn.addEventListener("click", async () => {
+                ui.checkBtn.disabled = true;
+
+                setResult(
+                    ui.result,
+                    `正在检查版本 ${ui.name}...`
+                );
+
+                try {
+                    const checkOpt = await invoke<CheckResult>(
+                        "check",
+                        {
+                            path: ui.path.value,
+                            tag: ui.name,
+                        }
+                    );
+                    console.log(checkOpt);
+                    setResult(
+                        ui.result,
+                        [
+                            checkOpt.ok ? "命令检验通过" : "命令执行失败",
+                            `版本: ${checkOpt.version || "未知"}`,
+                            checkOpt.stdout.trim() ? `stdout:\n${checkOpt.stdout.trim()}` : "",
+                            checkOpt.stderr.trim() ? `stderr:\n${checkOpt.stderr.trim()}` : "",
+                        ].filter(Boolean).join("\n")
+                    );
+                } catch (e) {
+                    setResult(
+                        ui.result,
+                        `测试失败: ${String(e)}`,
+                        true
+                    );
+                } finally {
+
+                    ui.checkBtn.disabled = false;
                 }
             });
         });
