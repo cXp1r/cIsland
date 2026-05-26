@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
-
+use crate::IslandState;
 use crate::{CREATE_NO_WINDOW, logger};
 
 const PLATFORM_TOOLS_URL: &str = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
@@ -51,6 +51,16 @@ pub struct AdbCommandResult {
 }
 
 #[tauri::command]
+pub fn open_dir(dir: &str) {
+    match Command::new("explorer")
+        .arg(dir)
+        .spawn() 
+    {
+        _ => {}
+    }
+}
+
+#[tauri::command]
 pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
     let args = match tag {
         _ => vec!["--version"],
@@ -69,14 +79,40 @@ pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
         .unwrap_or_default()
         .trim()
         .to_string();
-    let i = CheckResult {
+
+    Ok(CheckResult {
         ok: output.status.success(),
         version,
         stdout,
         stderr,
-    };
-    println!("{i:?}");
-    Ok(i)
+    })
+}
+#[tauri::command]
+pub fn aria2c_download(state: tauri::State<'_, IslandState>, url: &str, dir: &str, thread: u8) -> Result<TestResult, String> {
+    let thread_str = thread.to_string();
+
+    let output = Command::new(state.aria2c_path.lock().unwrap().clone())
+        .args([
+            "-x",
+            &thread_str,
+            "-s",
+            &thread_str,
+            url,
+            "-d",
+            dir,
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .map_err(|e| format!("failed to run aria2c: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    Ok(TestResult {
+        ok: output.status.success(),
+        stdout,
+        stderr,
+    })
 }
 
 #[tauri::command]
