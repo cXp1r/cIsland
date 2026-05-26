@@ -462,8 +462,6 @@ pub fn save_settings(
     log_level: Option<String>,
     log_filter_tags: Option<Vec<String>>,
     log_filter_invert: Option<bool>,
-    sadb_ip: Option<String>,
-    sadb_port: Option<u16>,
     email_poll_interval_secs: Option<u64>,
     email_username: Option<String>,
     email_auth: Option<String>,
@@ -680,14 +678,6 @@ pub fn save_settings(
             .collect();
         settings_data.smtc_app_whitelist = normalized;
     }
-    if let Some(ip) = sadb_ip {
-        settings_data.sadb_ip = ip.clone();
-        *state.sadb_ip.lock().unwrap() = ip;
-    }
-    if let Some(port) = sadb_port {
-        settings_data.sadb_port = port;
-        *state.sadb_port.lock().unwrap() = port;
-    }
     if let Some(secs) = email_poll_interval_secs {
         let secs = secs.max(1);
         settings_data.email_poll_interval_secs = secs;
@@ -727,6 +717,8 @@ pub fn save_tools_settings(
     aria2c_thread: Option<u8>,
     aria2c_install_dir: Option<String>,
     aria2c_path: Option<String>,
+    sadb_ip: Option<String>,
+    sadb_port: Option<u16>,
     
 ) {
     let mut settings_data = build_settings_data(&state);
@@ -749,6 +741,14 @@ pub fn save_tools_settings(
     if let Some(path) = adb_path {
         settings_data.adb_path = path.clone();
         *state.adb_path.lock().unwrap() = path;
+    }
+    if let Some(ip) = sadb_ip {
+        settings_data.sadb_ip = ip.clone();
+        *state.sadb_ip.lock().unwrap() = ip;
+    }
+    if let Some(port) = sadb_port {
+        settings_data.sadb_port = port;
+        *state.sadb_port.lock().unwrap() = port;
     }
 }
 
