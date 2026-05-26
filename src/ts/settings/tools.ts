@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./settings-shared";
 import { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
+import { initDownloader } from "./downloader";
 
 export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
 export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
@@ -71,6 +72,7 @@ export function initTools(): void {
         adb1.value = r.adb_install_dir;
         aria2cPath.value = r.aria2c_path;
         aria2cThread.value = r.aria2c_thread.toString();
+        initDownloader();
     })
 
     invoke<string>('get_workspace').then((res) => {
@@ -242,6 +244,7 @@ export function initTools(): void {
             });
         });
     });
+    
 }
 
 export async function saveToolsSettings() {
