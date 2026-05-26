@@ -1,10 +1,19 @@
-//! Scrcpy protocol implementation
+//! Scrcpy protocol implementation (v4.0)
 //!
 //! Handles the binary protocol between client and server:
-//! - Device metadata on first socket
-//! - Codec metadata (12 bytes for video, 4 bytes for audio)
-//! - Frame headers (12 bytes) with PTS, flags, and size
-//! - Control messages (bidirectional)
+//! - Device metadata on first socket (64-byte UTF-8 name, sent once)
+//! - Per-stream header:
+//!     * video: 4 bytes codec id, then a 12-byte SESSION packet (flags+w+h)
+//!     * audio: 4 bytes codec id (0 = stream disabled by device)
+//! - Frame packets: 12-byte meta (8 bytes pts+flags, 4 bytes size) + payload
+//! - Session packets (video stream only, may appear at any time on resize):
+//!   12 bytes total, bit 63 set in the first 8-byte word, no payload.
+//!
+//! Flag layout (top 3 bits of the 8-byte pts+flags word):
+//!   bit 63 = SESSION   (0x8000_0000 in the high u32)
+//!   bit 62 = CONFIG    (0x4000_0000 in the high u32)
+//!   bit 61 = KEY_FRAME (0x2000_0000 in the high u32)
+//!   bits 60..0 = PTS
 
 use crate::error::{Error, Result};
 use bytes::{Bytes, BytesMut};
@@ -94,15 +103,29 @@ pub struct DeviceMetadata {
     pub name: String,
 }
 
-/// Video codec metadata
+/// Video codec metadata.
+///
+/// In v4.0 the codec id (4 bytes) is the only header on the video socket;
+/// width/height arrive shortly after as a [`SessionMeta`] packet.
 #[derive(Debug, Clone)]
 pub struct VideoCodecMetadata {
     /// Video codec
     pub codec: VideoCodec,
-    /// Initial width
+    /// Initial width (filled in once the first session-meta packet is read)
     pub width: u32,
     /// Initial height
     pub height: u32,
+}
+
+/// 12-byte session metadata packet emitted by the server (video stream).
+/// Carries the current video size; sent once after the codec id, and again
+/// whenever the encoder resets (e.g. on display rotation/resize).
+#[derive(Debug, Clone, Copy)]
+pub struct SessionMeta {
+    pub width: u32,
+    pub height: u32,
+    /// Set if the resize was triggered by a client request.
+    pub client_resized: bool,
 }
 
 /// Audio codec metadata
@@ -149,34 +172,53 @@ impl DeviceMetadata {
 }
 
 impl VideoCodecMetadata {
-    /// Parse from 12 bytes
+    /// Parse the 4-byte codec id portion of the video header (v4.0).
+    /// Width/height must be filled in by the caller from the subsequent
+    /// [`SessionMeta`] packet.
+    pub fn parse(data: &[u8]) -> Result<Self> {
+        if data.len() < 4 {
+            return Err(Error::Protocol("Video codec id too short".to_string()));
+        }
+        let codec_id = u32::from_be_bytes(data[0..4].try_into().unwrap());
+        let codec = VideoCodec::try_from(codec_id)?;
+        debug!("Video codec: {:?}", codec);
+        Ok(Self { codec, width: 0, height: 0 })
+    }
+
+    /// Serialize to 4 bytes (codec id only, v4.0 wire format).
+    pub fn serialize(&self) -> [u8; 4] {
+        (self.codec as u32).to_be_bytes()
+    }
+}
+
+impl SessionMeta {
+    /// Parse a 12-byte session-meta packet. The high bit of the first u32
+    /// (the SESSION flag) MUST be set; the caller checks this with
+    /// [`is_session_header`] before calling.
     pub fn parse(data: &[u8]) -> Result<Self> {
         if data.len() < 12 {
-            return Err(Error::Protocol("Video codec metadata too short".to_string()));
+            return Err(Error::Protocol("Session meta too short".to_string()));
         }
-
-        let codec_id = u32::from_be_bytes(data[0..4].try_into().unwrap());
+        let flags = u32::from_be_bytes(data[0..4].try_into().unwrap());
+        if (flags & 0x8000_0000) == 0 {
+            return Err(Error::Protocol(
+                "Expected session-meta packet (high bit not set)".to_string(),
+            ));
+        }
         let width = u32::from_be_bytes(data[4..8].try_into().unwrap());
         let height = u32::from_be_bytes(data[8..12].try_into().unwrap());
-
-        let codec = VideoCodec::try_from(codec_id)?;
-        
-        debug!(
-            "Video codec: {:?}, size: {}x{}",
-            codec, width, height
-        );
-
-        Ok(Self { codec, width, height })
+        let client_resized = (flags & 1) != 0;
+        debug!("Session meta: {}x{} (client_resized={})", width, height, client_resized);
+        Ok(Self { width, height, client_resized })
     }
+}
 
-    /// Serialize to 12 bytes
-    pub fn serialize(&self) -> [u8; 12] {
-        let mut buf = [0u8; 12];
-        buf[0..4].copy_from_slice(&(self.codec as u32).to_be_bytes());
-        buf[4..8].copy_from_slice(&self.width.to_be_bytes());
-        buf[8..12].copy_from_slice(&self.height.to_be_bytes());
-        buf
-    }
+/// True if the 12-byte packet header at `data[..12]` is a session-meta packet
+/// (i.e. has the SESSION flag set). The caller must have at least 12 bytes
+/// available; in practice this is checked by [`ProtocolReader::try_parse_packet`].
+#[inline]
+pub fn is_session_header(data: &[u8]) -> bool {
+    !data.is_empty() && (data[0] & 0x80) != 0
 }
 
 impl AudioCodecMetadata {
@@ -201,7 +243,8 @@ impl AudioCodecMetadata {
 }
 
 impl FrameHeader {
-    /// Parse from 12 bytes
+    /// Parse from 12 bytes (v4.0 layout). Caller must have already verified
+    /// this is NOT a session header via [`is_session_header`].
     pub fn parse(data: &[u8]) -> Result<Self> {
         if data.len() < 12 {
             return Err(Error::Protocol("Frame header too short".to_string()));
@@ -211,12 +254,15 @@ impl FrameHeader {
         let pts_high = u32::from_be_bytes(data[0..4].try_into().unwrap());
         let pts_low = u32::from_be_bytes(data[4..8].try_into().unwrap());
 
-        // Extract flags from most significant bits
-        let config_packet = (pts_high & 0x80000000) != 0;
-        let key_frame = (pts_high & 0x40000000) != 0;
+        // Extract flags from most significant bits (v4.0 layout)
+        //   bit 63 = SESSION   — handled by caller, MUST be 0 here
+        //   bit 62 = CONFIG
+        //   bit 61 = KEY_FRAME
+        let config_packet = (pts_high & 0x4000_0000) != 0;
+        let key_frame = (pts_high & 0x2000_0000) != 0;
 
-        // Reconstruct 62-bit PTS
-        let pts = ((pts_high & 0x3fffffff) as u64) << 32 | pts_low as u64;
+        // Reconstruct 61-bit PTS
+        let pts = ((pts_high & 0x1fff_ffff) as u64) << 32 | pts_low as u64;
 
         // Packet size is big-endian u32
         let size = u32::from_be_bytes(data[8..12].try_into().unwrap());
@@ -234,15 +280,14 @@ impl FrameHeader {
         })
     }
 
-    /// Serialize to 12 bytes
+    /// Serialize to 12 bytes (v4.0 layout)
     pub fn serialize(&self) -> [u8; 12] {
         let mut buf = [0u8; 12];
 
-        // Pack flags and PTS into first 8 bytes
-        let pts_high: u32 = (((self.pts >> 32) & 0x3fffffff) as u32)
-            | (if self.key_frame { 0x40000000 } else { 0 })
-            | (if self.config_packet { 0x80000000 } else { 0 });
-        let pts_low = (self.pts & 0xffffffff) as u32;
+        let pts_high: u32 = (((self.pts >> 32) & 0x1fff_ffff) as u32)
+            | (if self.key_frame { 0x2000_0000 } else { 0 })
+            | (if self.config_packet { 0x4000_0000 } else { 0 });
+        let pts_low = (self.pts & 0xffff_ffff) as u32;
 
         buf[0..4].copy_from_slice(&pts_high.to_be_bytes());
         buf[4..8].copy_from_slice(&pts_low.to_be_bytes());
@@ -277,12 +322,14 @@ impl Packet {
 /// Protocol reader for parsing incoming data stream
 pub struct ProtocolReader {
     pub(crate) buffer: BytesMut,
+    pub(crate) last_session: Option<SessionMeta>,
 }
 
 impl ProtocolReader {
     pub fn new() -> Self {
         Self {
             buffer: BytesMut::new(),
+            last_session: None,
         }
     }
 
@@ -303,10 +350,10 @@ impl ProtocolReader {
         }
     }
 
-    /// Try to parse video codec metadata (12 bytes)
+    /// Try to parse video codec id (4 bytes, v4.0)
     pub fn try_parse_video_codec_metadata(&mut self) -> Option<Result<VideoCodecMetadata>> {
-        if self.buffer.len() >= 12 {
-            let data = self.buffer.split_to(12);
+        if self.buffer.len() >= 4 {
+            let data = self.buffer.split_to(4);
             Some(VideoCodecMetadata::parse(&data))
         } else {
             None
@@ -323,29 +370,51 @@ impl ProtocolReader {
         }
     }
 
-    /// Try to parse next packet (12-byte header + data)
+    /// Try to parse next packet (v4.0).
+    ///
+    /// In v4.0 the video stream interleaves session-meta packets (12 bytes,
+    /// no payload) with frame packets (12-byte header + payload). Session
+    /// packets are silently absorbed here — the device size is propagated
+    /// out of band via [`take_session_meta`].
     pub fn try_parse_packet(&mut self) -> Option<Result<Packet>> {
-        if self.buffer.len() < 12 {
-            return None;
+        loop {
+            if self.buffer.len() < 12 {
+                return None;
+            }
+
+            if is_session_header(&self.buffer[..12]) {
+                let session_result = SessionMeta::parse(&self.buffer[..12]);
+                let _ = self.buffer.split_to(12);
+                match session_result {
+                    Ok(s) => {
+                        self.last_session = Some(s);
+                        // try again for an actual frame
+                        continue;
+                    }
+                    Err(e) => return Some(Err(e)),
+                }
+            }
+
+            let header = match FrameHeader::parse(&self.buffer[..12]) {
+                Ok(h) => h,
+                Err(e) => return Some(Err(e)),
+            };
+
+            let required_size = 12 + header.size as usize;
+            if self.buffer.len() < required_size {
+                return None; // Need more data
+            }
+
+            let _header_bytes = self.buffer.split_to(12);
+            let data = self.buffer.split_to(header.size as usize);
+            return Some(Ok(Packet::new(header, data.freeze())));
         }
+    }
 
-        // Parse header first
-        let header_result = FrameHeader::parse(&self.buffer[..12]);
-        let header = match header_result {
-            Ok(h) => h,
-            Err(e) => return Some(Err(e)),
-        };
-
-        let required_size = 12 + header.size as usize;
-        if self.buffer.len() < required_size {
-            return None; // Need more data
-        }
-
-        // Consume header bytes (already parsed above), then take payload
-        let _header_bytes = self.buffer.split_to(12);
-        let data = self.buffer.split_to(header.size as usize);
-
-        Some(Ok(Packet::new(header, data.freeze())))
+    /// Take and clear the most recently observed session-meta info (if any).
+    /// Useful for callers that want to react to device-side resize events.
+    pub fn take_session_meta(&mut self) -> Option<SessionMeta> {
+        self.last_session.take()
     }
 
     /// Get remaining buffer length
@@ -370,19 +439,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_video_codec_metadata() {
+    fn test_video_codec_metadata_v4() {
         let metadata = VideoCodecMetadata {
             codec: VideoCodec::H264,
-            width: 1920,
-            height: 1080,
+            width: 0,
+            height: 0,
         };
-
         let data = metadata.serialize();
+        assert_eq!(data.len(), 4);
         let parsed = VideoCodecMetadata::parse(&data).unwrap();
-        
         assert_eq!(parsed.codec, VideoCodec::H264);
-        assert_eq!(parsed.width, 1920);
-        assert_eq!(parsed.height, 1080);
+    }
+
+    #[test]
+    fn test_session_meta() {
+        // flags=0x80000001 (session+resize), w=1920, h=1080
+        let mut buf = [0u8; 12];
+        buf[0..4].copy_from_slice(&0x8000_0001u32.to_be_bytes());
+        buf[4..8].copy_from_slice(&1920u32.to_be_bytes());
+        buf[8..12].copy_from_slice(&1080u32.to_be_bytes());
+        assert!(is_session_header(&buf));
+        let meta = SessionMeta::parse(&buf).unwrap();
+        assert_eq!(meta.width, 1920);
+        assert_eq!(meta.height, 1080);
+        assert!(meta.client_resized);
     }
 
     #[test]
@@ -404,24 +484,32 @@ mod tests {
     }
 
     #[test]
-    fn test_protocol_reader() {
+    fn test_protocol_reader_session_then_frame() {
         let mut reader = ProtocolReader::new();
-        
-        // Test incomplete data
-        reader.extend(&[1, 2, 3]);
-        assert!(reader.try_parse_video_codec_metadata().is_none());
-        
-        // Test complete metadata
-        let metadata = VideoCodecMetadata {
-            codec: VideoCodec::H264,
-            width: 1920,
-            height: 1080,
+
+        // Session meta (12 bytes, no payload)
+        let mut session = [0u8; 12];
+        session[0..4].copy_from_slice(&0x8000_0000u32.to_be_bytes());
+        session[4..8].copy_from_slice(&1920u32.to_be_bytes());
+        session[8..12].copy_from_slice(&1080u32.to_be_bytes());
+        reader.extend(&session);
+
+        // A real frame: pts=1234, key, size=3, payload=[0xaa,0xbb,0xcc]
+        let frame_header = FrameHeader {
+            config_packet: false,
+            key_frame: true,
+            pts: 1234,
+            size: 3,
         };
-        reader.extend(&metadata.serialize()[3..]); // Add remaining bytes
-        
-        let parsed = reader.try_parse_video_codec_metadata().unwrap().unwrap();
-        assert_eq!(parsed.codec, VideoCodec::H264);
-        assert_eq!(parsed.width, 1920);
-        assert_eq!(parsed.height, 1080);
+        reader.extend(&frame_header.serialize());
+        reader.extend(&[0xaa, 0xbb, 0xcc]);
+
+        let pkt = reader.try_parse_packet().unwrap().unwrap();
+        assert_eq!(pkt.header.size, 3);
+        assert!(pkt.header.key_frame);
+        assert_eq!(&pkt.data[..], &[0xaa, 0xbb, 0xcc]);
+        let s = reader.take_session_meta().unwrap();
+        assert_eq!(s.width, 1920);
+        assert_eq!(s.height, 1080);
     }
 }

@@ -75,7 +75,7 @@ fn resolve_server_jar(app: &AppHandle) -> PathBuf {
         return PathBuf::from(p);
     }
     if let Ok(r) = app.path().resource_dir() {
-        let p = r.join("resources/scrcpy-server-v3.3.4");
+        let p = r.join("resources/scrcpy-server-v4.0");
         if p.exists() {
             logger::info(TAG, &format!("using resource dir server jar: path={}", p.display()));
             return p;
@@ -83,7 +83,7 @@ fn resolve_server_jar(app: &AppHandle) -> PathBuf {
     }
     if let Ok(exe) = std::env::current_exe() {
         for anc in exe.ancestors().take(8) {
-            let p = anc.join("assets").join("scrcpy-server-v3.3.4");
+            let p = anc.join("assets").join("scrcpy-server-v4.0");
             if p.exists() {
                 logger::info(TAG, &format!("using exe-relative server jar: path={}", p.display()));
                 return p;
@@ -91,7 +91,7 @@ fn resolve_server_jar(app: &AppHandle) -> PathBuf {
         }
     }
     logger::warn(TAG, "scrcpy-server jar not found in any standard location, using default path");
-    PathBuf::from("assets/scrcpy-server-v3.3.4")
+    PathBuf::from("assets/scrcpy-server-v4.0")
 }
 
 #[tauri::command]

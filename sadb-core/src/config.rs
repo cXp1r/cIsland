@@ -34,7 +34,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            server_jar_path: "assets/scrcpy-server-v3.3.4".to_string(),
+            server_jar_path: "assets/scrcpy-server-v4.0".to_string(),
             max_size: Some(1920),
             video_bitrate: Some(8_000_000), // 8 Mbps
             audio: false,

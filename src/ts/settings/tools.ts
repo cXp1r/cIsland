@@ -67,6 +67,7 @@ export function initTools(): void {
                         `${ui.name} 路径: ${result.path}`,
                         "请点击「保存设置」保留该配置。",
                     ].join("\n"));
+                    ui.path.value = result.path;
                     showStatus(`${ui.name} 初始化完成，请保存设置`, false, 5000);
                 } catch (e) {
                     setResult(ui.result,`初始化失败: ${String(e)}`, true);

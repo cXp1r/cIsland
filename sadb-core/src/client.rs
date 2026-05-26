@@ -22,7 +22,7 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 /// Scrcpy-server version that must match the jar we push to the device.
 /// When upgrading the jar, bump this too.
-pub const SCRCPY_SERVER_VERSION: &str = "3.3.4";
+pub const SCRCPY_SERVER_VERSION: &str = "4.0";
 
 /// Default local TCP port used for the reverse/forward tunnel to the video socket.
 const DEFAULT_VIDEO_PORT: u16 = 27183;
@@ -206,16 +206,36 @@ impl ScrcpyClient {
         Ok(DeviceMetadata { name })
     }
 
-    /// Read the 12-byte video codec metadata (codec id + width + height).
+    /// Read the v4.0 video stream header.
+    ///
+    /// On the wire the server now sends:
+    ///   1. 4 bytes: video codec id
+    ///   2. 12 bytes: SESSION packet (high bit set in flags) with width + height
+    ///
+    /// Both are consumed here and combined into a [`VideoCodecMetadata`].
     pub fn read_video_codec_metadata(&mut self) -> Result<VideoCodecMetadata> {
         let socket = self
             .video_socket
             .as_mut()
             .ok_or(Error::ServerNotStarted)?;
 
-        let mut buf = [0u8; 12];
-        socket.read_exact(&mut buf)?;
-        VideoCodecMetadata::parse(&buf)
+        // 1. codec id (4 bytes)
+        let mut codec_buf = [0u8; 4];
+        socket.read_exact(&mut codec_buf)?;
+        let mut meta = VideoCodecMetadata::parse(&codec_buf)?;
+
+        // 2. first session-meta packet (12 bytes, no payload)
+        let mut session_buf = [0u8; 12];
+        socket.read_exact(&mut session_buf)?;
+        if !crate::protocol::is_session_header(&session_buf) {
+            return Err(Error::Protocol(
+                "Expected session-meta packet after video codec id".to_string(),
+            ));
+        }
+        let session = crate::protocol::SessionMeta::parse(&session_buf)?;
+        meta.width = session.width;
+        meta.height = session.height;
+        Ok(meta)
     }
 
     /// Read the 4-byte audio codec metadata (codec id only).
