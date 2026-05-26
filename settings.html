@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>灵动岛 - 设置</title>
-  <link rel="stylesheet" href="src/css/settings.css" />
+  <link rel="stylesheet" href="src/css/settings/settings.css" />
 </head>
 <body>
   <div class="container">
@@ -142,87 +142,43 @@
         <div class="page" id="page-tools">
           <div class="setting-group">
             <div class="setting-group-title">aria2c</div>
-
-            <div class="setting-item">
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
               <div class="setting-label">
-                <h3>网易云音乐用户第一次使用请先去插件管理安装插件</h3>
-                <p>音乐依赖SMTC协议和开放api</p>
+                <h3>安装目录</h3>
+                <p>初始化会下载 aria2c，并解压到此目录下。</p>
               </div>
-              <div class="setting-control">
-                <button type="button" class="btn" data-nav-to="plugins">去插件管理</button>
-              </div>
+              <input id="aria2c-install-dir" class="input path" type="text" placeholder="aria2c 工具安装目录" />
             </div>
-            
-            <div class="setting-item">
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
               <div class="setting-label">
-                <h3>歌词显示模式</h3>
-                <p>控制收起状态下的音乐展示策略。</p>
+                <h3>aria2c 路径</h3>
+                <p>一个多线程下载器</p>
               </div>
-              <div class="setting-control">
-                <select id="lyric-mode" class="select">
-                  <option value="lyric">显示歌词</option>
-                  <option value="info">仅歌曲信息</option>
-                  <option value="off">关闭</option>
-                </select>
-              </div>
+              <div style="display:flex; gap:10px; width:100%;">
+                <input
+                    id = "aria2c-path"
+                    class="input path"
+                    type="text"
+                    placeholder="aria2c.exe"
+                    style="flex:1; min-width:0;"
+                />
+
+                <input
+                    id = "aria2c-thread"
+                    class="input path"
+                    type="text"
+                    placeholder="并发线程数"
+                    style="flex:0 0 90px;"
+                />
             </div>
-
-            <div class="setting-item">
-              <div class="setting-label">
-                <h3>歌词偏移补偿</h3>
-                <p>补偿请求歌词或 SMTC 带来的延迟，默认启用。</p>
+              <div class="actions">
+                <button id="aria2c-get-path-btn" class="btn" type="button">从 PATH 获取</button>
+                <button id="aria2c-init-btn" class="btn btn-primary" type="button">初始化 aria2c</button>
+                <button id="aria2c-check-btn" class="btn" type="button">命令检验</button>
+                <button id="aria2c-test-btn" class="btn" type="button">下载测试</button>
               </div>
-              <div class="setting-control">
-                <label class="switch">
-                  <input type="checkbox" id="lyric-offset-enabled" checked />
-                  <span class="slider"></span>
-                </label>
-              </div>
+              <div id="aria2c-check-result" class="mono" style="white-space: pre-line;">未检测</div>
             </div>
-
-            <div class="setting-item">
-              <div class="setting-label">
-                <h3>按播放器配置歌词补偿</h3>
-                <p>每个播放器单独存储，默认 0ms；进入后点 ±0.5s 即时生效（范围 ±3s）。</p>
-              </div>
-              <div class="setting-control">
-                <button type="button" class="btn" data-nav-to="lyric-offset">打开</button>
-              </div>
-            </div>
-
-
-            <div class="setting-item">
-              <div class="setting-label">
-                <h3>歌词获取方式: 内置库</h3>
-                <p>已经转移其他方法至此获取方式</p>
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-label">
-                <h3>SMTC 白名单</h3>
-                <p>只允许白名单中的 app_id 命中 SMTC（适合多播放器环境）。</p>
-              </div>
-              <div class="setting-control">
-                <label class="switch">
-                  <input type="checkbox" id="smtc-whitelist-enabled" />
-                  <span class="slider"></span>
-                </label>
-              </div>
-            </div>
-
-            <div class="setting-item" id="smtc-whitelist-content-group" style="display: block; border: none; padding: 0;">
-              <div class="setting-label" style="margin-bottom: 12px;">
-                <p>小白勿动</p>
-              </div>
-              <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <input id="smtc-whitelist-input" class="input" type="text" placeholder="输入 app_id，如 cloudmusic.exe" style="flex:1;" />
-                <button id="smtc-whitelist-add-btn" class="btn btn-primary">添加</button>
-              </div>
-              <div id="smtc-whitelist-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-            </div>
-
-            
           </div>
         </div>
         
