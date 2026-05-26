@@ -750,6 +750,7 @@ pub fn save_tools_settings(
         settings_data.sadb_port = port;
         *state.sadb_port.lock().unwrap() = port;
     }
+    let _ = save_settings_to_file(&settings_data);
 }
 
 
