@@ -3,8 +3,8 @@ import { showStatus } from "./settings-shared";
 import { InstallResult } from "./types";
 
 const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
-const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
-const aria2cThread = document.getElementById("aria2c-thread") as HTMLInputElement
+export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
+export const aria2cThread = document.getElementById("aria2c-thread") as HTMLInputElement
 const aria2cGetPathBtn = document.getElementById("aria2c-get-path-btn") as HTMLButtonElement
 const aria2cInitBtn = document.getElementById("aria2c-init-btn") as HTMLButtonElement
 const aria2cCheckBtn = document.getElementById("aria2c-check-btn") as HTMLButtonElement

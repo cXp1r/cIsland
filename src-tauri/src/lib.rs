@@ -15,7 +15,7 @@ mod email;
 mod agent_hooks;
 mod tools;
 mod model;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU32, AtomicI32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, AtomicU32, AtomicI32, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -264,6 +264,7 @@ pub fn run() {
             settings::get_smtc_whitelist_enabled, settings::set_smtc_whitelist_enabled,
             settings::get_preview_updates, settings::set_preview_updates,
             settings::get_show_preview_toggle, settings::set_show_preview_toggle,
+            settings::save_tools_settings,
             updater::get_app_version, updater::check_for_updates, updater::download_and_install_update,
             logger::get_log_path, logger::open_log_dir, logger::get_log_level_num,
             logger::get_log_level, logger::set_log_level,
@@ -390,6 +391,8 @@ pub fn run() {
             let email_shortcut = Arc::new(Mutex::new(settings.email_shortcut.clone()));
             let cached_email_metas: Arc<Mutex<Vec<email::EmailMeta>>> = Arc::new(Mutex::new(email::load_email_metas()));
             
+            let aria2c_thread = Arc::new(AtomicU8::new(settings.aria2c_thread));
+            let aria2c_path = Arc::new(Mutex::new(settings.aria2c_path));
             media::update_smtc_whitelist(
                 smtc_whitelist_enabled.load(Ordering::Relaxed),
                 smtc_app_whitelist.lock().unwrap().clone(),
@@ -459,6 +462,8 @@ pub fn run() {
                 latest_email_uid: latest_email_uid.clone(),
                 email_shortcut: email_shortcut.clone(),
                 cached_email_metas: cached_email_metas.clone(),
+                aria2c_thread: aria2c_thread.clone(),
+                aria2c_path: aria2c_path.clone(),
             });
 
             // --- 系统托盘 ---
@@ -1531,6 +1536,9 @@ pub struct IslandState {
     pub sadb_idle: Arc<AtomicBool>,
     /// 镜像流正常推送中（视频帧在传输），用于允许拖动不回弹
     pub sadb_mirroring: Arc<AtomicBool>,
+
+    pub aria2c_path: Arc<Mutex<String>>,
+    pub aria2c_thread: Arc<AtomicU8>,//上限16,下限1
 }
 
 unsafe impl Send for IslandState {}

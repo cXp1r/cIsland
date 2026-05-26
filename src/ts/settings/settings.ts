@@ -14,8 +14,7 @@ import { initBlacklist } from "./settings-blacklist";
 import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
-import { initTools } from "./tools";
-
+import { aria2cThread, aria2cPath, initTools } from "./tools";
 const TAG = "Settings";
 
 const clipboardToggle = document.getElementById("clipboard-toggle") as HTMLInputElement;
@@ -157,14 +156,19 @@ saveBtn.addEventListener("click", async () => {
       logFilterInvert: logFilterInvertToggle ? logFilterInvertToggle.checked : undefined,
       sadbIp: adbValues.sadbIp,
       sadbPort: adbValues.sadbPort,
-      adbInstallDir: adbValues.adbInstallDir,
-      adbPath: adbValues.adbPath,
       emailPollIntervalSecs: Math.max(1, parseInt(emailPollIntervalInput.value) || 1),
       emailUsername: emailUsernameInput.value.trim(),
       emailAuth: emailAuthInput.value.trim(),
       emailAddress: emailAddressInput.value.trim(),
       emailPort: parseInt(emailPortInput.value) || 993,
       emailShortcut: q4,
+    });
+
+    await invoke('save_tools_settings', {
+      adbInstallDir: adbValues.adbInstallDir,
+      adbPath: adbValues.adbPath,
+      aria2cPath: aria2cPath.value,
+      aria2cThread: parseInt(aria2cThread.value) <= 0 ? 4 : (parseInt(aria2cThread.value) > 16 ? 16 : parseInt(aria2cThread.value)),
     });
 
     // 保存 AI 设置

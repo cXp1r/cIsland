@@ -128,6 +128,10 @@ pub(crate) struct SettingsData {
     pub email_poll_interval_secs: u64,
     #[serde(default = "default_email_shortcut")]
     pub email_shortcut: String,
+    #[serde(default)]
+    pub aria2c_thread: u8,
+    #[serde(default)]
+    pub aria2c_path: String,
 }
 
 
@@ -277,6 +281,8 @@ fn default_settings() -> SettingsData {
         email_port: default_email_port(),
         email_poll_interval_secs: default_email_poll_interval_secs(),
         email_shortcut: default_email_shortcut(),
+        aria2c_path: String::new(),
+        aria2c_thread: 4,
     }
 }
 pub(crate) fn load_settings_from_file() -> SettingsData {
@@ -348,6 +354,8 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         email_port: ec_port,
         email_poll_interval_secs: state.email_poll_interval_secs.load(Ordering::Relaxed),
         email_shortcut: state.email_shortcut.lock().unwrap().clone(),
+        aria2c_path: state.aria2c_path.lock().unwrap().clone(),
+        aria2c_thread: state.aria2c_thread.load(Ordering::Relaxed),
     }
 }
 
@@ -451,8 +459,6 @@ pub fn save_settings(
     log_filter_invert: Option<bool>,
     sadb_ip: Option<String>,
     sadb_port: Option<u16>,
-    adb_install_dir: Option<String>,
-    adb_path: Option<String>,
     email_poll_interval_secs: Option<u64>,
     email_username: Option<String>,
     email_auth: Option<String>,
@@ -677,14 +683,6 @@ pub fn save_settings(
         settings_data.sadb_port = port;
         *state.sadb_port.lock().unwrap() = port;
     }
-    if let Some(dir) = adb_install_dir {
-        settings_data.adb_install_dir = dir.clone();
-        *state.adb_install_dir.lock().unwrap() = dir;
-    }
-    if let Some(path) = adb_path {
-        settings_data.adb_path = path.clone();
-        *state.adb_path.lock().unwrap() = path;
-    }
     if let Some(secs) = email_poll_interval_secs {
         let secs = secs.max(1);
         settings_data.email_poll_interval_secs = secs;
@@ -715,6 +713,34 @@ pub fn save_settings(
     let _ = save_settings_to_file(&settings_data);
 }
 
+//tools以后会变多,早日独立
+#[tauri::command]
+pub fn save_tools_settings(
+    state: tauri::State<'_, IslandState>,
+    adb_install_dir: Option<String>,
+    adb_path: Option<String>,
+    aria2c_thread: Option<u8>,
+    aria2c_path: Option<String>,
+    
+) {
+    let mut settings_data = build_settings_data(&state);
+    if let Some(aria2c_thread) = aria2c_thread {
+        settings_data.aria2c_thread = aria2c_thread;
+        state.aria2c_thread.store(aria2c_thread, Ordering::Relaxed);
+    }
+    if let Some(aria2c_path) = aria2c_path {
+        settings_data.aria2c_path = aria2c_path.clone();
+        *state.aria2c_path.lock().unwrap() = aria2c_path;
+    }
+    if let Some(dir) = adb_install_dir {
+        settings_data.adb_install_dir = dir.clone();
+        *state.adb_install_dir.lock().unwrap() = dir;
+    }
+    if let Some(path) = adb_path {
+        settings_data.adb_path = path.clone();
+        *state.adb_path.lock().unwrap() = path;
+    }
+}
 // ===== 歌词补偿（按播放器） =====
 
 /// 返回 settings 页子页需要的状态：开关、步进、范围、各播放器 offset、当前命中 app_id
