@@ -35,18 +35,9 @@ pub struct InstallResult {
     downloaded_zip: String,
 }
 
-
 #[derive(Debug, Serialize)]
-pub struct AdbDeviceInfo {
-    serial: String,
-    state: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct AdbDevicesResult {
+pub struct TestResult {
     ok: bool,
-    adb_path: String,
-    devices: Vec<AdbDeviceInfo>,
     stdout: String,
     stderr: String,
 }
@@ -61,15 +52,14 @@ pub struct AdbCommandResult {
 
 #[tauri::command]
 pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
-    let arg = match tag {
-        _ => "--version",
+    let args = match tag {
+        _ => vec!["--version"],
     };
-    println!("{} {}", path, arg);
     let output = Command::new(path)
-        .arg(arg)
+        .args(&args)
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("failed to run {} {}: {}",path, arg, e))?;
+        .map_err(|e| format!("failed to run {} {:?}: {}",path, args, e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -89,37 +79,25 @@ pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
     Ok(i)
 }
 
-
-fn run_adb_devices(adb_path: &str) -> Result<AdbDevicesResult, String> {
-    let output = Command::new(adb_path)
-        .arg("devices")
+#[tauri::command]
+pub fn test(path: &str, tag: &str) -> Result<TestResult, String> {
+    let args = match tag {
+        "adb" => vec!["devices"],
+        "aria2c" => vec!["-x", "16", "-s", "16", "https://github.com/cXp1r/tauri-island/blob/main/README.md"],
+        _ => vec!["--version"],
+    };
+    let output = Command::new(path)
+        .args(&args)
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("failed to run adb devices: {}", e))?;
+        .map_err(|e| format!("failed to run {} {:?}: {}",path, args, e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-    let devices = stdout
-        .lines()
-        .skip(1)
-        .filter_map(|line| {
-            let mut parts = line.split_whitespace();
-            let serial = parts.next()?.trim();
-            let state = parts.next()?.trim();
-            if serial.is_empty() || state.is_empty() {
-                return None;
-            }
-            Some(AdbDeviceInfo {
-                serial: serial.to_string(),
-                state: state.to_string(),
-            })
-        })
-        .collect();
 
-    Ok(AdbDevicesResult {
+
+    Ok(TestResult {
         ok: output.status.success(),
-        adb_path: adb_path.to_string(),
-        devices,
         stdout,
         stderr,
     })
@@ -201,12 +179,6 @@ pub fn find_path_by_where(name: &str) -> Result<String, String> {
 }
 
 
-
-#[tauri::command]
-pub fn tools_check_adb_devices(adb_path: Option<String>) -> Result<AdbDevicesResult, String> {
-    let adb_path = adb_path.unwrap_or_else(|| "adb".to_string());
-    run_adb_devices(&adb_path)
-}
 
 #[tauri::command]
 pub fn tools_kill_adb_server(adb_path: Option<String>) -> Result<AdbCommandResult, String> {

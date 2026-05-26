@@ -68,15 +68,9 @@ export type CheckResult = {
   stderr: string;
 };
 
-export type AdbDeviceInfo = {
-  serial: string;
-  state: string;
-};
 
-export type AdbDevicesResult = {
+export type TestResult = {
   ok: boolean;
-  adb_path: string;
-  devices: AdbDeviceInfo[];
   stdout: string;
   stderr: string;
 };

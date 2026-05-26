@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./settings-shared";
-import { CheckResult, InstallResult, ToolsSettingsResponse } from "./types";
+import { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
 
 export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
 export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
@@ -16,12 +16,13 @@ export const adbPath = document.getElementById("adb-path") as HTMLInputElement;
 const adbGetPathBtn = document.getElementById("adb-path-from-path-btn") as HTMLButtonElement;
 const adbInitBtn = document.getElementById("adb-init-btn") as HTMLButtonElement;
 const adbCheckBtn = document.getElementById("adb-check-btn") as HTMLButtonElement;
-const adbTestBtn = document.getElementById("adb-connect-device-btn") as HTMLButtonElement;
+const adbTestBtn = document.getElementById("adb-devices-btn") as HTMLButtonElement;
+
 const adbKillServerBtn = document.getElementById("adb-kill-server-btn") as HTMLButtonElement;
 const adbResult = document.getElementById("adb-check-result") as HTMLInputElement;
 
 //需要单独添加
-const adbDeviceBtn = document.getElementById("adb-devices-btn") as HTMLButtonElement;
+const adbConnBtn = document.getElementById("adb-connect-device-btn") as HTMLButtonElement;
 
 let WORKSPACE: string | null = null;
 
@@ -48,16 +49,10 @@ const modules = {
         name: "adb",
     },
 };
-let rtimer: number | null = null;
-function setResult(e: HTMLInputElement, t: string, i = false, s = 3000) {
+
+function setResult(e: HTMLInputElement, t: string, i = false) {
     e.textContent = t;
     e.style.color = i ? "#ff6f7f" : "var(--text)";
-    if (rtimer) {
-        rtimer = null;
-    }
-    rtimer = (window.setTimeout(()=>{
-        e.textContent = "待操作"
-    }, s));
 }
 function sanitize(v: string) {
     return v.replace(/[^a-zA-Z0-9_/\\\:]/g, "");
@@ -86,7 +81,7 @@ export function initTools(): void {
                 const installDir = ui.installDir.value.trim();
                 
                 if (!installDir) {
-                    setResult(ui.result, `请先填写 ${ui.name} 工具安装目录。`, true);
+                    setResult(ui.result, `请先填写 ${ui.name} 工具安装目录。`);
                     showStatus(`请先填写 ${ui.name} 工具安装目录`, true);
                     return;
                 }
@@ -99,12 +94,14 @@ export function initTools(): void {
                         name: ui.name,
                     });
                     setResult(
-                        ui.result,[
-                        "初始化完成",
-                        `安装目录: ${result.install_dir}`,
-                        `${ui.name} 路径: ${result.path}`,
-                        "请点击「保存设置」保留该配置。",
-                    ].join("\n"));
+                        ui.result,
+                        [
+                            "初始化完成",
+                            `安装目录: ${result.install_dir}`,
+                            `${ui.name} 路径: ${result.path}`,
+                            "请点击「保存设置」保留该配置。",
+                        ].join("\n")
+                    );
                     ui.path.value = result.path;
                     showStatus(`${ui.name} 初始化完成，请保存设置`, false, 5000);
                 } catch (e) {
@@ -175,13 +172,21 @@ export function initTools(): void {
                 );
 
                 try {
-                    const testOpt = await invoke<string>(
-                        "test_" + ui.name
+                    const testOpt = await invoke<TestResult>(
+                        "test",
+                        {
+                            path: ui.path.value,
+                            tag: ui.name,
+                        }
                     );
                     
                     setResult(
                         ui.result,
-                        `${ui.name} opt: ${testOpt}`
+                        [
+                            testOpt.ok ? "测试命令通过" : "测试命令失败",
+                            testOpt.stdout.trim() ? `stdout:\n${testOpt.stdout.trim()}` : "",
+                            testOpt.stderr.trim() ? `stderr:\n${testOpt.stderr.trim()}` : "",
+                        ].filter(Boolean).join("\n")
                     );
                 } catch (e) {
                     setResult(
