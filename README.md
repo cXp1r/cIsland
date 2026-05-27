@@ -147,3 +147,5 @@ tauri-island/
 - 预览更新通道
 - 日志级别
 
+Copyright (c) 2026 Pyisland
+All rights reserved
