@@ -253,7 +253,7 @@ export function initTools(): void {
 export async function saveToolsSettings() {
     await invoke('save_tools_settings', {
         sadbIp: sadbIpInput.value.trim(),
-        sadbPort:  parseInt(sadbPortInput.value) <= 0 ? 5555 : (parseInt(sadbPortInput.value) >= 65535 ? 5555 : parseInt(aria2cThread.value)),
+        sadbPort:  parseInt(sadbPortInput.value) <= 0 ? 5555 : (parseInt(sadbPortInput.value) >= 65535 ? 5555 : parseInt(sadbPortInput.value)),
         adbInstallDir: adb1.value,
         adbPath: adbPath.value,
         aria2cInstallDir: aria2c1.value,
