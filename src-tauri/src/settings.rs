@@ -49,7 +49,9 @@ use winreg::RegKey;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct SettingsData {
+    #[serde(default)]
     pub offset_x: i32,
+    #[serde(default)]
     pub offset_y: i32,
     #[serde(default = "get_primary_monitor_info")]
     pub primary_monitor_info: MonitorInfo,
@@ -134,11 +136,16 @@ pub(crate) struct SettingsData {
     pub aria2c_path: String,
     #[serde(default)]
     pub aria2c_install_dir: String,
-    #[serde(default)]
+    #[serde(default = "default_aria2c_rpc_port")]
     pub aria2c_rpc_port: u16,
     #[serde(default = "default_aria2c_rpc_secret")]
     pub aria2c_rpc_secret: String,
 }
+
+fn default_aria2c_rpc_port() -> u16 {
+    6800
+}
+
 fn default_aria2c_rpc_secret() -> String {
     "灯灯侑侑天下第一".into()
 }
@@ -438,16 +445,14 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
 
 #[tauri::command]
 pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
-    let adb_install_dir = state.adb_install_dir.lock().unwrap().clone();
-    let adb_path = state.adb_path.lock().unwrap().clone();
-    let aria2c_path = state.aria2c_path.lock().unwrap().clone();
-    let aria2c_thread = state.aria2c_thread.load(Ordering::Relaxed);
     serde_json::json!({
-        "adb_install_dir": adb_install_dir,
-        "adb_path": adb_path,
+        "adb_install_dir": state.adb_install_dir.lock().unwrap().clone(),
+        "adb_path": state.adb_path.lock().unwrap().clone(),
         "aria2c_install_dir":  state.aria2c_install_dir.lock().unwrap().clone(),
-        "aria2c_path": aria2c_path,
-        "aria2c_thread": aria2c_thread,
+        "aria2c_path": state.aria2c_path.lock().unwrap().clone(),
+        "aria2c_thread": state.aria2c_thread.load(Ordering::Relaxed),
+        "aria2c_rpc_port": state.aria2c_rpc_port.load(Ordering::Relaxed),
+        "aria2c_rpc_secret": state.aria2c_rpc_secret.lock().unwrap().clone(),
     })
 }
 

@@ -1,3 +1,4 @@
+import { LargeNumberLike } from "crypto";
 import type { MonitorInfo } from "./screens-frame";
 
 export type SettingsResponse = {
@@ -38,6 +39,8 @@ export type ToolsSettingsResponse = {
   adb_path: string;
   aria2c_path: string;
   aria2c_thread: number;
+  aria2c_rpc_port: number;
+  aria2c_rpc_secret: string;
 }
 
 export type AISettingsResponse = {

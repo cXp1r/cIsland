@@ -155,7 +155,7 @@
                 <h3>aria2c 路径</h3>
                 <p>一个多线程下载器</p>
               </div>
-              <div style="display:flex; gap:10px; width:100%;">
+              <div id="jshint" style="display:flex; gap:10px; width:100%;">
                 <input
                     id="aria2c-path"
                     class="input path"
@@ -171,7 +171,28 @@
                     placeholder="并发线程数"
                     style="flex:0 0 90px;"
                 />
-            </div>
+              </div>
+              <div class="setting-label">
+                <h3>aria2c服务器配置</h3>
+                <p>第一个为密钥, 第二个为端口值</p>
+              </div>
+              <div style="display:flex; gap:10px; width:100%;">
+                <input
+                    id="aria2c-rpc-secret"
+                    class="input path"
+                    type="text"
+                    placeholder="和服务器通信的密钥,留空则使用作者内置的密钥"
+                    style="flex:1; min-width:0;"
+                />
+
+                <input
+                    id="aria2c-rpc-port"
+                    class="input path"
+                    type="text"
+                    placeholder="服务器端口"
+                    style="flex:0 0 90px;"
+                />
+              </div>
               <div class="actions">
                 <button id="aria2c-get-path-btn" class="btn" type="button">从 PATH 获取</button>
                 <button id="aria2c-init-btn" class="btn btn-primary" type="button">初始化 aria2c</button>

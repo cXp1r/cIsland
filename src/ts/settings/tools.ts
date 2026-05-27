@@ -18,17 +18,18 @@ const adbGetPathBtn = document.getElementById("adb-path-from-path-btn") as HTMLB
 const adbInitBtn = document.getElementById("adb-init-btn") as HTMLButtonElement;
 const adbCheckBtn = document.getElementById("adb-check-btn") as HTMLButtonElement;
 const adbTestBtn = document.getElementById("adb-devices-btn") as HTMLButtonElement;
+const adbResult = document.getElementById("adb-check-result") as HTMLInputElement;
 
 export const sadbIpInput = document.getElementById("sadb-ip") as HTMLInputElement;
 export const sadbPortInput = document.getElementById("sadb-port") as HTMLInputElement;
 
 
 const adbKillServerBtn = document.getElementById("adb-kill-server-btn") as HTMLButtonElement;
-const adbResult = document.getElementById("adb-check-result") as HTMLInputElement;
 
 //需要单独添加
 const adbConnBtn = document.getElementById("adb-connect-device-btn") as HTMLButtonElement;
-
+const aria2cRpcPort = document.getElementById("aria2c-rpc-port") as HTMLInputElement;
+const aria2cRpcSecret = document.getElementById("aria2c-rpc-secret") as HTMLInputElement;
 let WORKSPACE: string | null = null;
 
 
@@ -72,6 +73,8 @@ export function initTools(): void {
         adb1.value = r.adb_install_dir;
         aria2cPath.value = r.aria2c_path;
         aria2cThread.value = r.aria2c_thread.toString();
+        aria2cRpcSecret.value = r.aria2c_rpc_secret === "灯灯侑侑天下第一" ? "" : r.aria2c_rpc_secret;
+        aria2cRpcPort.value = r.aria2c_rpc_port.toString()
         initDownloader();
     })
 
