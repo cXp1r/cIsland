@@ -271,7 +271,7 @@ pub fn run() {
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
             get_workspace, get_user_dir,
             tools::tools_download_and_install_from_github, tools::find_path_by_where,//两个通用函数
-            tools::check, tools::test, tools::open_dir,
+            tools::check, tools::test, tools::open_path,
             tools::tools_kill_adb_server, tools::aria2c_download,
             tools::tools_download_and_install_adb,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,

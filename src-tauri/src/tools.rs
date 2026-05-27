@@ -50,15 +50,13 @@ pub struct AdbCommandResult {
     stdout: String,
     stderr: String,
 }
+use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
-pub fn open_dir(dir: &str) {
-    match Command::new("explorer")
-        .arg(dir)
-        .spawn() 
-    {
-        _ => {}
-    }
+pub fn open_path(app: tauri::AppHandle, path: String) {
+    app.opener()
+        .open_path(path, None::<String>)
+        .expect("failed to open");
 }
 
 #[tauri::command]
