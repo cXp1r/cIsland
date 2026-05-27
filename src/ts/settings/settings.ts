@@ -14,6 +14,7 @@ import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
 import { saveToolsSettings, initTools } from "./tools";
+
 const TAG = "Settings";
 
 const clipboardToggle = document.getElementById("clipboard-toggle") as HTMLInputElement;
@@ -39,6 +40,8 @@ const emailAddressInput = document.getElementById("email-address") as HTMLInputE
 const emailPortInput = document.getElementById("email-port") as HTMLInputElement;
 const emailShortcutInput = document.getElementById("email-shortcut-input") as HTMLInputElement;
 
+export let WORKSPACE: string = "";
+export const setWORKSPACE = (v: string) => { WORKSPACE = v}
 let isRecording = false;
 const shortcutHint = "请按下快捷键...";
 
@@ -285,3 +288,9 @@ initUpdate();
 initBlacklist();
 initSmtcWhitelist();
 initLogFilter();
+
+
+const openCfgBtn = document.getElementById("open-cfg-btn") as HTMLButtonElement;
+openCfgBtn.addEventListener("click", async () => {
+  await invoke('open_path', { path: WORKSPACE + "settings.json" });
+})
