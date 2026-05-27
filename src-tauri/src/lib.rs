@@ -15,10 +15,12 @@ mod email;
 mod agent_hooks;
 mod tools;
 mod model;
-use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, AtomicU32, AtomicI32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU64, AtomicU32, AtomicI32, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
+use std::os::windows::process::CommandExt;
+
 
 use tauri::{Emitter, Manager};
 use std::path::PathBuf;
@@ -31,25 +33,12 @@ use windows::Win32::Foundation::HWND;
 use ai::ChatMessage;
 use email::Email;
 use link_handler::LinkHandler;
-
+use std::process::{Child, Command};
 use crate::window::MonitorInfo;
+
 
 pub(crate) const WIN_W: f64 = 140.0;
 pub(crate) const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-// ── 胶囊尺寸（与 base.css :root 变量对应） ──
-#[allow(unused)]
-pub(crate) const CAPSULE_COLLAPSED_W: f64 = 140.0; // CSS --collapsed-w
-#[allow(unused)]
-pub(crate) const CAPSULE_COLLAPSED_H: f64 = 50.0;  // CSS --collapsed-h
-#[allow(unused)]
-pub(crate) const CAPSULE_LYRIC_W: f64 = 340.0;     // CSS --lyric-collapsed-w
-#[allow(unused)]
-pub(crate) const CAPSULE_EXPANDED_W: f64 = 330.0;  // CSS --expanded-w
-#[allow(unused)]
-pub(crate) const CAPSULE_EXPANDED_H: f64 = 74.0;   // CSS --expanded-h
-#[allow(unused)]
-pub(crate) const CAPSULE_TOP_PAD: f64 = 5.0;       // body padding-top
 
 pub(crate) const WIN_H_DEFAULT: f64 = 84.0;        // CAPSULE_EXPANDED_H + padding
 
@@ -401,7 +390,22 @@ pub fn run() {
             
             let aria2c_install_dir = Arc::new(Mutex::new(settings.aria2c_install_dir));
             let aria2c_thread = Arc::new(AtomicU8::new(settings.aria2c_thread));
-            let aria2c_path = Arc::new(Mutex::new(settings.aria2c_path));
+            let aria2c_path = Arc::new(Mutex::new(settings.aria2c_path.clone()));
+            
+            let aria2c_rpc_port = Arc::new(AtomicU16::new(settings.aria2c_rpc_port));
+            let aria2c_rpc_client = reqwest::Client::new();
+            let aria2c_rpc_secret = Arc::new(Mutex::new(settings.aria2c_rpc_secret.clone()));
+            let args = vec![
+                "--enable-rpc".into(),
+                format!("--rpc-listen-port={}", &settings.aria2c_rpc_port),//等待可调配置
+                format!("--rpc-secret={}", &settings.aria2c_rpc_secret),
+                "--continue=true".into(),
+            ];
+            let aria2c_process = Command::new(settings.aria2c_path)
+                .args(&args)
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn()
+                .unwrap();
             media::update_smtc_whitelist(
                 smtc_whitelist_enabled.load(Ordering::Relaxed),
                 smtc_app_whitelist.lock().unwrap().clone(),
@@ -474,6 +478,10 @@ pub fn run() {
                 aria2c_thread: aria2c_thread.clone(),
                 aria2c_install_dir: aria2c_install_dir.clone(),
                 aria2c_path: aria2c_path.clone(),
+                aria2c_process: Arc::new(Mutex::new(aria2c_process)),
+                aria2c_rpc_client,
+                aria2c_rpc_secret,
+                aria2c_rpc_port,
             });
 
             // --- 系统托盘 ---
@@ -1557,6 +1565,10 @@ pub struct IslandState {
     pub aria2c_install_dir: Arc<Mutex<String>>,
     pub aria2c_path: Arc<Mutex<String>>,
     pub aria2c_thread: Arc<AtomicU8>,//上限16,下限1
+    pub aria2c_process: Arc<Mutex<Child>>,
+    pub aria2c_rpc_client: reqwest::Client,
+    pub aria2c_rpc_secret: Arc<Mutex<String>>,
+    pub aria2c_rpc_port: Arc<AtomicU16>,
 }
 
 unsafe impl Send for IslandState {}

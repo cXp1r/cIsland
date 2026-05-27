@@ -24,12 +24,11 @@ export function initDownloader() {
     })
     downloadBtn.addEventListener("click", async () => {
         
-        let opt = await invoke<TestResult>('aria2c_download', {
+        await invoke<TestResult>('aria2c_download', {
             url: url.value,
             dir: saveDir.value,
             thread: parseInt(thread.value) <= 0 ? 4 : (parseInt(thread.value) > 16 ? 16 : parseInt(thread.value)),
         })
-        
     });
     openDivBtn.addEventListener("click", async () => {
         await invoke('open_dir', { dir: saveDir.value })

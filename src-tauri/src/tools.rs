@@ -3,7 +3,9 @@ use std::io::{self, Cursor, Read};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::Ordering;
 use serde::{Deserialize, Serialize};
+use windows::core::Param;
 use zip::ZipArchive;
 use crate::IslandState;
 use crate::{CREATE_NO_WINDOW, logger};
@@ -16,7 +18,6 @@ use regex::Regex;
 static RE0: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(aria2-[\d\.]+)-win-64bit[^\.]+.zip").unwrap()
 });
-
 
 
 #[derive(Debug, Serialize)]
@@ -418,4 +419,154 @@ pub fn tools_download_and_install_from_github(idir: String, name: String) -> Res
         }
     }
     return Err("候选项里没有预期程序(包)".into())
+}
+
+use reqwest::Client;
+use serde_json::json;
+
+pub async fn add_uri(
+    client: &Client,
+    url: &str,
+    secret: &str,
+    port: u16,
+    x: u8,
+) -> Result<String, String> {
+
+    let body = json!({
+        "jsonrpc": "2.0",
+        "id": "qwer",
+        "method": "aria2.addUri",
+        "params": [
+            format!("token:{}", secret),
+            [url],
+            {
+                "split": x,
+                "max-connection-per-server": x
+            }
+        ]
+    });
+
+    let res = client
+        .post(format!("http://127.0.0.1:{}/jsonrpc", port))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let value: serde_json::Value = res
+        .json()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let gid = value["result"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+
+    Ok(gid)
+}
+
+pub async fn tell_status(
+    client: &Client,
+    secret: &str,
+    port: u16,
+    gid: &str,
+) -> Result<serde_json::Value, String> {
+
+    let body = json!({
+        "jsonrpc": "2.0",
+        "id": "qwer",
+        "method": "aria2.tellStatus",
+        "params": [
+            format!("token:{}", secret),
+            gid
+        ]
+    });
+
+    let res = client
+        .post(format!("http://127.0.0.1:{}/jsonrpc", port))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let value = res
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(value)
+}
+
+#[tauri::command]
+pub async fn aria2c_rpc_download(
+    window: tauri::Window,
+    state: tauri::State<'_, IslandState>,
+    url: String,
+) -> Result<(), String> {
+    let client = state.aria2c_rpc_client.clone();
+    let port = state.aria2c_rpc_port.load(Ordering::Relaxed);
+    let secret = state.aria2c_rpc_secret.lock().unwrap().clone();
+    let x = state.aria2c_thread.load(Ordering::Relaxed);
+
+    let gid = add_uri(&client, &url, &secret, port, x).await?;
+
+    let client_clone = client.clone();
+    let win = window.clone();
+
+    tokio::spawn(async move {
+
+        loop {
+
+            let status = tell_status(
+                &client_clone,
+                &secret,
+                port,
+                &gid
+            ).await;
+
+            if let Ok(v) = status {
+
+                let result = &v["result"];
+
+                let completed: f64 = result["completedLength"]
+                    .as_str()
+                    .unwrap_or("0")
+                    .parse()
+                    .unwrap_or(0.0);
+
+                let total: f64 = result["totalLength"]
+                    .as_str()
+                    .unwrap_or("1")
+                    .parse()
+                    .unwrap_or(1.0);
+
+                let speed = result["downloadSpeed"]
+                    .as_str()
+                    .unwrap_or("0");
+
+                let progress = completed / total;
+
+                /*let _ = win.emit("download-progress", serde_json::json!({
+                    "gid": gid,
+                    "progress": progress,
+                    "speed": speed,
+                }));*/
+
+                let status_str = result["status"]
+                    .as_str()
+                    .unwrap_or("");
+
+                if status_str == "complete" {
+                    break;
+                }
+            }
+
+            tokio::time::sleep(
+                std::time::Duration::from_secs(1)
+            ).await;
+        }
+    });
+
+    Ok(())
 }

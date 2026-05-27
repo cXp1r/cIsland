@@ -134,8 +134,14 @@ pub(crate) struct SettingsData {
     pub aria2c_path: String,
     #[serde(default)]
     pub aria2c_install_dir: String,
+    #[serde(default)]
+    pub aria2c_rpc_port: u16,
+    #[serde(default = "default_aria2c_rpc_secret")]
+    pub aria2c_rpc_secret: String,
 }
-
+fn default_aria2c_rpc_secret() -> String {
+    "灯灯侑侑天下第一".into()
+}
 
 fn default_email_poll_interval_secs() -> u64 {
     1
@@ -276,6 +282,8 @@ fn default_settings() -> SettingsData {
         aria2c_install_dir: String::new(),
         aria2c_path: String::new(),
         aria2c_thread: 4,
+        aria2c_rpc_port: 6800,
+        aria2c_rpc_secret: default_aria2c_rpc_secret(),
     }
 }
 pub(crate) fn load_settings_from_file() -> SettingsData {
@@ -350,6 +358,8 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         aria2c_install_dir: state.aria2c_install_dir.lock().unwrap().clone(),
         aria2c_path: state.aria2c_path.lock().unwrap().clone(),
         aria2c_thread: state.aria2c_thread.load(Ordering::Relaxed),
+        aria2c_rpc_port: state.aria2c_rpc_port.load(Ordering::Relaxed),
+        aria2c_rpc_secret: state.aria2c_rpc_secret.lock().unwrap().clone(),
     }
 }
 
