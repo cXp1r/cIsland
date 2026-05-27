@@ -353,7 +353,7 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         log_filter_tags: crate::logger::get_filter_tags(),
         log_filter_invert: crate::logger::get_filter_invert(),
         sadb_ip: state.sadb_ip.lock().unwrap().clone(),
-        sadb_port: *state.sadb_port.lock().unwrap(),
+        sadb_port: state.sadb_port.load(Ordering::Relaxed),
         adb_install_dir: state.adb_install_dir.lock().unwrap().clone(),
         adb_path: state.adb_path.lock().unwrap().clone(),
         email_username: ec_username,
@@ -386,51 +386,37 @@ pub fn open_settings(app: tauri::AppHandle) {
     }
 }
 
+
 #[tauri::command]
 pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
-    let shortcut = state.shortcut_key.lock().unwrap().clone();
-    let clipboard_enabled = state.clipboard_enabled.load(Ordering::Relaxed);
-    let lyric_mode = state.lyric_mode.lock().unwrap().clone();
-    let lyric_offset_enabled = state.lyric_offset_enabled.load(Ordering::Relaxed);
-    let indicator_color = state.indicator_color.lock().unwrap().clone();
-    let agent_window_size = state.agent_window_size.lock().unwrap().clone();
-    let weather_city = state.weather_city.lock().unwrap().clone();
-    let weather_lat = *state.weather_lat.lock().unwrap();
-    let weather_lon = *state.weather_lon.lock().unwrap();
-    let auto_start = state.auto_start.load(Ordering::Relaxed);
-    let smtc_whitelist_enabled = state.smtc_whitelist_enabled.load(Ordering::Relaxed);
-    let smtc_app_whitelist = state.smtc_app_whitelist.lock().unwrap().clone();
-    let sadb_ip = state.sadb_ip.lock().unwrap().clone();
-    let sadb_port = *state.sadb_port.lock().unwrap();
-    let email_poll_interval_secs = state.email_poll_interval_secs.load(Ordering::Relaxed);
     let email_cfg = state.email_config.lock().unwrap();
     let email_username = email_cfg.username.clone();
     let email_auth = email_cfg.auth.clone();
     let email_address = email_cfg.address.clone();
     let email_port = email_cfg.port;
-
     drop(email_cfg);
+
     serde_json::json!({
-        "clipboard_enabled": clipboard_enabled,
-        "shortcut_key": shortcut,
+        "clipboard_enabled": state.clipboard_enabled.load(Ordering::Relaxed),
+        "shortcut_key": state.shortcut_key.lock().unwrap().clone(),
         "search_shortcut": state.search_shortcut.lock().unwrap().clone(),
         "hide_and_see_key": state.hide_and_see_key.lock().unwrap().clone(),
-        "lyric_mode": lyric_mode,
-        "lyric_offset_enabled": lyric_offset_enabled,
-        "indicator_color": indicator_color,
-        "agent_window_size": agent_window_size,
-        "weather_city": weather_city,
-        "weather_lat": weather_lat,
-        "weather_lon": weather_lon,
-        "auto_start": auto_start,
-        "smtc_whitelist_enabled": smtc_whitelist_enabled,
-        "smtc_app_whitelist": smtc_app_whitelist,
+        "lyric_mode": state.lyric_mode.lock().unwrap().clone(),
+        "lyric_offset_enabled": state.lyric_offset_enabled.load(Ordering::Relaxed),
+        "indicator_color": state.indicator_color.lock().unwrap().clone(),
+        "agent_window_size": state.agent_window_size.lock().unwrap().clone(),
+        "weather_city": state.weather_city.lock().unwrap().clone(),
+        "weather_lat": *state.weather_lat.lock().unwrap(),
+        "weather_lon": *state.weather_lon.lock().unwrap(),
+        "auto_start": state.auto_start.load(Ordering::Relaxed),
+        "smtc_whitelist_enabled": state.smtc_whitelist_enabled.load(Ordering::Relaxed),
+        "smtc_app_whitelist": state.smtc_app_whitelist.lock().unwrap().clone(),
         "log_level": crate::logger::get_level(),
         "log_filter_tags": crate::logger::get_filter_tags(),
         "log_filter_invert": crate::logger::get_filter_invert(),
-        "sadb_ip": sadb_ip,
-        "sadb_port": sadb_port,
-        "email_poll_interval_secs": email_poll_interval_secs,
+        "sadb_ip": state.sadb_ip.lock().unwrap().clone(),
+        "sadb_port": state.sadb_port.load(Ordering::Relaxed),
+        "email_poll_interval_secs": state.email_poll_interval_secs.load(Ordering::Relaxed),
         "email_username": email_username,
         "email_auth": email_auth,
         "email_address": email_address,
@@ -732,6 +718,8 @@ pub fn save_tools_settings(
     aria2c_thread: Option<u8>,
     aria2c_install_dir: Option<String>,
     aria2c_path: Option<String>,
+    aria2c_rpc_secret: Option<String>,
+    aria2c_rpc_port: Option<u16>,
     sadb_ip: Option<String>,
     sadb_port: Option<u16>,
     
@@ -749,6 +737,14 @@ pub fn save_tools_settings(
         settings_data.aria2c_install_dir = aria2c_install_dir.clone();
         *state.aria2c_install_dir.lock().unwrap() = aria2c_install_dir;
     }
+    if let Some(aria2c_rpc_secret) = aria2c_rpc_secret {
+        settings_data.aria2c_rpc_secret = aria2c_rpc_secret.clone();
+        *state.aria2c_rpc_secret.lock().unwrap() = aria2c_rpc_secret;
+    }
+    if let Some(port) = aria2c_rpc_port {
+        settings_data.aria2c_rpc_port = port;
+        state.aria2c_rpc_port.store(port, Ordering::Relaxed);
+    }
     if let Some(dir) = adb_install_dir {
         settings_data.adb_install_dir = dir.clone();
         *state.adb_install_dir.lock().unwrap() = dir;
@@ -763,7 +759,7 @@ pub fn save_tools_settings(
     }
     if let Some(port) = sadb_port {
         settings_data.sadb_port = port;
-        *state.sadb_port.lock().unwrap() = port;
+        state.sadb_port.store(port, Ordering::Relaxed);
     }
     let _ = save_settings_to_file(&settings_data);
 }
