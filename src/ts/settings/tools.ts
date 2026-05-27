@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./settings-shared";
 import { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
 import { initDownloader } from "./downloader";
+import { setWORKSPACE, WORKSPACE } from "./settings";
 
 export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
 export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
@@ -30,7 +31,7 @@ const adbKillServerBtn = document.getElementById("adb-kill-server-btn") as HTMLB
 const adbConnBtn = document.getElementById("adb-connect-device-btn") as HTMLButtonElement;
 const aria2cRpcPort = document.getElementById("aria2c-rpc-port") as HTMLInputElement;
 const aria2cRpcSecret = document.getElementById("aria2c-rpc-secret") as HTMLInputElement;
-let WORKSPACE: string | null = null;
+
 
 
 const modules = {
@@ -68,7 +69,6 @@ function sanitize(v: string) {
 export function initTools(): void {
     //小巧思
     invoke<ToolsSettingsResponse>('get_tools_settings').then((r) => {
-        console.log(r);
         adbPath.value = r.adb_path;
         adb1.value = r.adb_install_dir;
         aria2cPath.value = r.aria2c_path;
@@ -79,10 +79,10 @@ export function initTools(): void {
     })
 
     invoke<string>('get_workspace').then((res) => {
-        WORKSPACE = res;
+        setWORKSPACE(res+ "\\");
         
         Object.entries(modules).forEach(([name, ui]) => {
-            ui.installDir.value = ui.installDir.value == "" ? WORKSPACE + "\\" + ui.name : ui.installDir.value;
+            ui.installDir.value = ui.installDir.value == "" ? WORKSPACE + ui.name : ui.installDir.value;
             ui.installDir.addEventListener("input", () => {
                 ui.installDir.value = sanitize(ui.installDir.value);
             });
@@ -259,5 +259,7 @@ export async function saveToolsSettings() {
         aria2cInstallDir: aria2c1.value,
         aria2cPath: aria2cPath.value,
         aria2cThread: parseInt(aria2cThread.value) <= 0 ? 4 : (parseInt(aria2cThread.value) > 16 ? 16 : parseInt(aria2cThread.value)),
+        aria2cRpcPort: parseInt(aria2cRpcPort.value) <= 0 ? 5555 : (parseInt(aria2cRpcPort.value) >= 65535 ? 5555 : parseInt(aria2cRpcPort.value)),
+        aria2cRpcSecret: (aria2cRpcSecret.value == "" || aria2cRpcSecret.value == null) ? "灯灯侑侑天下第一" : aria2cRpcSecret.value, 
     });
 }
