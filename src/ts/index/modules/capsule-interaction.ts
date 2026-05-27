@@ -11,6 +11,7 @@ import {
   musicClickTimer, setMusicClickTimer,
   agentClickTimer, setAgentClickTimer,
   sadbClickTimer, setSadbClickTimer,
+  downloaderClickTimer, setDownloaderClickTimer,
   isExpandAnimating, setIsExpandAnimating,
   currentSongTitle, currentArtistName, currentThumbnailUrl,
   emailClickTimer,
@@ -187,6 +188,39 @@ export function initCapsuleInteraction() {
         void invoke('set_expanded', { expanded: true });
         capsule.classList.add("email-expanded");
       }, 250));
+    }
+
+    if (currentView === "downloader") {
+
+      if (!(target instanceof HTMLDivElement)) {
+        return;
+      }
+      e.stopPropagation();
+      // 延迟执行，等待可能的双击
+      if (downloaderClickTimer) {
+        clearTimeout(downloaderClickTimer);
+        setDownloaderClickTimer(null);
+        return; // 双击的第二次 click，忽略
+      }
+      setDownloaderClickTimer(window.setTimeout(() => {
+        setDownloaderClickTimer(null);
+        if (isExpandAnimating) return;
+        setIsExpandAnimating(true);
+        if (!capsule.classList.contains("downloader-expanded")) {
+          capsule.classList.add("downloader-expanded");
+          void invoke("set_expanded", { expanded: true });
+          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
+        } else {
+          window.setTimeout(() => {
+            capsule.classList.remove("downloader-expanded");
+            void invoke("set_expanded", { expanded: false });
+            window.setTimeout(() => {
+              setIsExpandAnimating(false);
+            }, 50);
+          }, 100);
+        }
+      }, 250));
+      return;
     }
   });
   capsule.addEventListener("dblclick", (e: MouseEvent) => {

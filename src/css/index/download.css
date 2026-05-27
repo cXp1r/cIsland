@@ -1,0 +1,109 @@
+/* ===== 收起态：只显示 ::before 标签 ===== */
+
+#island-capsule:not(.downloader-expanded) #downloader {
+    flex-direction: row;
+    padding: 0 12px;
+    gap: 6px;
+}
+
+#island-capsule:not(.downloader-expanded) #downloader > * {
+    display: none;
+}
+
+#island-capsule:not(.downloader-expanded) #downloader::before {
+    content: "downloader";
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* ===== 展开态 ===== */
+
+#island-capsule.downloader-expanded #downloader {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px;
+    gap: 10px;
+    height: 100%;
+    overflow: hidden;
+}
+
+#island-capsule.downloader-expanded #downloader::before {
+    display: none;
+}
+
+/* ===== 输入框 ===== */
+
+.downloader-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #e0e0e0;
+    background: transparent;
+    border: 1px solid #3a3a4a;
+    border-radius: 4px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.downloader-input::placeholder {
+    color: #6a6a7a;
+}
+
+.downloader-input:focus {
+    border-color: #5a5a7a;
+}
+
+/* ===== 第一行: url + thread ===== */
+
+.downloader-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.downloader-row .downloader-input:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.downloader-thread {
+    flex: 0 0 52px;
+    text-align: center;
+}
+
+/* ===== 按钮 ===== */
+
+.downloader-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.downloader-btn {
+    padding: 2px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.82);
+    cursor: pointer;
+    font-size: 10px;
+    font-family: var(--font-main);
+    transition: background 0.15s;
+}
+
+.downloader-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.downloader-btn-primary {
+    color: rgba(200, 200, 255, 0.88);
+    border-color: rgba(140, 140, 255, 0.25);
+    background: rgba(100, 100, 255, 0.12);
+}
+
+.downloader-btn-primary:hover {
+    background: rgba(100, 100, 255, 0.2);
+    border-color: rgba(160, 160, 255, 0.35);
+}

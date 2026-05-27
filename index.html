@@ -14,6 +14,8 @@
 
     <link rel="stylesheet" href="src/css/index/agent-base.css" />
 
+    <link rel="stylesheet" href="src/css/index/download.css" />
+
     <link rel="stylesheet" href="src/css/index/classic.css" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -174,8 +176,6 @@
         </div>
 
         
-
-
         <div id="lyric-area" class="content-wrapper">
 
             <!-- 收起态：唱片 + 歌词 + 控制按钮 -->
@@ -420,6 +420,7 @@
 
         </div>
 
+
         <div id="email-area" class="content-wrapper">
             <div id="email-drag-handle" aria-label="拖动邮箱视图"></div>
             <div id="email-panel">
@@ -441,6 +442,33 @@
             <div id="email-resize-handle"></div>
         </div>
 
+
+        <div id="downloader" class="content-wrapper">
+            <div class="downloader-row">
+                <input
+                  id="downloader-url"
+                  class="downloader-input"
+                  type="text"
+                  placeholder="https://example.com/test.zip"
+                />
+                <input
+                  id="downloader-downloader-thread"
+                  class="downloader-input downloader-thread"
+                  type="text"
+                  placeholder="线程数"
+                />
+            </div>
+            <input
+                id="downloader-save-dir"
+                class="downloader-input"
+                type="text"
+                placeholder="文件保存目录"
+            />
+            <div class="downloader-actions">
+                <button id="downloader-download-btn" class="downloader-btn" type="button">下载</button>
+                <button id="downloader-open-dir-btn" class="downloader-btn downloader-btn-primary" type="button">打开文件所在目录</button>
+            </div>
+        </div>
     </div>
 
 

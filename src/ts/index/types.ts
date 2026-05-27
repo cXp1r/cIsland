@@ -1,4 +1,4 @@
-export type ViewMode = "time" | "lyric" | "agent" | "search" | "sadb" | "email";
+export type ViewMode = "time" | "lyric" | "agent" | "search" | "sadb" | "email" | "downloader";
 
 
 
@@ -36,3 +36,7 @@ export type WeatherResult = {
 
 };
 
+export type ClipboardUrlsPayload = {
+  urls: string[];
+  downloadables: boolean[];
+};

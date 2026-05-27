@@ -4,6 +4,7 @@ use std::os::windows::process::CommandExt;
 use serde::{Deserialize, Serialize};
 use crate::{IslandState, CREATE_NO_WINDOW};
 use reqwest::header::{CONTENT_DISPOSITION, CONTENT_TYPE, RANGE};
+use reqwest::Client;
 /// 链接处理器配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LinkHandler {
@@ -183,56 +184,67 @@ pub fn open_url(url: String) {
 }
 
 
-#[tauri::command]
-pub async fn is_downloadable(state: tauri::State<'_, IslandState>, url: &str) -> Result<bool, String> {
-    let client = state.link_client.clone();
-    let res = match client
-        .get(url)
-        .header(RANGE, "bytes=0-0")
-        .send()
-        .await
-    {
-        Ok(r) => r,
-        Err(_) => return Err("connection error".into()),
-    };
 
-    let final_url = res.url().to_string().to_lowercase();
-    println!("{final_url}");
-    if let Some(disposition) = res.headers().get(CONTENT_DISPOSITION) {
-        if let Ok(v) = disposition.to_str() {
-            if v.contains("attachment") {
-                return Ok(true);
+pub async fn is_downloadable(
+    client: Client,
+    urls: Vec<String>,
+) -> Result<Vec<bool>, String> {
+
+    let mut result: Vec<bool> = Vec::with_capacity(urls.len());
+
+    for url in urls {
+        let res = client
+            .get(&url)
+            .header(RANGE, "bytes=0-0")
+            .send()
+            .await
+            .map_err(|_| "connection error")?;
+
+        let final_url = res.url().to_string().to_lowercase();
+
+        let mut ok = false;
+
+
+        if let Some(disposition) = res.headers().get(CONTENT_DISPOSITION) {
+            if let Ok(v) = disposition.to_str() {
+                if v.contains("attachment") {
+                    ok = true;
+                }
             }
         }
-    }
 
-    if res.status() == 206 {
-        return Ok(true);
-    }
 
-    if let Some(ct) = res.headers().get(CONTENT_TYPE) {
-        if let Ok(v) = ct.to_str() {
-            if !v.contains("text/html") {
-                return Ok(true);
+        if res.status() == 206 {
+            ok = true;
+        }
+
+
+        if let Some(ct) = res.headers().get(CONTENT_TYPE) {
+            if let Ok(v) = ct.to_str() {
+                if !v.contains("text/html") {
+                    ok = true;
+                }
             }
         }
-    }
-    //常用
-    if final_url.contains(".zip")
-        || final_url.contains(".pdf")
-        || final_url.contains(".png")
-        || final_url.contains(".jpg")
-        || final_url.contains(".mp4")
-        || final_url.contains(".apk")
-        || final_url.contains(".exe")
-        || final_url.contains(".rar")
-    {
-        return Ok(true);
+
+
+        if final_url.contains(".zip")
+            || final_url.contains(".pdf")
+            || final_url.contains(".png")
+            || final_url.contains(".jpg")
+            || final_url.contains(".mp4")
+            || final_url.contains(".apk")
+            || final_url.contains(".exe")
+            || final_url.contains(".rar")
+        {
+            ok = true;
+        }
+
+        result.push(ok);
     }
 
-    Ok(false)
+    Ok(result)
 }
-
 #[tauri::command]
 pub fn open_url_with_whitelist(
     state: tauri::State<'_, IslandState>,

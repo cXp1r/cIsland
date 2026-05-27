@@ -17,6 +17,8 @@ import { initEmailView } from "./modules/email-view";
 import { initNoticeQueue } from "./modules/notice-queue";
 import { initrAF } from "./modules/rAF";
 import { initTodo, initCalendar, initClock } from "./modules/panel";
+import { initDownloader } from "./modules/downloader";
+initDownloader();
 initLogLevel()
 initNoticeUrl();
 initNoticeQueue();
@@ -36,7 +38,6 @@ initrAF();
 initTodo();
 initClock();
 initCalendar();
-
 showOnlyView("time");
 hidePrivacyPopup();
 void syncCurrentView(currentView);

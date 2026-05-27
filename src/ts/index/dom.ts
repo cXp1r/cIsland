@@ -1,3 +1,4 @@
+import { downloadDir } from "@tauri-apps/api/path";
 import type { ViewMode } from "./types";
 
 
@@ -252,7 +253,7 @@ export const emailResizeHandle = document.getElementById("email-resize-handle") 
 
 
 
-
+export const downloader = document.getElementById("downloader") as HTMLDivElement;
 
 
 
@@ -317,6 +318,8 @@ export const viewElements: Record<ViewMode, HTMLElement> = {
   sadb: sadbArea,
 
   email: emailArea,
+
+  downloader: downloader,
 
 };
 

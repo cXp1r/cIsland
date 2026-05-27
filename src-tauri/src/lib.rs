@@ -19,6 +19,7 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, AtomicU32, AtomicI32, O
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
+
 use tauri::{Emitter, Manager};
 use std::path::PathBuf;
 
@@ -245,7 +246,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             window::resize_raf, window::start_raf, window::end_raf,
             window::start_drag, window::end_drag, window::drag_move,//三个移动函数
-            link_handler::open_url, link_handler::open_url_with_whitelist, link_handler::is_downloadable,//两个url跳转函数
+            link_handler::open_url, link_handler::open_url_with_whitelist,//两个url跳转函数
             window::get_pending_urls, window::set_interacting, window::dismiss_island, window::set_current_view,
             window::sync_window_size, window::show_context_menu,
             window::set_capsule_current_rect, window::set_capsule_target_rect, window::open_email_window, window::set_expanded,
@@ -407,7 +408,7 @@ pub fn run() {
             );
 
             app.manage(IslandState {
-                link_client,
+                link_client: link_client.clone(),
                 offset_x: offset_x.clone(), offset_y: offset_y.clone(),
                 primary_monitor_info: primary_monitor_info.clone(),
                 monitor_info: monitor_info.clone(),
@@ -748,19 +749,20 @@ pub fn run() {
             });
 
             // --- 剪贴板监控线程 ---
+            let rt_cb = Arc::new(tokio::runtime::Runtime::new().unwrap());
             let win_cb = window.clone();
             let noti_cb = is_notifying.clone();
             let exp_cb = is_expanded.clone();
             let cb_enabled = clipboard_enabled.clone();
             let pending_url_cb = pending_url.clone();
             let current_view_cb = current_view.clone();
-
+            let link_client_cb = link_client.clone();
             thread::spawn(move || {
                 logger::info("Clipboard", "polling thread started");
                 let mut last_text = String::new();
                 let mut logged_disabled = false;
                 loop {
-                    thread::sleep(Duration::from_millis(1200));
+                    thread::sleep(Duration::from_millis(800));
                     if !cb_enabled.load(Ordering::Relaxed) {
                         if !logged_disabled {
                             logger::debug("Clipboard", "clipboard_enabled = false, skipping");
@@ -788,9 +790,15 @@ pub fn run() {
                             }
                             noti_cb.store(true, Ordering::Relaxed);
                             exp_cb.store(true, Ordering::Relaxed);
-                            let _ = win_cb.set_size(tauri::LogicalSize::new(WIN_W, WIN_H_DEFAULT));
-                            let _ = win_cb.emit("set-expand", true);
-                            let _ = win_cb.emit("clipboard-urls", urls.clone());
+                            let win_cb1 = win_cb.clone();
+                            let link_client_for_task = link_client_cb.clone(); // clone before the move
+                            rt_cb.spawn(async move {
+                                let downloadables = link_handler::is_downloadable(link_client_for_task, urls.clone()).await.unwrap_or_default();
+                                let _ = win_cb1.emit("clipboard-urls", serde_json::json!({
+                                    "urls": urls,
+                                    "downloadables": downloadables
+                                }));
+                            });
                         }
                     }
                 }

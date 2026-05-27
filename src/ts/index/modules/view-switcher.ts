@@ -18,6 +18,7 @@ import {
   setUserChosenView,
   isPlaying,
   setIsExpandAnimating,
+  isAria2c,
 } from "../state";
 import { logi, logw } from "../logger";
 // ---------------------------------------------------------------------------
@@ -35,6 +36,9 @@ export function getAvailableViews(): ViewMode[] {
   views.push("sadb");
   if (emailConfigure) {
     views.push("email");
+  }
+  if (isAria2c) {
+    views.push("downloader");
   }
   
   return views;
@@ -57,7 +61,7 @@ export function updateSwitcherUI() {
   views.forEach((v) => {
     const dot = document.createElement("div");
     dot.className = "view-dot" + (v === currentView ? " active" : "");
-    dot.title = v === "time" ? "时间视图" : v === "lyric" ? "歌词视图" : v === "agent" ? "Agent" : v === "sadb" ? "ADB" : "邮箱";
+    dot.title = v === "time" ? "时间视图" : v === "lyric" ? "歌词视图" : v === "agent" ? "Agent" : v === "sadb" ? "ADB" : v === "email" ? "邮箱" : "下载器";
     dot.addEventListener("click", (e) => {
       e.stopPropagation();
       setUserChosenView(v);
@@ -242,6 +246,11 @@ export function setView(mode: ViewMode, animated = true) {
 
   if (previous === "email" && mode !== "email" && capsule.classList.contains("email-expanded")) {
     capsule.classList.remove("email-expanded");
+    void invoke("set_expanded", { expanded: false });
+  }
+
+  if (previous === "downloader" && mode !== "downloader" && capsule.classList.contains("downloader-expanded")) {
+    capsule.classList.remove("downloader-expanded");
     void invoke("set_expanded", { expanded: false });
   }
 

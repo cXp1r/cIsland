@@ -567,7 +567,7 @@ body {
 
 
 
-.notice-dismiss {
+.notice-button {
 
     border: none;
 
@@ -589,7 +589,7 @@ body {
 
 
 
-.notice-dismiss:hover {
+.notice-button:hover {
 
     background: rgba(255, 255, 255, 0.2);
 

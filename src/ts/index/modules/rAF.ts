@@ -106,6 +106,8 @@ export function initrAF() {
         if (!capsule.classList.contains("sadb-expanded")){
           let [toW, toH] = [140, 50];
           if (capsule.classList.value == "") {
+          } else if (capsule.classList.contains("notice-active")) {
+            [toW, toH] = [400, 70];
           } else if (capsule.classList.contains("panel-expanded") || capsule.classList.contains("hooks-expanded")) {
             [toW, toH] = [700, 220];
           } else if (capsule.classList.contains("music-expanded")) {
@@ -117,6 +119,8 @@ export function initrAF() {
           } else if (capsule.classList.contains("email-expanded")) {
             const style = getComputedStyle(document.documentElement);
             [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
+          } else if (capsule.classList.contains("downloader-expanded")) {
+            [toW, toH] = [400, 150];
           } else if (capsule.classList.contains("expanded")) {
             [toW, toH] = [330, 74];
             if (capsule.classList.contains("lyric-collapsed")) {

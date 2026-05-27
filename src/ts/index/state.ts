@@ -209,3 +209,10 @@ export function setVolThrottleTimer(v: number | null) { volThrottleTimer = v; }
 
 export let currentAssistantContainer: HTMLDivElement | null = null;
 export function setCurrentAssistantContainer(v: HTMLDivElement | null) { currentAssistantContainer = v; }
+
+
+export let isAria2c: boolean = false;
+export function setIsAria2c(v: boolean) { isAria2c = v; }
+
+export let downloaderClickTimer: number | null = null;
+export function setDownloaderClickTimer(v: number | null) { downloaderClickTimer = v; }
