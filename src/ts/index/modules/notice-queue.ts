@@ -1,10 +1,12 @@
 ﻿import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, noticeArea } from "../dom";
-import { setPendingUrls } from "../state";
+import { isAria2c, setPendingUrls } from "../state";
 import { truncateUrl } from "../utils";
 import { logi } from "../logger";
 import { ClipboardUrlsPayload } from "../types";
+import { url } from "./downloader";
+import { setView } from "./view-switcher";
 
 const TAG: string = "NoticeQueue";
 
@@ -81,7 +83,7 @@ function baseNoticeHtml(item: NoticeItem): string {
   // clipboard 类型且 downloadable=true 时插入下载按钮
   const p = item.payload as ClipboardUrlsPayload;
   const downloadBtn = (item.type === "clipboard" && p.urls.length === 1 && p.downloadables[0])
-    ? `<button class="notice-button" id="notice-download" type="button">下载</button>`
+    ? isAria2c ? `<button class="notice-button" id="notice-download" type="button">下载</button>` : ""
     : "";
 
   return `
@@ -143,7 +145,10 @@ function renderMessage(item: NoticeItem): void {
       if (activeItem?.id !== item.id) return;
       const p = item.payload as ClipboardPayload;
       logi(TAG, `download-click: ${describeNotice(item)} urls=${p.urls}`);
-      // TODO: 主人 请在这里填写下载逻辑~
+      url.value = p.urls[0];
+      setView("downloader");
+      capsule.classList.add("downloader-expanded");
+      void invoke("set_expanded", { expanded: true });
       console.log("[NoticeQueue] download clicked, urls:", p.urls);
       completeActiveNotice(true, "download");
     });
