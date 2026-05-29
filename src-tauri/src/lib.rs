@@ -270,10 +270,8 @@ pub fn run() {
             sadb::sadb_set_clipboard,
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
             get_workspace, get_user_dir,
-            tools::tools_download_and_install_from_github, tools::find_path_by_where, tools::aria2c_rpc_download, //两个通用函数
-            tools::check, tools::test, tools::open_path,
-            tools::tools_kill_adb_server, tools::aria2c_download,
-            tools::tools_download_and_install_adb,
+            tools::tools_downloader, tools::find_path_by_where, tools::aria2c_rpc_download, //两个通用函数
+            tools::check, tools::test, tools::open_path, tools::custom_caller,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,
             email::fetch_email_uid_list, email::fetch_email_metas_by_uids, email::fetch_email_bodies_by_uids, email::fetch_email_metas_and_bodies_by_uids, email::fetch_email_body_by_uid, email::read_email_body_by_uid,
         ])
