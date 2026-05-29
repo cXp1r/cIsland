@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { aria2cThread } from "./tools";
+import { aria2cThread } from "./settings-tools";
 import { Aria2cRpcEnd, Aria2cRpcProgress} from "./types";
 import { listen } from "@tauri-apps/api/event";
 import { showStatus } from "./settings-shared";

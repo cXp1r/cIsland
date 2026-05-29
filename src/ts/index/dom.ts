@@ -1,4 +1,3 @@
-import { downloadDir } from "@tauri-apps/api/path";
 import type { ViewMode } from "./types";
 
 

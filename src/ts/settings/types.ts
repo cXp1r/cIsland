@@ -1,4 +1,3 @@
-import { LargeNumberLike } from "crypto";
 import type { MonitorInfo } from "./screens-frame";
 
 export type SettingsResponse = {
