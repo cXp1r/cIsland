@@ -1,7 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from "@tauri-apps/api/event";
 import { capsule } from "../dom";
-import { downloaderH } from './downloader';
 
 //import { getAvailableViews, setView, updateSwitcherUI, updateCapsuleSize } from "./view-switcher";
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
@@ -121,7 +120,7 @@ export function initrAF() {
             const style = getComputedStyle(document.documentElement);
             [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
           } else if (capsule.classList.contains("downloader-expanded")) {
-            [toW, toH] = [500, downloaderH];
+            [toW, toH] = [400, 300];
           } else if (capsule.classList.contains("expanded")) {
             [toW, toH] = [330, 74];
             if (capsule.classList.contains("lyric-collapsed")) {

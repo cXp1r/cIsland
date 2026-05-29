@@ -1,9 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ToolsSettingsResponse, TestResult, Aria2cRpcProgress, Aria2cRpcEnd } from "../../settings/types";
+import { ToolsSettingsResponse, Aria2cRpcProgress, Aria2cRpcEnd } from "../../settings/types";
 import { setIsAria2c } from "../state";
 import { listen } from "@tauri-apps/api/event";
-import { animateCapsule } from "./rAF";
-import { capsule } from "../dom";
 
 export const url = document.getElementById("downloader-url") as HTMLInputElement;
 const thread = document.getElementById("downloader-downloader-thread") as HTMLInputElement;
@@ -13,7 +11,6 @@ const openDivBtn = document.getElementById("downloader-open-dir-btn") as HTMLBut
 const result = document.getElementById("downloader-result") as HTMLDivElement;
 const progressWrapper = document.getElementById("aria2c-progress-wrapper") as HTMLDivElement;
 
-export let downloaderH = 200;
 
 function formatSpeed(bytesPerSec: number) {
     const mb = bytesPerSec / 1024 / 1024;
@@ -62,7 +59,6 @@ listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
                 : "下载失败";
     }
     window.setTimeout(() => { progressDiv.remove() }, 1000);
-    downloaderH -= 30;
 })
 
 export function initDownloader() {
@@ -80,10 +76,6 @@ export function initDownloader() {
             let urlq = url.value.trim()
             if (urlq !== ""){
                 result.innerText = ""
-                let rect = capsule.getBoundingClientRect()
-                let fromW = Math.round(rect.width)
-                downloaderH += 30;
-                animateCapsule(fromW, downloaderH);
                 const uuid = crypto.randomUUID();
                 invoke('aria2c_rpc_download', {url: url.value, dir: saveDir.value, uuid: uuid})
                 progressWrapper.innerHTML += `<div id="${uuid}">
