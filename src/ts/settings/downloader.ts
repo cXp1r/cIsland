@@ -12,7 +12,15 @@ const openDivBtn = document.getElementById("aria2c-open-dir-btn") as HTMLButtonE
 
 const progressWrapper = document.getElementById("aria2c-progress-wrapper") as HTMLDivElement;
 
+function formatSpeed(bytesPerSec: number) {
+    const mb = bytesPerSec / 1024 / 1024;
 
+    if (mb < 1) {
+        return `${(bytesPerSec / 1024).toFixed(2)} KB/s`;
+    }
+
+    return `${mb.toFixed(2)} MB/s`;
+}
 listen<Aria2cRpcProgress>("aria2c-rpc-progress", (event) => {
     let res = event.payload;
     let progressDiv = document.getElementById(res.uuid) as HTMLDivElement;
@@ -21,10 +29,11 @@ listen<Aria2cRpcProgress>("aria2c-rpc-progress", (event) => {
             100,
             Math.max(0, res.progress * 100)
         );
+        const speed = formatSpeed(res.speed);
         console.log(percent);
         (progressDiv.querySelector("#bar") as HTMLDivElement).style.width = `${percent}%`;
         (progressDiv.querySelector("#percent") as HTMLSpanElement)
-            .innerText = `${percent.toFixed(2)}%`;
+            .innerText = `${percent.toFixed(2)}% ${speed}`;
     }
 
 });
