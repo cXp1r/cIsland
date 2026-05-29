@@ -38,14 +38,32 @@ listen<Aria2cRpcProgress>("aria2c-rpc-progress", (event) => {
 
 });
 
+function truncate(str: string, max = 30) {
+    if (!str) return "";
+    if (str.length <= max) return str;
+
+    const head = str.slice(0, Math.floor(max * 0.6));
+    const tail = str.slice(-Math.floor(max * 0.4));
+
+    return `${head}...${tail}`;
+}
+
 listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
     let res = event.payload;
     let progressDiv = document.getElementById(res.uuid) as HTMLDivElement;
     if (progressDiv) {
         (progressDiv.querySelector("#state") as HTMLSpanElement)
-            .innerText = res.ok ? `下载成功, 路径:${res.path}` : "下载失败";
+            .innerText = res.ok
+                ? `下载成功, 文件名:${truncate(res.filename, 25)}`
+                : "下载失败";
     }
-    showStatus(res.ok ? `下载成功, 文件名:${res.filename}, 路径:${res.path}` : "下载失败", false, 5000)
+    showStatus(
+        res.ok
+            ? `下载成功, 文件名:${truncate(res.filename, 25)}, 路径:${truncate(res.path, 40)}`
+            : "下载失败",
+        false,
+        5000
+    );
 })
 
 export function initDownloader() {
