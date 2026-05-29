@@ -226,7 +226,7 @@ export function initCapsuleInteraction() {
   capsule.addEventListener("dblclick", (e: MouseEvent) => {
     logd("Capsule",`double click on view '${currentView}'`);
     const target = e.target as HTMLElement;
-    if (target.closest(".url-item") || target.closest("#notice-area") || target.closest(".media-btn") || target.closest(".view-dot") || target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn") || target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop") || target.closest("#sadb-canvas")) {
+    if (target.closest(".url-item") || target.closest("#notice-area") || target.closest(".media-btn") || target.closest(".view-dot") || target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn") || target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop") || target.closest("#sadb-canvas") || target.closest(".downloader-btn")) {
       return;
     }
     [panelClickTimer, agentClickTimer, musicClickTimer, sadbClickTimer, emailClickTimer]
