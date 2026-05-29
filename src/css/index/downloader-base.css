@@ -112,3 +112,7 @@
     background: rgba(100, 100, 255, 0.2);
     border-color: rgba(160, 160, 255, 0.35);
 }
+
+#aria2c-progress-wrapper {
+    display: flex; flex-direction: column; margin-bottom: 12px; gap: 4px;
+}
