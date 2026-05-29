@@ -57,7 +57,10 @@ listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
                 ? `下载成功, 文件名:${truncate(res.filename, 25)}`
                 : "下载失败";
     }
-    window.setTimeout(() => { progressDiv.remove() }, 1000);
+    window.setTimeout(() => {
+        const el = document.getElementById(res.uuid);
+        el?.remove();
+    }, 1000);
 })
 
 export function initDownloader() {
