@@ -31,7 +31,6 @@ listen<Aria2cRpcProgress>("aria2c-rpc-progress", (event) => {
             Math.max(0, res.progress * 100)
         );
         const speed = formatSpeed(res.speed);
-        console.log(percent);
         (progressDiv.querySelector("#bar") as HTMLDivElement).style.width = `${percent}%`;
         (progressDiv.querySelector("#percent") as HTMLSpanElement)
             .innerText = `${percent.toFixed(2)}% ${speed}`;
