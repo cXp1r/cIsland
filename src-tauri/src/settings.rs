@@ -67,7 +67,6 @@ pub(crate) struct SettingsData {
     pub lyric_mode: String,
     #[serde(default = "default_lyric_offset_enabled")]
     pub lyric_offset_enabled: bool,
-    /// 按 SMTC app_id 存储的歌词补偿（ms）。默认空表，未配置的播放器视为 0。
     #[serde(default)]
     pub lyric_offsets_by_player: HashMap<String, i64>,
     #[serde(default)]
@@ -430,19 +429,6 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
 }
 
 #[tauri::command]
-pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
-    serde_json::json!({
-        "adb_install_dir": state.adb_install_dir.lock().unwrap().clone(),
-        "adb_path": state.adb_path.lock().unwrap().clone(),
-        "aria2c_install_dir":  state.aria2c_install_dir.lock().unwrap().clone(),
-        "aria2c_path": state.aria2c_path.lock().unwrap().clone(),
-        "aria2c_thread": state.aria2c_thread.load(Ordering::Relaxed),
-        "aria2c_rpc_port": state.aria2c_rpc_port.load(Ordering::Relaxed),
-        "aria2c_rpc_secret": state.aria2c_rpc_secret.lock().unwrap().clone(),
-    })
-}
-
-#[tauri::command]
 pub fn save_settings(
     app: tauri::AppHandle,
     state: tauri::State<'_, IslandState>,
@@ -709,7 +695,20 @@ pub fn save_settings(
     let _ = save_settings_to_file(&settings_data);
 }
 
-//tools以后会变多,早日独立
+// tools部分
+#[tauri::command]
+pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
+    serde_json::json!({
+        "adb_install_dir": state.adb_install_dir.lock().unwrap().clone(),
+        "adb_path": state.adb_path.lock().unwrap().clone(),
+        "aria2c_install_dir":  state.aria2c_install_dir.lock().unwrap().clone(),
+        "aria2c_path": state.aria2c_path.lock().unwrap().clone(),
+        "aria2c_thread": state.aria2c_thread.load(Ordering::Relaxed),
+        "aria2c_rpc_port": state.aria2c_rpc_port.load(Ordering::Relaxed),
+        "aria2c_rpc_secret": state.aria2c_rpc_secret.lock().unwrap().clone(),
+    })
+}
+
 #[tauri::command]
 pub fn save_tools_settings(
     state: tauri::State<'_, IslandState>,
@@ -765,7 +764,6 @@ pub fn save_tools_settings(
 }
 
 
-// ===== 歌词补偿（按播放器） =====
 
 /// 返回 settings 页子页需要的状态：开关、步进、范围、各播放器 offset、当前命中 app_id
 #[tauri::command]

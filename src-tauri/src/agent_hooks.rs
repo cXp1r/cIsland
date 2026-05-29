@@ -35,7 +35,8 @@ struct Request {
 
 
 pub async fn start_interprocess_server() {
-    let name = match "灯灯侑侑天下第一".to_ns_name::<GenericNamespaced>() {
+    let ipc_name = "灯灯侑侑天下第一";
+    let name = match ipc_name.to_ns_name::<GenericNamespaced>() {
         Ok(n) => n,
         Err(e) => {
             logger::error(TAG, &format!("这tm有人抢我IPC名字?: {}", e.to_string()));
@@ -51,7 +52,7 @@ pub async fn start_interprocess_server() {
         },
     };
 
-    logger::info(TAG, "IPC server start");
+    logger::info(TAG, &format!("IPC server start on name '{}'", ipc_name));
 
     loop {
         let conn = match listener.accept().await {
