@@ -5,11 +5,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::Ordering;
 use serde::{Deserialize, Serialize};
-use windows::core::Param;
 use zip::ZipArchive;
 use crate::IslandState;
 use crate::{CREATE_NO_WINDOW, logger};
-
+use tauri::Emitter;
 const PLATFORM_TOOLS_URL: &str = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
 const TAG: &str = "Tools";
 
@@ -428,6 +427,7 @@ pub async fn add_uri(
     secret: &str,
     port: u16,
     x: u8,
+    dir: &str,
 ) -> Result<String, String> {
 
     let body = json!({
@@ -439,7 +439,8 @@ pub async fn add_uri(
             [url],
             {
                 "split": x,
-                "max-connection-per-server": x
+                "max-connection-per-server": x,
+                "dir": dir,
             }
         ]
     });
@@ -498,20 +499,22 @@ pub async fn tell_status(
 
 #[tauri::command]
 pub async fn aria2c_rpc_download(
-    window: tauri::Window,
+    dir: &str,
+    window: tauri::WebviewWindow,
     state: tauri::State<'_, IslandState>,
-    url: String,
+    url: &str,
+    uuid: &str,//前端会生成一个唯一uuid给core,进度条会根据uuid来选择,然后结束后告诉前端uuid来重置
 ) -> Result<(), String> {
     let client = state.aria2c_rpc_client.clone();
     let port = state.aria2c_rpc_port.load(Ordering::Relaxed);
     let secret = state.aria2c_rpc_secret.lock().unwrap().clone();
     let x = state.aria2c_thread.load(Ordering::Relaxed);
 
-    let gid = add_uri(&client, &url, &secret, port, x).await?;
+    let gid = add_uri(&client, &url, &secret, port, x, dir).await?;
 
     let client_clone = client.clone();
     let win = window.clone();
-
+    let uuid = uuid.to_string();
     tokio::spawn(async move {
 
         loop {
@@ -544,18 +547,44 @@ pub async fn aria2c_rpc_download(
                     .unwrap_or("0");
 
                 let progress = completed / total;
-
-                /*let _ = win.emit("download-progress", serde_json::json!({
+                let _ = win.emit("aria2c-rpc-progress", serde_json::json!({
                     "gid": gid,
                     "progress": progress,
                     "speed": speed,
-                }));*/
+                    "uuid": &uuid,
+                }));
 
                 let status_str = result["status"]
                     .as_str()
                     .unwrap_or("");
 
                 if status_str == "complete" {
+                    let path = result["files"]
+                        .as_array()
+                        .and_then(|files| files.first())
+                        .and_then(|f| f["path"].as_str())
+                        .unwrap_or("");
+
+                    let filename = std::path::Path::new(path)
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("");
+
+                    let _ = win.emit("aria2c-rpc-end", serde_json::json!({
+                        "ok": if filename.is_empty() { false } else {true},
+                        "path": path,
+                        "filename": filename,
+                        "uuid": &uuid,
+                    }));
+
+                    break;
+                }
+
+                if status_str == "error" || status_str == "removed" {
+                    let _ = win.emit("aria2c-rpc-end", serde_json::json!({
+                        "ok": false,
+                        "uuid": &uuid,
+                    }));
                     break;
                 }
             }

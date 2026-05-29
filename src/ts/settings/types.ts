@@ -114,3 +114,17 @@ export type InstallResult = {
   path: string;
   downloaded_zip: string;
 };
+
+export type Aria2cRpcProgress = {
+  progress: number,
+  uuid: string,
+  gid: string,
+  speed: number,
+}
+
+export type Aria2cRpcEnd = {
+  ok: boolean,
+  path: string,
+  filename: string,
+  uuid: string,
+}
