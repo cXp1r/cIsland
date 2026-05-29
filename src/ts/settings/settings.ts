@@ -13,7 +13,7 @@ import { initBlacklist } from "./settings-blacklist";
 import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
-import { saveToolsSettings, initTools } from "./tools";
+import { saveToolsSettings, initTools } from "./settings-tools";
 
 const TAG = "Settings";
 
