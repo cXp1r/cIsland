@@ -80,54 +80,99 @@ npx tauri build
 
 ```
 tauri-island/
-├── src/                          # 前端代码
-│   ├── main.ts                   # 主界面入口
-│   ├── state.ts                  # 前端状态管理
-│   ├── types.ts                  # TypeScript 类型定义
-│   ├── dom.ts                    # DOM 工具
-│   ├── utils.ts                  # 通用工具函数
-│   ├── settings.ts               # 设置页逻辑
-│   ├── settings.css              # 设置页样式
-│   ├── settings-lyric-offset.ts  # 歌词补偿设置
-│   ├── highlight-setup.ts        # highlight.js 配置
-│   ├── modules/
-│   │   ├── view-switcher.ts      # 视图切换
-│   │   ├── capsule-interaction.ts # 胶囊交互
-│   │   ├── lyric-renderer.ts     # 歌词渲染
-│   │   ├── notice-url.ts         # 剪贴板链接通知
-│   │   ├── notice-queue.ts       # 通知队列
-│   │   ├── weather.ts            # 天气模块
-│   │   ├── search.ts             # 搜索模块
-│   │   ├── agent.ts              # AI 助手模块
-│   │   ├── music-controls.ts     # 音乐控制模块
-│   │   ├── privacy.ts            # 隐私指示器模块
-│   │   ├── sadb.ts               # 屏幕镜像模块
-│   │   ├── resize-observer.ts    # 窗口大小监听
-│   │   └── minimize-drag.ts      # 最小化拖拽
-│   └── assets/                   # 前端静态资源
-├── src-tauri/
+├── src/                              # 前端代码
+│   ├── assets/
+│   │   ├── icons/                    # 应用图标
+│   │   └── logo-bw-morph.svg         # Logo SVG
+│   ├── css/
+│   │   ├── index/                    # 主界面样式
+│   │   │   ├── base.css
+│   │   │   ├── classic.css
+│   │   │   ├── glow-border.css
+│   │   │   ├── liquid-glass.css
+│   │   │   ├── panel-base.css
+│   │   │   ├── agent-base.css
+│   │   │   ├── downloader-base.css
+│   │   │   └── email-base.css
+│   │   └── settings/
+│   │       └── settings.css          # 设置页样式
+│   └── ts/
+│       ├── index/                    # 主界面逻辑
+│       │   ├── main.ts               # 入口
+│       │   ├── state.ts              # 状态管理
+│       │   ├── types.ts              # 类型定义
+│       │   ├── dom.ts                # DOM 工具
+│       │   ├── utils.ts              # 通用工具
+│       │   ├── logger.ts             # 前端日志
+│       │   └── highlight-setup.ts    # highlight.js 配置
+│       └── settings/                 # 设置页逻辑
+│           ├── settings.ts           # 设置页入口
+│           ├── settings-shared.ts    # 设置页共享逻辑
+│           ├── settings-ai.ts        # AI 配置
+│           ├── settings-blacklist.ts # 进程黑名单
+│           ├── settings-lyric-offset.ts
+│           ├── settings-weather.ts
+│           ├── settings-update.ts
+│           ├── settings-smtc-whitelist.ts
+│           ├── settings-link-handler.ts
+│           ├── settings-log-filter.ts
+│           ├── settings-betterncm.ts
+│           ├── settings-tools.ts
+│           ├── screens-frame.ts      # 屏幕镜像帧
+│           ├── downloader.ts         # 下载管理
+│           └── types.ts
+├── src-tauri/                        # Tauri 后端
+│   ├── Cargo.toml
+│   ├── tauri.conf.json
+│   ├── build.rs
+│   ├── capabilities/
+│   │   └── default.json             # 权限清单
+│   ├── icons/                        # 应用图标
+│   ├── resources/                    # 嵌入资源
+│   │   ├── Everything64.dll
+│   │   └── scrcpy-server-v4.0
 │   └── src/
-│       ├── main.rs               # Tauri 入口点
-│       ├── lib.rs                # 核心逻辑（状态、线程、命令注册）
-│       ├── media.rs              # SMTC 媒体控制、音量控制
-│       ├── lyrics.rs             # 歌词获取与解析
-│       ├── ai.rs                 # AI 对话 Agent
-│       ├── clipboard.rs          # 剪贴板监控
-│       ├── window.rs             # 窗口管理（拖拽、动画、命中穿透）
-│       ├── settings.rs           # 设置持久化
-│       ├── updater.rs            # 自动更新
-│       ├── email.rs              # IMAP 邮件
-│       ├── ceverything.rs        # Everything 搜索集成
-│       ├── sadb.rs               # ADB 屏幕镜像
-│       ├── link_handler.rs       # 自定义链接处理器
-│       ├── privacy.rs            # 麦克风/摄像头状态检测
-│       ├── betterncm.rs          # BetterNCM 插件安装
-│       ├── cc.rs                 # Claude Code 通知服务器
-│       ├── tools.rs              # ADB 工具下载/检测
-│       └── logger.rs             # 日志系统
-├── index.html                    # 主界面 HTML
-├── settings.html                 # 设置页 HTML
+│       ├── main.rs                   # Tauri 入口点
+│       ├── lib.rs                    # 核心逻辑（状态、线程、命令注册）
+│       ├── media.rs                  # SMTC 媒体控制、音量控制
+│       ├── lyrics.rs                 # 歌词获取与解析
+│       ├── ai.rs                     # AI 对话 Agent
+│       ├── agent_hooks.rs            # Agent 钩子系统
+│       ├── clipboard.rs              # 剪贴板监控
+│       ├── window.rs                 # 窗口管理（拖拽、动画、命中穿透）
+│       ├── settings.rs               # 设置持久化
+│       ├── updater.rs                # 自动更新
+│       ├── email.rs                  # IMAP 邮件
+│       ├── ceverything.rs            # Everything 搜索集成
+│       ├── sadb.rs                   # ADB 屏幕镜像
+│       ├── link_handler.rs           # 自定义链接处理器
+│       ├── privacy.rs                # 麦克风/摄像头状态检测
+│       ├── betterncm.rs              # BetterNCM 插件安装
+│       ├── tools.rs                  # ADB 工具下载/检测
+│       ├── logger.rs                 # 日志系统
+│       └── model/
+│           └── mod.rs                # 数据模型定义
+├── sadb-core/                        # ADB 屏幕镜像核心库
+│   ├── Cargo.toml
+│   └── src/
+│       ├── lib.rs
+│       ├── adb.rs
+│       ├── client.rs
+│       ├── config.rs
+│       ├── control.rs
+│       ├── error.rs
+│       ├── protocol.rs
+│       └── stream.rs
+├── scripts/
+│   └── gen-icons.mjs                 # 图标生成脚本
+├── .github/
+│   ├── workflows/release.yml         # CI 发布流程
+│   └── ISSUE_TEMPLATE/
+├── index.html                        # 主界面 HTML
+├── settings.html                     # 设置页 HTML
+├── email.html                        # 邮件通知 HTML
 ├── package.json
+├── tsconfig.json
 └── vite.config.ts
 ```
 
