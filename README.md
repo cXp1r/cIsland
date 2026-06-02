@@ -192,5 +192,13 @@ tauri-island/
 - 预览更新通道
 - 日志级别
 
-Copyright (c) 2026 Pyisland
-All rights reserved
+## License
+
+This project is released under **GNU General Public License v3.0 (GPLv3)** or later (`GPL-3.0-or-later`).
+
+Under GPLv3 Section 7(b), limited additional terms apply: the following author attributions must be retained in all copies, modified versions, and any Appropriate Legal Notices displayed by the program:
+
+- Copyright (C) 2026-present [Coding_w](https://github.com/2064878930) [cXp1r](https://github.com/cXp1r)
+- Copyright (C) 2026-present pyisland.com (https://pyisland.com)
+
+For full terms (including the standard GPLv3 text and additional clauses), see the `LICENSE` file in the repository root.
