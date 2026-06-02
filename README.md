@@ -1,4 +1,4 @@
-# Dynamic Island for Windows
+# Tauri-island
 
 仿 macOS 灵动岛的 Windows 桌面悬浮胶囊，基于 Tauri 2 + Rust + TypeScript 构建。
 
