@@ -88,19 +88,36 @@ function playSwitchPulse() {
 // 循环切换到下一视图（双击触发）
 // ---------------------------------------------------------------------------
 
-export function switchToNextView() {
+export function switchToNextView(direction: number = 1) {
   const views = getAvailableViews();
   logi("ViewSwitcher", "switchToNextView views:", views, "isMusicPlaying:", isMusicPlaying, "lyricMode:", lyricMode, "aiEnabled:", aiEnabled);
   if (views.length < 2) return;
 
   const currentIndex = views.indexOf(currentView);
-  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % views.length : 0;
+  const offset = direction >= 0 ? 1 : -1;
+  const nextIndex = currentIndex >= 0
+    ? (((currentIndex + offset) % views.length) + views.length) % views.length
+    : 0;
   const nextView = views[nextIndex];
 
   playSwitchPulse();
   setUserChosenView(nextView);
   setView(nextView, true);
 }
+
+// ---------------------------------------------------------------------------
+// 鼠标滚轮切换视图
+// ---------------------------------------------------------------------------
+
+viewSwitcher.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.deltaY > 0) {
+    switchToNextView(1);
+  } else {
+    switchToNextView(-1);
+  }
+}, { passive: false });
 
 // ---------------------------------------------------------------------------
 // DOM 搬运：将活跃视图移入 #current-view，其余回暗仓
