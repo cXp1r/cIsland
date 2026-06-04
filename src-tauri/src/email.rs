@@ -1,7 +1,7 @@
 ﻿use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 use std::sync::atomic::{AtomicBool, Ordering};
-use crate::logger;
+use crate::{get_path, logger};
 use tokio::task;
 
 const TAG: &str = "Email";
@@ -14,11 +14,9 @@ static CONFIGURED: AtomicBool = AtomicBool::new(false);
 pub fn is_email_configured() -> bool {
     CONFIGURED.load(Ordering::Relaxed)
 }
-/// 邮件缓存目录：config_dir/dynamic-island/email
+/// 邮件缓存目录：/email
 pub fn email_cache_dir() -> PathBuf {
-    let dir = dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("dynamic-island")
+    let dir = get_path()
         .join("email");
     let _ = std::fs::create_dir_all(&dir);
     dir

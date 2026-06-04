@@ -562,6 +562,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "cisland"
+version = "0.11.1"
+dependencies = [
+ "base64 0.22.1",
+ "dirs 5.0.1",
+ "display-info",
+ "encoding_rs",
+ "flate2",
+ "imap",
+ "interprocess",
+ "libloading 0.9.0",
+ "lyrix",
+ "mailparse",
+ "native-tls",
+ "open",
+ "regex",
+ "reqwest 0.12.28",
+ "sadb-core",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-opener",
+ "tokio",
+ "tracing",
+ "url",
+ "urlencoding",
+ "uuid",
+ "windows 0.61.3",
+ "winreg 0.52.0",
+ "zip",
+]
+
+[[package]]
 name = "cmake"
 version = "0.1.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1020,41 +1055,6 @@ name = "dyn-clone"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
-
-[[package]]
-name = "dynamic-island"
-version = "0.11.1"
-dependencies = [
- "base64 0.22.1",
- "dirs 5.0.1",
- "display-info",
- "encoding_rs",
- "flate2",
- "imap",
- "interprocess",
- "libloading 0.9.0",
- "lyrix",
- "mailparse",
- "native-tls",
- "open",
- "regex",
- "reqwest 0.12.28",
- "sadb-core",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-opener",
- "tokio",
- "tracing",
- "url",
- "urlencoding",
- "uuid",
- "windows 0.61.3",
- "winreg 0.52.0",
- "zip",
-]
 
 [[package]]
 name = "ecb"

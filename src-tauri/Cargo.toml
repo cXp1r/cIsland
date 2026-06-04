@@ -1,5 +1,5 @@
 [package]
-name = "dynamic-island"
+name = "cisland"
 version = "0.11.1"
 description = "a dynamic island for windows"
 authors = ["Coding_w", "cXp1r"]

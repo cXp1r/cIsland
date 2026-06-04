@@ -22,7 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-dynamic-island
+cisland
 node_modules/
 dist/
 target/

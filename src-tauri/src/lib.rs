@@ -50,13 +50,13 @@ const PRIVACY_POLL_MS: u64 = 1200;
 pub(crate) fn get_path() -> PathBuf {
     dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("dynamic-island")       
+            .join("cisland")
 }
 #[tauri::command]
 fn get_workspace() -> String {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("dynamic-island")
+        .join("cisland")
         .to_string_lossy()
         .to_string()   
 }
@@ -399,11 +399,18 @@ pub fn run() {
                 format!("--rpc-secret={}", &settings.aria2c_rpc_secret),
                 "--continue=true".into(),
             ];
-            let aria2c_process = Command::new(settings.aria2c_path)
+
+            let aria2c_process = match Command::new(settings.aria2c_path)
                 .args(&args)
                 .creation_flags(CREATE_NO_WINDOW)
                 .spawn()
-                .unwrap();
+                {
+                    Ok(c) => Some(c),
+                    Err(e) => {
+                        logger::debug("Aria2c", &e.to_string());
+                        None
+                    },
+                };
             media::update_smtc_whitelist(
                 smtc_whitelist_enabled.load(Ordering::Relaxed),
                 smtc_app_whitelist.lock().unwrap().clone(),
@@ -910,11 +917,11 @@ pub fn run() {
                     }
                 }
             });
-
+            let win_agent = window.clone();
             // --- Claude Code 本地通知服务器 ---
             std::thread::spawn(|| {
                 let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(agent_hooks::start_interprocess_server());
+                rt.block_on(agent_hooks::start_interprocess_server(win_agent));
             });
             // --- 天气后台线程 ---
             let win_weather = window.clone();
@@ -1563,7 +1570,7 @@ pub struct IslandState {
     pub aria2c_install_dir: Arc<Mutex<String>>,
     pub aria2c_path: Arc<Mutex<String>>,
     pub aria2c_thread: Arc<AtomicU8>,//上限16,下限1
-    pub aria2c_process: Arc<Mutex<Child>>,
+    pub aria2c_process: Arc<Mutex<Option<Child>>>,
     pub aria2c_rpc_client: reqwest::Client,
     pub aria2c_rpc_secret: Arc<Mutex<String>>,
     pub aria2c_rpc_port: Arc<AtomicU16>,
