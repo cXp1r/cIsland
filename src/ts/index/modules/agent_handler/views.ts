@@ -46,8 +46,7 @@ function renderEditDiff(input: any): string {
     const oldLines = (input.old_string || "").split("\n");
     const newLines = (input.new_string || "").split("\n");
     const maxLines = Math.max(oldLines.length, newLines.length, 1);
-    const displayLines = Math.min(maxLines, 12);
-    const truncated = maxLines > displayLines;
+    const displayLines = Math.min(maxLines, 50);
 
     let diffHtml = `<div class="oi-diff">`;
     diffHtml += `<div class="oi-diff-file">${escapeHtml(filePath)}</div>`;
@@ -66,11 +65,6 @@ function renderEditDiff(input: any): string {
             diffHtml += `<div class="oi-diff-line oi-diff-add"><span class="oi-diff-prefix">+</span><span class="oi-diff-text">${escapeHtml(newLine)}</span></div>`;
         }
     }
-
-    if (truncated) {
-        diffHtml += `<div class="oi-diff-truncated">... 还有 ${maxLines - displayLines} 行</div>`;
-    }
-
     diffHtml += `</div></div>`;
     return diffHtml;
 }

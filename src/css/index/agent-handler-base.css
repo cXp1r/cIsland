@@ -108,6 +108,7 @@
 
 .oi-body {
     margin-bottom: 14px;
+    overflow: hidden;
 }
 
 .oi-command-preview {
@@ -120,7 +121,7 @@
     line-height: 1.5;
     word-break: break-all;
     white-space: pre-wrap;
-    max-height: 120px;
+    max-height: 240px;
     overflow-y: auto;
 }
 
@@ -155,7 +156,6 @@
 
 .oi-diff-content {
     padding: 4px 0;
-    max-height: 200px;
     overflow-y: auto;
 }
 
@@ -177,7 +177,8 @@
 .oi-diff-text {
     flex: 1;
     white-space: pre;
-    overflow-x: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .oi-diff-remove {

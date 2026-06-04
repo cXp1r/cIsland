@@ -9,7 +9,7 @@ const TAG = "AgentHandler";
 
 const HEIGHTS = {
     approval: 160,
-    diff: 260,
+    diff: 390,
     question1: 290,
     question2: 380,
 };
@@ -47,12 +47,9 @@ function calculateHeight(request: HookRequest): number {
     return HEIGHTS.approval;
 }
 
-function roundUp10(n: number): number {
-    return Math.ceil(n / 10) * 10;
-}
 
 function updateContainerSize(height: number) {
-    const rounded = roundUp10(height);
+    const rounded = height;
     const root = document.documentElement;
     root.style.setProperty('--agent-handler-h', `${rounded}px`);
     logi(TAG, `更新高度: ${height}px → ${rounded}px`);
