@@ -108,6 +108,9 @@ export function initrAF() {
           if (capsule.classList.value == "") {
           } else if (capsule.classList.contains("notice-active")) {
             [toW, toH] = [400, 70];
+          } else if (capsule.classList.contains("agent-handler-active")) {
+            const style = getComputedStyle(document.documentElement);
+            [toW, toH] = [parseInt(style.getPropertyValue('--agent-handler-w')), parseInt(style.getPropertyValue('--agent-handler-h'))];
           } else if (capsule.classList.contains("panel-expanded") || capsule.classList.contains("hooks-expanded")) {
             [toW, toH] = [700, 220];
           } else if (capsule.classList.contains("music-expanded")) {

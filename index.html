@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="zh-CN">
+<html lang="zh-CN" style="--email-view-w: 820px; --email-view-h: 620px; --agent-handler-w: 380px; --agent-handler-h: 160px;">
 
 <head>
 
@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="src/css/index/email-base.css" />
 
     <link rel="stylesheet" href="src/css/index/agent-base.css" />
+
+    <link rel="stylesheet" href="src/css/index/agent-handler-base.css" />
 
     <link rel="stylesheet" href="src/css/index/downloader-base.css" />
 
@@ -39,6 +41,9 @@
         <!-- overlay 弹层（不参与视图切换，内容由 notice-queue.ts 动态渲染） -->
 
         <div id="notice-area" class="overlay-popup"></div>
+
+        <!-- Agent Hook 审批弹层 -->
+        <div id="agent-handler" class="overlay-popup"></div>
 
 
 

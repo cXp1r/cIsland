@@ -18,6 +18,7 @@ import { initNoticeQueue } from "./modules/notice-queue";
 import { initrAF } from "./modules/rAF";
 import { initTodo, initCalendar, initClock } from "./modules/panel";
 import { initDownloader } from "./modules/downloader";
+import { initAgentHandler } from "./modules/agent_handler/handler";
 initDownloader();
 initLogLevel()
 initNoticeUrl();
@@ -40,5 +41,6 @@ initClock();
 initCalendar();
 showOnlyView("time");
 hidePrivacyPopup();
+initAgentHandler();
 void syncCurrentView(currentView);
 

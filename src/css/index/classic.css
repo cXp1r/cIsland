@@ -44,6 +44,10 @@
 .url-item                  { color: #8ab4f8; }
 .url-item:hover            { background: rgba(255, 255, 255, 0.08); color: #aecbfa; }
 
+/* ── Agent Handler (Open Island 风格) ── */
+#agent-handler             { background: #0d0d0f; }
+#agent-handler:hover       { background: #0d0d0f; }
+
 /* ── 唱片 (收起态) ── */
 .vinyl-disc {
     background: radial-gradient(circle at center,

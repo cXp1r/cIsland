@@ -34,6 +34,8 @@ export const panel = document.getElementById("panel") as  HTMLDivElement;
 
 export const noticeArea = document.getElementById("notice-area") as HTMLDivElement;
 
+export const agentHandler = document.getElementById("agent-handler") as HTMLDivElement;
+
 
 
 export const lyricArea = document.getElementById("lyric-area") as HTMLDivElement;
