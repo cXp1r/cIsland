@@ -1,3 +1,4 @@
+use std::fmt;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
@@ -9,32 +10,73 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 static LOG_FILE_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-// 0=DEBUG, 1=INFO, 2=WARN
+// 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR
 static LOG_LEVEL: AtomicU8 = AtomicU8::new(1);
 static LOG_FILTER_TAGS: OnceLock<RwLock<Vec<String>>> = OnceLock::new();
 static LOG_FILTER_INVERT: AtomicU8 = AtomicU8::new(0);
 
-fn level_to_u8(level: &str) -> u8 {
-    match level {
-        "DEBUG" => 0,
-        "INFO"  => 1,
-        "WARN"  => 2,
-        "ERROR" => 3,
-        _ => 1,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogLevel {
+    Debug = 0,
+    Info = 1,
+    Warn = 2,
+    Error = 3,
+}
+
+impl fmt::Display for LogLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LogLevel::Debug => write!(f, "DEBUG"),
+            LogLevel::Info => write!(f, "INFO"),
+            LogLevel::Warn => write!(f, "WARN"),
+            LogLevel::Error => write!(f, "ERROR"),
+        }
     }
+}
+
+impl LogLevel {
+    pub fn as_str_lower(&self) -> &'static str {
+        match self {
+            LogLevel::Debug => "debug",
+            LogLevel::Info => "info",
+            LogLevel::Warn => "warn",
+            LogLevel::Error => "error",
+        }
+    }
+
+    pub fn from_u8(val: u8) -> Self {
+        match val {
+            0 => LogLevel::Debug,
+            1 => LogLevel::Info,
+            2 => LogLevel::Warn,
+            3 => LogLevel::Error,
+            _ => LogLevel::Info,
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        match s.to_ascii_uppercase().as_str() {
+            "DEBUG" => LogLevel::Debug,
+            "INFO" => LogLevel::Info,
+            "WARN" => LogLevel::Warn,
+            "ERROR" => LogLevel::Error,
+            _ => LogLevel::Info,
+        }
+    }
+}
+
+fn level_to_u8(level: &str) -> u8 {
+    LogLevel::from_str(level) as u8
 }
 
 pub fn set_level(level: &str) {
-    let normalized = level.to_ascii_uppercase();
-    LOG_LEVEL.store(level_to_u8(&normalized), Ordering::Relaxed);
+    LOG_LEVEL.store(level_to_u8(level), Ordering::Relaxed);
 }
 
 pub fn get_level() -> String {
-    match LOG_LEVEL.load(Ordering::Relaxed) {
-        0 => "debug".to_string(),
-        2 => "warn".to_string(),
-        _ => "info".to_string(),
-    }
+    LogLevel::from_u8(LOG_LEVEL.load(Ordering::Relaxed))
+        .as_str_lower()
+        .to_string()
 }
 
 pub fn set_filter(tags: Vec<String>, invert: bool) {
@@ -106,8 +148,8 @@ fn get_sender() -> &'static Sender<LogMsg> {
     })
 }
 
-fn write_log(tag: &str, level: &str, message: &str) {
-    if level_to_u8(level) < LOG_LEVEL.load(Ordering::Relaxed) {
+fn write_log(tag: &str, level: LogLevel, message: &str) {
+    if (level as u8) < LOG_LEVEL.load(Ordering::Relaxed) {
         return;
     }
     let filter_tags = LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).read().unwrap();
@@ -127,19 +169,19 @@ fn write_log(tag: &str, level: &str, message: &str) {
 }
 
 pub fn debug(tag: &str, message: &str) {
-    write_log(tag, "DEBUG", message);
+    write_log(tag, LogLevel::Debug, message);
 }
 
 pub fn info(tag: &str, message: &str) {
-    write_log(tag, "INFO", message);
+    write_log(tag, LogLevel::Info, message);
 }
 
 pub fn warn(tag: &str, message: &str) {
-    write_log(tag, "WARN", message);
+    write_log(tag, LogLevel::Warn, message);
 }
 
 pub fn error(tag: &str, message: &str) {
-    write_log(tag, "ERROR", message);
+    write_log(tag, LogLevel::Error, message);
 }
 
 #[tauri::command]
@@ -155,7 +197,8 @@ pub fn get_log_level_num() -> u8 {
 #[tauri::command]
 pub fn set_log_level(level: String) {
     set_level(&level);
-    info("Logger", &format!("日志等级已设为: {}", get_level()));
+    let log_level = LogLevel::from_str(&level);
+    info("Logger", &format!("日志等级已设为: {}", log_level));
 }
 
 #[tauri::command]
