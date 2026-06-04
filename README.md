@@ -26,18 +26,9 @@
 ## 歌词来源
 - [Lyrix](https://github.com/cXp1r/Lyrix) — 集成多平台歌词（网易云、QQ 音乐、酷狗、汽水音乐）
 
-## TODO (按照优先级降序)
-- [ ] agent hooks对接
-- [ ] 修复隐私指示器的裁切问题
-- [ ] todo list内容持久化
-- [ ] 倒计时日
-- [ ] 修复ai无法使用问题
-- [ ] 设置部分重构
+## TODO
 
-
-## 已完成
-- [x] 下载链接跳转aria2c
-- [x] 快捷键隐藏
+详见 [TODO.md](TODO.md)
 
 ## 技术栈
 
