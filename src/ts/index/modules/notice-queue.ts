@@ -136,8 +136,7 @@ function renderMessage(item: NoticeItem): void {
 
   // 绑定 .notice-main 点击 → 各类型自己的 action
   const main = noticeArea.querySelector<HTMLElement>(".notice-main");
-  const dismiss = noticeArea.querySelector<HTMLButtonElement>("#notice-dissmis");
-
+  const dismiss = noticeArea.querySelector<HTMLButtonElement>("#notice-dismiss");
   const download = noticeArea.querySelector<HTMLButtonElement>("#notice-download");
   if (download) {
     download.addEventListener("click", (e) => {
