@@ -1,6 +1,6 @@
-# Tauri-island
+# cIsland
 
-仿 macOS 灵动岛的 Windows 桌面悬浮胶囊，基于 Tauri 2 + Rust + TypeScript 构建。
+基于 Tauri 2 + Rust + TypeScript 构建的Windows灵动岛
 
 ![Windows](https://img.shields.io/badge/platform-Windows_10%2F11-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-orange)
@@ -26,12 +26,14 @@
 ## 歌词来源
 - [Lyrix](https://github.com/cXp1r/Lyrix) — 集成多平台歌词（网易云、QQ 音乐、酷狗、汽水音乐）
 
-## TODO 
+## TODO (按照优先级降序)
+- [ ] agent hooks对接
+- [ ] 修复隐私指示器的裁切问题
 - [ ] todo list内容持久化
 - [ ] 倒计时日
 - [ ] 修复ai无法使用问题
 - [ ] 设置部分重构
-- [ ] agent hooks对接
+
 
 ## 已完成
 - [x] 下载链接跳转aria2c
