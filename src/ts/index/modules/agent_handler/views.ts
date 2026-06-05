@@ -18,7 +18,7 @@ function escapeHtml(text: string): string {
 }
 
 function renderCommandPreview(toolName: string, input: any): string {
-    if (!input) return '<span class="oi-subtitle">无输入</span>';
+    if (!input) return '<span class="oi-subtitle">No input</span>';
 
     if (toolName === "Edit" && input.old_string !== undefined && input.new_string !== undefined) {
         return renderEditDiff(input);
@@ -37,7 +37,7 @@ function renderCommandPreview(toolName: string, input: any): string {
         case "Grep":
             return `<span class="string">${escapeHtml(input.pattern || "")}</span>`;
         case "ExitPlanMode":
-            return `退出计划模式，开始实现`;
+            return `Exit plan mode`;
         default:
             return `<pre style="margin:0;white-space:pre-wrap;">${escapeHtml(JSON.stringify(input, null, 2))}</pre>`;
     }
@@ -87,7 +87,7 @@ function renderWritePreview(input: any): string {
     }
 
     if (truncated) {
-        html += `<div class="oi-diff-truncated">... 还有 ${lines.length - displayLines} 行</div>`;
+        html += `<div class="oi-diff-truncated">... ${lines.length - displayLines} more lines</div>`;
     }
 
     html += `</div></div>`;
@@ -95,15 +95,15 @@ function renderWritePreview(input: any): string {
 }
 
 const TOOL_LABELS: Record<string, { icon: string; label: string }> = {
-    "Bash": { icon: "⚡", label: "终端命令" },
-    "Write": { icon: "✏️", label: "写入文件" },
-    "Edit": { icon: "✏️", label: "编辑文件" },
-    "Read": { icon: "📖", label: "读取文件" },
-    "Glob": { icon: "🔍", label: "搜索文件" },
-    "Grep": { icon: "🔍", label: "搜索内容" },
-    "AskUserQuestion": { icon: "❓", label: "回答问题" },
-    "ExitPlanMode": { icon: "🚀", label: "退出计划模式" },
-    "PermissionRequest": { icon: "🔐", label: "权限请求" },
+    "Bash": { icon: "$", label: "Terminal" },
+    "Write": { icon: "W", label: "Write File" },
+    "Edit": { icon: "E", label: "Edit File" },
+    "Read": { icon: "R", label: "Read File" },
+    "Glob": { icon: "G", label: "Search Files" },
+    "Grep": { icon: "G", label: "Search Content" },
+    "AskUserQuestion": { icon: "?", label: "Answer Question" },
+    "ExitPlanMode": { icon: "!", label: "Exit Plan Mode" },
+    "PermissionRequest": { icon: "!", label: "Permission Request" },
 };
 
 function getToolLabel(toolName: string) {
@@ -111,66 +111,87 @@ function getToolLabel(toolName: string) {
 }
 
 
-export function createApprovalCard(request: HookRequest): HTMLElement {
+type CardStatusVariant = "waiting" | "answer";
+
+interface CardShellConfig {
+    request: HookRequest;
+    title: string;
+    subtitle: string;
+    statusVariant: CardStatusVariant;
+    toolIcon: string;
+    bodyHtml: string;
+    actionsHtml: string;
+    bindEvents: (card: HTMLElement) => void;
+}
+
+function createAgentCard(config: CardShellConfig): HTMLElement {
     const card = document.createElement("div");
     card.className = "oi-card";
-    card.dataset.uuid = request.uuid;
-
-    const config = getToolLabel(request.tool_name || "");
-    const isPermissionRequest = request.hook_event === "PermissionRequest";
+    card.dataset.uuid = config.request.uuid;
 
     card.innerHTML = `
         <div class="oi-header">
-            <div class="oi-status-dot ${isPermissionRequest ? 'waiting' : ''}"></div>
-            <span class="oi-agent-badge">${getAgentIcon(request.agent_type)}</span>
+            <div class="oi-status-dot ${config.statusVariant}"></div>
+            <span class="oi-agent-badge">${getAgentIcon(config.request.agent_type)}</span>
             <div class="oi-title-area">
-                <div class="oi-title">${config.label}</div>
-                <div class="oi-subtitle">${escapeHtml(request.tool_name || "")}</div>
+                <div class="oi-title">${escapeHtml(config.title)}</div>
+                <div class="oi-subtitle">${escapeHtml(config.subtitle)}</div>
             </div>
-            <span class="oi-tool-icon">${config.icon}</span>
+            <span class="oi-tool-icon">${config.toolIcon}</span>
         </div>
         <div class="oi-body">
-            <div class="oi-command-preview">${renderCommandPreview(request.tool_name || "", request.tool_input)}</div>
+            ${config.bodyHtml}
         </div>
-        <div class="oi-actions">
-            <button class="oi-btn oi-btn-secondary" data-action="deny">拒绝</button>
-            <button class="oi-btn oi-btn-primary" data-action="allow">允许</button>
-        </div>
+        ${config.actionsHtml}
     `;
 
-    card.querySelector('[data-action="allow"]')?.addEventListener("click", async () => {
-        await respondToHook(request.uuid, { type: "allow" });
-        card.remove();
-    });
-
-    card.querySelector('[data-action="deny"]')?.addEventListener("click", async () => {
-        await respondToHook(request.uuid, { type: "deny" });
-        card.remove();
-    });
-
+    config.bindEvents(card);
     return card;
 }
 
-export function createQuestionCard(request: HookRequest): HTMLElement {
-    const card = document.createElement("div");
-    card.className = "oi-card";
-    card.dataset.uuid = request.uuid;
+export function createApprovalCard(request: HookRequest): HTMLElement {
+    const config = getToolLabel(request.tool_name || "");
+    const isPermissionRequest = request.hook_event === "PermissionRequest";
 
+    return createAgentCard({
+        request,
+        title: config.label,
+        subtitle: request.tool_name || "",
+        statusVariant: isPermissionRequest ? "waiting" : "answer",
+        toolIcon: config.icon,
+        bodyHtml: `<div class="oi-command-preview">${renderCommandPreview(request.tool_name || "", request.tool_input)}</div>`,
+        actionsHtml: `
+            <div class="oi-actions">
+                <button class="oi-btn oi-btn-secondary" data-action="deny">Deny</button>
+                <button class="oi-btn oi-btn-primary" data-action="allow">Allow</button>
+            </div>
+        `,
+        bindEvents: (card) => {
+            card.querySelector('[data-action="allow"]')?.addEventListener("click", async () => {
+                await respondToHook(request.uuid, { type: "allow" });
+                card.remove();
+            });
+
+            card.querySelector('[data-action="deny"]')?.addEventListener("click", async () => {
+                await respondToHook(request.uuid, { type: "deny" });
+                card.remove();
+            });
+        },
+    });
+}
+
+export function createQuestionCard(request: HookRequest): HTMLElement {
     const questions = parseQuestions(request);
 
-    card.innerHTML = `
-        <div class="oi-header">
-            <div class="oi-status-dot answer"></div>
-            <span class="oi-agent-badge">${getAgentIcon(request.agent_type)}</span>
-            <div class="oi-title-area">
-                <div class="oi-title">回答问题</div>
-                <div class="oi-subtitle">AskUserQuestion</div>
-            </div>
-            <span class="oi-tool-icon">❓</span>
-        </div>
-        <div class="oi-body">
+    return createAgentCard({
+        request,
+        title: "Answer Question",
+        subtitle: "AskUserQuestion",
+        statusVariant: "answer",
+        toolIcon: "?",
+        bodyHtml: `
             ${questions.map((q, qi) => `
-                <div class="oi-question-header">问题 ${qi + 1}</div>
+                <div class="oi-question-header">Question ${qi + 1}</div>
                 <div class="oi-question-text">${escapeHtml(q.question)}</div>
                 <div class="oi-options">
                     ${q.options.map((opt, oi) => `
@@ -183,41 +204,41 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                 </div>
             `).join("")}
             <div class="oi-custom-input-wrap">
-                <input type="text" class="oi-custom-input" placeholder="自定义回答..." />
-                <button class="oi-btn oi-btn-primary" data-action="submit">发送</button>
+                <input type="text" class="oi-custom-input" placeholder="Custom answer..." />
+                <button class="oi-btn oi-btn-primary" data-action="submit">Submit</button>
             </div>
-        </div>
-    `;
+        `,
+        actionsHtml: "",
+        bindEvents: (card) => {
+            card.querySelectorAll(".oi-option").forEach(opt => {
+                opt.addEventListener("click", async () => {
+                    const answer = opt.getAttribute("data-answer") || "";
+                    await respondToHook(request.uuid, { type: "answer", answer });
+                    card.remove();
+                });
+            });
 
-    card.querySelectorAll(".oi-option").forEach(opt => {
-        opt.addEventListener("click", async () => {
-            const answer = opt.getAttribute("data-answer") || "";
-            await respondToHook(request.uuid, { type: "answer", answer });
-            card.remove();
-        });
+            card.querySelector('[data-action="submit"]')?.addEventListener("click", async () => {
+                const input = card.querySelector(".oi-custom-input") as HTMLInputElement;
+                const answer = input?.value?.trim();
+                if (answer) {
+                    await respondToHook(request.uuid, { type: "answer", answer });
+                    card.remove();
+                }
+            });
+
+            (card.querySelector(".oi-custom-input") as HTMLInputElement)?.addEventListener("keydown", async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                    const input = e.target as HTMLInputElement;
+                    const answer = input?.value?.trim();
+                    if (answer) {
+                        await respondToHook(request.uuid, { type: "answer", answer });
+                        card.remove();
+                    }
+                }
+            });
+        },
     });
-
-    card.querySelector('[data-action="submit"]')?.addEventListener("click", async () => {
-        const input = card.querySelector(".oi-custom-input") as HTMLInputElement;
-        const answer = input?.value?.trim();
-        if (answer) {
-            await respondToHook(request.uuid, { type: "answer", answer });
-            card.remove();
-        }
-    });
-
-    (card.querySelector(".oi-custom-input") as HTMLInputElement)?.addEventListener("keydown", async (e: KeyboardEvent) => {
-        if (e.key === "Enter") {
-            const input = e.target as HTMLInputElement;
-            const answer = input?.value?.trim();
-            if (answer) {
-                await respondToHook(request.uuid, { type: "answer", answer });
-                card.remove();
-            }
-        }
-    });
-
-    return card;
 }
 
 function parseQuestions(request: HookRequest): Array<{
