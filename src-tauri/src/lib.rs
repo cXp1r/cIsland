@@ -400,8 +400,7 @@ pub fn run() {
             let latest_email_uid: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
             let email_shortcut = Arc::new(Mutex::new(settings.email_shortcut.clone()));
             let cached_email_metas: Arc<Mutex<Vec<email::EmailMeta>>> = Arc::new(Mutex::new(email::load_email_metas()));
-            
-            let aria2c_install_dir = Arc::new(Mutex::new(settings.aria2c_install_dir));
+
             let aria2c_thread = Arc::new(AtomicU8::new(settings.aria2c_thread));
             let aria2c_path = Arc::new(Mutex::new(settings.aria2c_path.clone()));
             
@@ -493,10 +492,8 @@ pub fn run() {
                 latest_email_uid: latest_email_uid.clone(),
                 email_shortcut: email_shortcut.clone(),
                 cached_email_metas: cached_email_metas.clone(),
-                adb_install_dir: Arc::new(Mutex::new(settings.adb_install_dir.clone())),
                 adb_path: Arc::new(Mutex::new(settings.adb_path.clone())),
                 aria2c_thread: aria2c_thread.clone(),
-                aria2c_install_dir: aria2c_install_dir.clone(),
                 aria2c_path: aria2c_path.clone(),
                 aria2c_process: Arc::new(Mutex::new(aria2c_process)),
                 aria2c_rpc_client,
@@ -1574,7 +1571,6 @@ pub struct IslandState {
     pub(crate) sadb_session: tokio::sync::Mutex<Option<sadb::SessionHandle>>,
     pub sadb_ip: Arc<Mutex<String>>,
     pub sadb_port: Arc<AtomicU16>,
-    pub adb_install_dir: Arc<Mutex<String>>,
     pub adb_path: Arc<Mutex<String>>,
     pub sadb_expanded: Arc<AtomicBool>,
     /// 待机面板展开中（已点击展开但尚未开始镜像，或镜像结束后回退）
@@ -1582,7 +1578,6 @@ pub struct IslandState {
     /// 镜像流正常推送中（视频帧在传输），用于允许拖动不回弹
     pub sadb_mirroring: Arc<AtomicBool>,
 
-    pub aria2c_install_dir: Arc<Mutex<String>>,
     pub aria2c_path: Arc<Mutex<String>>,
     pub aria2c_thread: Arc<AtomicU8>,//上限16,下限1
     pub aria2c_process: Arc<Mutex<Option<Child>>>,

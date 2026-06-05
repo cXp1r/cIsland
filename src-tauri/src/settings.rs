@@ -126,15 +126,11 @@ pub(crate) struct SettingsData {
     #[serde(default = "default_email_shortcut")]
     pub email_shortcut: String,
     #[serde(default)]
-    pub adb_install_dir: String,
-    #[serde(default)]
     pub adb_path: String,
     #[serde(default)]
     pub aria2c_thread: u8,
     #[serde(default)]
     pub aria2c_path: String,
-    #[serde(default)]
-    pub aria2c_install_dir: String,
     #[serde(default = "default_aria2c_rpc_port")]
     pub aria2c_rpc_port: u16,
     #[serde(default = "default_aria2c_rpc_secret")]
@@ -273,7 +269,6 @@ fn default_settings() -> SettingsData {
         log_filter_invert: default_log_filter_invert(),
         sadb_ip: String::new(),
         sadb_port: default_sadb_port(),
-        adb_install_dir: String::new(),
         adb_path: String::new(),
         email_username: String::new(),
         email_auth: String::new(),
@@ -281,7 +276,6 @@ fn default_settings() -> SettingsData {
         email_port: default_email_port(),
         email_poll_interval_secs: default_email_poll_interval_secs(),
         email_shortcut: default_email_shortcut(),
-        aria2c_install_dir: String::new(),
         aria2c_path: String::new(),
         aria2c_thread: 4,
         aria2c_rpc_port: 6800,
@@ -349,7 +343,6 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         log_filter_invert: crate::logger::get_filter_invert(),
         sadb_ip: state.sadb_ip.lock().unwrap().clone(),
         sadb_port: state.sadb_port.load(Ordering::Relaxed),
-        adb_install_dir: state.adb_install_dir.lock().unwrap().clone(),
         adb_path: state.adb_path.lock().unwrap().clone(),
         email_username: ec_username,
         email_auth: ec_auth,
@@ -357,7 +350,6 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         email_port: ec_port,
         email_poll_interval_secs: state.email_poll_interval_secs.load(Ordering::Relaxed),
         email_shortcut: state.email_shortcut.lock().unwrap().clone(),
-        aria2c_install_dir: state.aria2c_install_dir.lock().unwrap().clone(),
         aria2c_path: state.aria2c_path.lock().unwrap().clone(),
         aria2c_thread: state.aria2c_thread.load(Ordering::Relaxed),
         aria2c_rpc_port: state.aria2c_rpc_port.load(Ordering::Relaxed),
@@ -695,9 +687,7 @@ pub fn save_settings(
 #[tauri::command]
 pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
     serde_json::json!({
-        "adb_install_dir": state.adb_install_dir.lock().unwrap().clone(),
         "adb_path": state.adb_path.lock().unwrap().clone(),
-        "aria2c_install_dir":  state.aria2c_install_dir.lock().unwrap().clone(),
         "aria2c_path": state.aria2c_path.lock().unwrap().clone(),
         "aria2c_thread": state.aria2c_thread.load(Ordering::Relaxed),
         "aria2c_rpc_port": state.aria2c_rpc_port.load(Ordering::Relaxed),
@@ -708,10 +698,8 @@ pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::V
 #[tauri::command]
 pub fn save_tools_settings(
     state: tauri::State<'_, IslandState>,
-    adb_install_dir: Option<String>,
     adb_path: Option<String>,
     aria2c_thread: Option<u8>,
-    aria2c_install_dir: Option<String>,
     aria2c_path: Option<String>,
     aria2c_rpc_secret: Option<String>,
     aria2c_rpc_port: Option<u16>,
@@ -728,10 +716,6 @@ pub fn save_tools_settings(
         settings_data.aria2c_path = aria2c_path.clone();
         *state.aria2c_path.lock().unwrap() = aria2c_path;
     }
-    if let Some(aria2c_install_dir) = aria2c_install_dir {
-        settings_data.aria2c_install_dir = aria2c_install_dir.clone();
-        *state.aria2c_install_dir.lock().unwrap() = aria2c_install_dir;
-    }
     if let Some(aria2c_rpc_secret) = aria2c_rpc_secret {
         settings_data.aria2c_rpc_secret = aria2c_rpc_secret.clone();
         *state.aria2c_rpc_secret.lock().unwrap() = aria2c_rpc_secret;
@@ -739,10 +723,6 @@ pub fn save_tools_settings(
     if let Some(port) = aria2c_rpc_port {
         settings_data.aria2c_rpc_port = port;
         state.aria2c_rpc_port.store(port, Ordering::Relaxed);
-    }
-    if let Some(dir) = adb_install_dir {
-        settings_data.adb_install_dir = dir.clone();
-        *state.adb_install_dir.lock().unwrap() = dir;
     }
     if let Some(path) = adb_path {
         settings_data.adb_path = path.clone();
