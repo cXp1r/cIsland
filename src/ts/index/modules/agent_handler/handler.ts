@@ -2,7 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, agentHandler } from "../../dom";
 import { HookRequest, HookAction, CcHookEvent } from "./model";
-import { createApprovalCard, createQuestionCard } from "./views";
+import { createApprovalCard, createNotification, createQuestionCard } from "./views";
 import { logi } from "../../logger";
 
 const TAG = "AgentHandler";
@@ -21,22 +21,23 @@ const NEED_APPROVAL_TOOLS = [
     "PermissionRequest",
 ];
 
-const SILENT_EVENTS: CcHookEvent[] = [
-    "SessionStart",
-    "SessionEnd",
-    "PostToolUse",
-    "PostToolUseFailure",
+const INFO_TOOLS = [
     "Stop",
+    "Notification",
+    "SessionEnd",
+]
+
+const ERROR_TOOLS = [
+    "PostToolUseFailure",
     "StopFailure",
-    "SubagentStart",
-    "SubagentStop",
-    "PreCompact",
-];
+]
 
 let activeCard: HTMLElement | null = null;
 let activeUuid: string | null = null;
 
 function calculateHeight(request: HookRequest): number {
+    //在适配之后暂时先用一个定值
+    return 390;
     if (request.tool_name === "AskUserQuestion") {
         const questions = (request.tool_input as any)?.questions || [];
         return questions.length > 1 ? HEIGHTS.question2 : HEIGHTS.question1;
@@ -70,11 +71,6 @@ export function initAgentHandler() {
 }
 
 async function handleHookRequest(request: HookRequest) {
-    if (SILENT_EVENTS.includes(request.hook_event)) {
-        logi(TAG, `静默事件，自动允许: ${request.hook_event}`);
-        await respondToHook(request.uuid, { type: "allow" });
-        return;
-    }
 
     if (request.hook_event === "PermissionRequest") {
         showCard(createApprovalCard(request), request);
@@ -91,7 +87,12 @@ async function handleHookRequest(request: HookRequest) {
         return;
     }
 
-    logi(TAG, `默认允许: ${request.hook_event} ${request.tool_name}`);
+    if (INFO_TOOLS.includes(request.hook_event)) {
+        showCard(createNotification(request), request);
+        return;
+    }
+
+    logi(TAG, `默认允许: ${request}`);
     await respondToHook(request.uuid, { type: "allow" });
 }
 

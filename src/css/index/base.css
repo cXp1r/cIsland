@@ -3458,3 +3458,35 @@ body.minimized #collapsed-indicator { display: block; }
 
 }
 
+
+.cscrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+.cscrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.cscrollbar::-webkit-scrollbar-button {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+}
+
+
+.cscrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+}
+
+
+.cscrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.25);
+}

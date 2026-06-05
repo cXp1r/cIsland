@@ -116,6 +116,68 @@
     flex-direction: column;
 }
 
+.oi-md-preview {
+    background: rgba(255,255,255,0.045);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #f1ead9;
+    line-height: 1.5;
+    text-align: left;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    max-height: none;
+}
+
+.oi-md-preview > :first-child {
+    margin-top: 0;
+}
+
+.oi-md-preview > :last-child {
+    margin-bottom: 0;
+}
+
+.oi-md-preview p,
+.oi-md-preview ul,
+.oi-md-preview ol,
+.oi-md-preview blockquote,
+.oi-md-preview pre,
+.oi-md-preview table {
+    margin: 0 0 0.75em;
+}
+
+.oi-md-preview h1,
+.oi-md-preview h2,
+.oi-md-preview h3,
+.oi-md-preview h4,
+.oi-md-preview h5,
+.oi-md-preview h6 {
+    margin: 0 0 0.5em;
+    line-height: 1.25;
+}
+
+.oi-md-preview ul,
+.oi-md-preview ol {
+    padding-left: 1.25em;
+}
+
+.oi-md-preview blockquote {
+    padding-left: 12px;
+    border-left: 2px solid rgba(255,255,255,0.14);
+    color: rgba(241,234,217,0.78);
+}
+
+.oi-md-preview pre {
+    overflow: auto;
+}
+
+.oi-md-preview code {
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+}
+
 .oi-command-preview {
     background: rgba(255,255,255,0.045);
     border-radius: 8px;
@@ -353,37 +415,4 @@
 
 .oi-btn-warning:hover {
     background: rgb(230, 155, 50);
-}
-
-.oi-command-preview::-webkit-scrollbar,
-.oi-diff-content::-webkit-scrollbar {
-    width: 5px;
-}
-
-.oi-command-preview::-webkit-scrollbar-track,
-.oi-diff-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.oi-command-preview::-webkit-scrollbar-button,
-.oi-diff-content::-webkit-scrollbar-button {
-    width: 0 !important;
-    height: 0 !important;
-    display: none !important;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent !important;
-    background-image: none !important;
-    border: 0 !important;
-}
-
-.oi-command-preview::-webkit-scrollbar-thumb,
-.oi-diff-content::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.15);
-    border-radius: 3px;
-}
-
-.oi-command-preview::-webkit-scrollbar-thumb:hover,
-.oi-diff-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.25);
 }
