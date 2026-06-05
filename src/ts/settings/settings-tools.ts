@@ -96,7 +96,7 @@ export function initTools(): void {
                 ui.initBtn.disabled = true;
 
                 try {
-                    const result = await invoke<InstallResult>('tools_download_and_install_from_github', {
+                    const result = await invoke<InstallResult>('tools_downloader', {
                         idir: installDir,
                         name: ui.name,
                     });
