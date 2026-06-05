@@ -34,7 +34,10 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
     color: #f1ead9;
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .oi-header {
@@ -107,8 +110,10 @@
 }
 
 .oi-body {
-    margin-bottom: 14px;
-    overflow: hidden;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .oi-command-preview {
@@ -121,8 +126,10 @@
     line-height: 1.5;
     word-break: break-all;
     white-space: pre-wrap;
-    max-height: 240px;
-    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    max-height: none;
 }
 
 .oi-command-preview .keyword {
@@ -294,6 +301,9 @@
     display: flex;
     gap: 8px;
     justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255,255,255,0.12);
 }
 
 .oi-btn {
