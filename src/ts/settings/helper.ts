@@ -3,3 +3,7 @@ export function get_parent(p: string): string {
     arr.pop();
     return arr.join("\\");
 }
+
+export function sanitize(v: string) {
+    return v.replace(/[^a-zA-Z0-9_/\\\:]/g, "");
+}
