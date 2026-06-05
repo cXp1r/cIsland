@@ -3,6 +3,7 @@ import { aria2cThread } from "./settings-tools";
 import { Aria2cRpcEnd, Aria2cRpcProgress} from "./types";
 import { listen } from "@tauri-apps/api/event";
 import { showStatus } from "./settings-shared";
+import { userDir } from "./main";
 //实则归属tools,但是作为一个工具模块还是分页出来,也其他初始化方式区别开
 const url = document.getElementById("aria2c-url") as HTMLInputElement;
 const thread = document.getElementById("aria2c-downloader-thread") as HTMLInputElement;
@@ -69,9 +70,7 @@ listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
 export function initDownloader() {
     thread.value = aria2cThread.value;
     console.log(aria2cThread.value, thread.value);
-    invoke<string>('get_user_dir').then((r) => {
-        saveDir.value = r + "\\downloads";
-    })
+    saveDir.value = userDir + "\\downloads";
     downloadBtn.addEventListener("click", async () => {
         let urlq = url.value.trim()
         if (urlq !== ""){
