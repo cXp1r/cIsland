@@ -3,6 +3,7 @@ import { showStatus } from "./settings-shared";
 import { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
 import { configDir } from "./main";
 import { logi } from "../logger";
+import { get_parent } from "./helper";
 
 let tag = "Tools";
 export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement;
@@ -66,11 +67,7 @@ function sanitize(v: string) {
     return v.replace(/[^a-zA-Z0-9_/\\\:]/g, "");
 }
 
-function get_parent(p: string): string {
-    const arr = p.replaceAll("\\", "/").split("/");
-    arr.pop();
-    return arr.join("/");
-}
+
 
 export function initTools(): void {
     //小巧思
