@@ -1,17 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./settings-shared";
 import { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
-import { initDownloader } from "./downloader";
-import { setWORKSPACE, WORKSPACE } from "./settings";
+import { configDir } from "./main";
+import { logi } from "../logger";
 
-export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement
-export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement
-export const aria2cThread = document.getElementById("aria2c-thread") as HTMLInputElement
-const aria2cGetPathBtn = document.getElementById("aria2c-get-path-btn") as HTMLButtonElement
-const aria2cInitBtn = document.getElementById("aria2c-init-btn") as HTMLButtonElement
-const aria2cCheckBtn = document.getElementById("aria2c-check-btn") as HTMLButtonElement
-const aria2cTestBtn = document.getElementById("aria2c-test-btn") as HTMLButtonElement
-const aria2cResult = document.getElementById("aria2c-check-result") as HTMLInputElement
+let tag = "Tools";
+export const aria2c1 = document.getElementById("aria2c-install-dir") as HTMLInputElement;
+export const aria2cPath = document.getElementById("aria2c-path") as HTMLInputElement;
+export const aria2cThread = document.getElementById("aria2c-thread") as HTMLInputElement;
+const aria2cGetPathBtn = document.getElementById("aria2c-get-path-btn") as HTMLButtonElement;
+const aria2cInitBtn = document.getElementById("aria2c-init-btn") as HTMLButtonElement;
+const aria2cCheckBtn = document.getElementById("aria2c-check-btn") as HTMLButtonElement;
+const aria2cTestBtn = document.getElementById("aria2c-test-btn") as HTMLButtonElement;
+const aria2cResult = document.getElementById("aria2c-check-result") as HTMLInputElement;
 
 export const adb1 = document.getElementById("adb-install-dir") as HTMLInputElement;
 export const adbPath = document.getElementById("adb-path") as HTMLInputElement;
@@ -65,24 +66,28 @@ function sanitize(v: string) {
     return v.replace(/[^a-zA-Z0-9_/\\\:]/g, "");
 }
 
+function get_parent(p: string): string {
+    const arr = p.replaceAll("\\", "/").split("/");
+    arr.pop();
+    return arr.join("/");
+}
 
 export function initTools(): void {
     //小巧思
     invoke<ToolsSettingsResponse>('get_tools_settings').then((r) => {
+        logi(tag, "读取到tools配置:", r);
+        let adb_parent = get_parent(r.adb_path);
+        let aria2c_parent = get_parent(r.aria2c_path);
         adbPath.value = r.adb_path;
-        adb1.value = r.adb_install_dir;
+        adb1.value = adb_parent == "" ? configDir + "adb" : adb_parent;
+        aria2c1.value = aria2c_parent == "" ? configDir + "aria2c" : aria2c_parent;
         aria2cPath.value = r.aria2c_path;
         aria2cThread.value = r.aria2c_thread.toString();
         aria2cRpcSecret.value = r.aria2c_rpc_secret === "灯灯侑侑天下第一" ? "" : r.aria2c_rpc_secret;
         aria2cRpcPort.value = r.aria2c_rpc_port.toString()
-        initDownloader();
     })
 
-    invoke<string>('get_workspace').then((res) => {
-        setWORKSPACE(res+ "\\");
-        
-        Object.entries(modules).forEach(([_name, ui]) => {
-            ui.installDir.value = ui.installDir.value == "" ? WORKSPACE + ui.name : ui.installDir.value;
+    Object.entries(modules).forEach(([_name, ui]) => {
             ui.installDir.addEventListener("input", () => {
                 ui.installDir.value = sanitize(ui.installDir.value);
             });
@@ -246,7 +251,6 @@ export function initTools(): void {
                 }
             });
         });
-    });
 
   adbConnBtn.addEventListener("click", async () => {
     const ip = sadbIpInput.value.trim();
