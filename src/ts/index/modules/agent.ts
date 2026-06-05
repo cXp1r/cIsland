@@ -21,6 +21,10 @@ import {
   thinkingTimer, setThinkingTimer,
   currentAssistantContainer, setCurrentAssistantContainer,
 } from "../state";
+import {
+  renderMarkdown as renderMarkdownFromMd,
+  highlightAndAddCopyButtons as highlightAndAddCopyButtonsFromMd,
+} from "../md";
 import { updateSwitcherUI } from "./view-switcher";
 import { logd, loge, logi } from "../logger";
 
@@ -672,9 +676,9 @@ export function initAgent() {
 
     setCurrentAssistantRawText(currentAssistantRawText + event.payload.text);
 
-    currentAssistantMessage!.innerHTML = renderMarkdown(currentAssistantRawText);
+    currentAssistantMessage!.innerHTML = renderMarkdownFromMd(currentAssistantRawText);
 
-    highlightAndAddCopyButtons(currentAssistantMessage!);
+    highlightAndAddCopyButtonsFromMd(currentAssistantMessage!);
 
     scrollMessagesToBottom();
 
