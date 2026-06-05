@@ -1,11 +1,12 @@
 use libloading::{Library, Symbol};
 use serde::Serialize;
 use std::{
-    env,
     ffi::OsString,
     os::windows::ffi::OsStringExt,
     path::PathBuf,
 };
+
+use crate::get_exe_path;
 
 type EverythingSetSearchW = unsafe extern "system" fn(*const u16);
 type EverythingSetMax = unsafe extern "system" fn(u32);
@@ -41,11 +42,7 @@ pub struct SearchPage {
 }
 
 fn dll_path() -> Result<PathBuf, String> {
-    let exe_dir = env::current_exe()
-        .map_err(|err| format!("failed to get current exe path: {err}"))?
-        .parent()
-        .ok_or_else(|| "failed to resolve exe directory".to_string())?
-        .to_path_buf();
+    let exe_dir = get_exe_path();
 
     // 优先 exe 同目录（dev 模式），再查 resources 子目录（打包后）
     let direct = exe_dir.join("Everything64.dll");

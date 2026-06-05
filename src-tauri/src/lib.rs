@@ -46,14 +46,22 @@ pub(crate) const WIN_H_DEFAULT: f64 = 84.0;        // CAPSULE_EXPANDED_H + paddi
 pub(crate) const SNAP_DURATION_MS: f64 = 300.0;
 pub(crate) const SNAP_FRAME_MS: u64 = 16;
 const PRIVACY_POLL_MS: u64 = 1200;
-
-pub(crate) fn get_path() -> PathBuf {
+pub(crate) fn get_exe_path() -> PathBuf {
+    std::env::current_exe()
+        .map_err(|err| format!("failed to get current exe path: {err}"))
+        .unwrap()
+        .parent()
+        .ok_or_else(|| "failed to resolve exe directory".to_string())
+        .unwrap()
+        .to_path_buf()
+}
+pub(crate) fn get_config_path() -> PathBuf {
     dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join("cisland")
 }
 #[tauri::command]
-fn get_workspace() -> String {
+fn get_config_dir() -> String {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("cisland")
@@ -62,9 +70,15 @@ fn get_workspace() -> String {
 }
 #[tauri::command]
 fn get_user_dir() -> String {
-     std::env::var("USERPROFILE")
+    std::env::var("USERPROFILE")
         .expect("USERPROFILE not set")
         .to_string()
+}
+#[tauri::command]
+fn get_exe_dir() -> String {
+    get_exe_path()
+        .to_string_lossy()
+        .to_string() 
 }
 
 /// 全局复用的 HTTP client，天气处调用
@@ -269,7 +283,7 @@ pub fn run() {
             sadb::sadb_send_keycode, sadb::sadb_inject_text,
             sadb::sadb_set_clipboard,
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
-            get_workspace, get_user_dir,
+            get_config_dir, get_user_dir, get_exe_dir,
             tools::tools_downloader, tools::find_path_by_where, tools::aria2c_rpc_download, //两个通用函数
             tools::check, tools::test, tools::open_path, tools::custom_caller,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,

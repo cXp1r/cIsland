@@ -1,7 +1,7 @@
 ﻿use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 use std::sync::atomic::{AtomicBool, Ordering};
-use crate::{get_path, logger};
+use crate::{get_config_path, logger};
 use tokio::task;
 
 const TAG: &str = "Email";
@@ -16,7 +16,7 @@ pub fn is_email_configured() -> bool {
 }
 /// 邮件缓存目录：/email
 pub fn email_cache_dir() -> PathBuf {
-    let dir = get_path()
+    let dir = get_config_path()
         .join("email");
     let _ = std::fs::create_dir_all(&dir);
     dir

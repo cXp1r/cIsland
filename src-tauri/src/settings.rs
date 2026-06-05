@@ -7,7 +7,6 @@ use tauri::{Emitter, Manager};
 use crate::IslandState;
 use crate::link_handler::LinkHandler;
 use windows::Win32::Foundation::HWND;
-use crate::get_path;
 use crate::window::{MonitorInfo, get_primary_monitor_info};
 /// 歌词补偿：按播放器保存时 clamp 的边界与步长（毫秒）
 pub(crate) const LYRIC_OFFSET_MIN_MS: i64 = -3000;
@@ -238,7 +237,7 @@ fn default_blacklist_processes() -> Vec<String> {
 }
 
 pub(crate) fn get_settings_path() -> PathBuf {
-    get_path().join("settings.json")
+    crate::get_config_path().join("settings.json")
 }
 fn default_settings() -> SettingsData {
     SettingsData {

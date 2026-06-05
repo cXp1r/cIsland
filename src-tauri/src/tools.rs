@@ -81,7 +81,7 @@ pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
 
 #[tauri::command]
 pub fn custom_caller(path: &str, args: Vec<&str>) -> Result<TestResult, String> {
-    if path.ends_with("adb.exe") || path.ends_with("aria2c.exe") {
+    if path.ends_with("adb.exe") || path.ends_with("aria2c.exe") || path.ends_with("cc-hook.exe") {
         let output = Command::new(path)
             .args(&args)
             .creation_flags(CREATE_NO_WINDOW)

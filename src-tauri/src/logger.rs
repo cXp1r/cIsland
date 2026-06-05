@@ -114,7 +114,7 @@ fn get_sender() -> &'static Sender<LogMsg> {
     SENDER.get_or_init(|| {
         let (tx, rx) = mpsc::channel::<LogMsg>();
 
-        let log_dir: PathBuf = crate::get_path().join("log");
+        let log_dir: PathBuf = crate::get_config_path().join("log");
         let _ = std::fs::create_dir_all(&log_dir);
 
         let ts = SystemTime::now()
