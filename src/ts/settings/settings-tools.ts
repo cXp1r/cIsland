@@ -135,6 +135,7 @@ export function initTools(): void {
                     );
 
                     ui.path.value = foundPath;
+                    ui.installDir.value = get_parent(foundPath);
 
                     setResult(
                         ui.result,
