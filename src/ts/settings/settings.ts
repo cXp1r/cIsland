@@ -14,6 +14,7 @@ import { initSmtcWhitelist } from "./settings-smtc-whitelist";
 import { initLogFilter, getLogFilterTags, setLogFilterTags } from "./settings-log-filter";
 import type { SettingsResponse } from "./types";
 import { saveToolsSettings, initTools } from "./settings-tools";
+import { initAgentHandlerInstaller } from "./agent-handler";
 
 const TAG = "Settings";
 
@@ -288,7 +289,7 @@ initUpdate();
 initBlacklist();
 initSmtcWhitelist();
 initLogFilter();
-
+initAgentHandlerInstaller();
 
 const openCfgBtn = document.getElementById("open-cfg-btn") as HTMLButtonElement;
 openCfgBtn.addEventListener("click", async () => {

@@ -21,6 +21,7 @@
         <div class="nav-item" data-page="music">音乐</div>
         <div class="nav-item" data-page="weather">天气</div>
         <div class="nav-item" data-page="ai">AI Agent</div>
+        <div class="nav-item" data-page="agent-handler">Agent处理</div>
         <div class="nav-item" data-page="clipboard-links">剪贴板与链接</div>
         <div class="nav-item" data-page="email">邮件</div>
         <div class="nav-item" data-page="sadb">ADB 镜像</div>
@@ -247,8 +248,6 @@
             </div>
           </div>
         </div>
-
-
         
         <!-- 音乐页面 -->
         <div class="page" id="page-music">
@@ -392,136 +391,7 @@
           </div>
         </div>
 
-        <!-- 剪贴板与链接页面 -->
-        <div class="page" id="page-clipboard-links">
-          <div class="setting-group">
-            <div class="setting-group-title">剪贴板</div>
-            <div class="setting-item">
-              <div class="setting-label">
-                <h3>监听剪贴板链接</h3>
-                <p>复制 URL 时在灵动岛显示快速跳转提示。</p>
-              </div>
-              <div class="setting-control">
-                <label class="switch">
-                  <input type="checkbox" id="clipboard-toggle" checked />
-                  <span class="slider"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <div class="setting-group-title">链接处理器</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>自定义链接处理器</h3>
-                <p>检测到特定链接时，使用指定应用打开。</p>
-              </div>
-              <div id="link-handlers-list" class="handlers-list"></div>
-              <div class="actions" style="margin-top: 16px;">
-                <button id="add-handler-btn" class="btn btn-primary" type="button">添加处理器</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- 邮件页面 -->
-        <div class="page" id="page-email">
-          <div class="setting-group">
-            <div class="setting-group-title">快捷键</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>打开邮箱快捷键</h3>
-                <p>按下此快捷键可快速打开邮箱窗口。点击输入框后按下组合键进行录制。</p>
-              </div>
-              <input id="email-shortcut-input" class="input path" type="text" readonly placeholder="Ctrl+Alt+E" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-group-title">IMAP 账号</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>用户名</h3>
-                <p>登录邮箱时使用的用户名（通常是完整邮箱地址）。</p>
-              </div>
-              <input id="email-username" class="input path" type="text" placeholder="user@example.com" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>授权码 / 密码</h3>
-                <p>IMAP 登录凭据，部分邮箱需使用专用授权码而非登录密码。</p>
-              </div>
-              <input id="email-auth" class="input path" type="password" placeholder="授权码或密码" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>IMAP 服务器地址</h3>
-                <p>如 imap.qq.com、imap.gmail.com 等。</p>
-              </div>
-              <input id="email-address" class="input path" type="text" placeholder="imap.example.com" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>端口</h3>
-                <p>IMAP SSL 端口，默认 993。</p>
-              </div>
-              <input id="email-port" class="input path" type="number" min="1" max="65535" value="993" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-group-title">轮询</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>轮询间隔（秒）</h3>
-                <p>后台定时获取最新邮件 UID，UID 变化时弹出通知。默认 1 秒。</p>
-              </div>
-              <input id="email-poll-interval" class="input path" type="number" min="1" step="1" value="1" />
-            </div>
-          </div>
-        </div>
-
-
-        <!-- 插件管理页面 -->
-        <div class="page" id="page-plugins">
-          <div class="setting-group">
-            <div class="setting-group-title">InfLink-rs</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>InfLink-rs 下载教程</h3>
-                <p>仅提供下载教程，不再执行 InfLink 插件文件写入。</p>
-              </div>
-              <div class="mono" id="InfLink-rs-docs-link">https://docs.pyisland.com/guide/qa/ncm-music.html</div>
-              <div class="actions">
-                <button id="open-inflink-btn" class="btn" type="button">打开下载地址</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <div class="setting-group-title">PluginMarket</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>PluginMarket main.js 源修复</h3>
-                <p>仅执行源地址替换（旧源 → BetterNCM 官方源）。</p>
-              </div>
-              <div class="input-group">
-                <input id="betterncm-path" class="input path" value="C:\betterncm" />
-                <div class="actions">
-                  <button id="install-betterncm-btn" class="btn btn-primary" type="button">执行源修复</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AI Agent 页面 -->
+        <!-- AI Agent页面 -->
         <div class="page" id="page-ai">
           <div class="setting-group">
             <div class="setting-group-title">API 配置</div>
@@ -584,6 +454,108 @@
             </div>
           </div>
         </div>
+
+        <!-- Agent 处理器页面 -->
+        <div class="page" id="page-agent-handler">
+          <div class="setting-group">
+            <div class="setting-group-title" id="agent-list">检测待安装Hooks的agent</div>
+          </div>
+        </div>
+
+        <!-- 剪贴板与链接页面 -->
+        <div class="page" id="page-clipboard-links">
+          <div class="setting-group">
+            <div class="setting-group-title">剪贴板</div>
+            <div class="setting-item">
+              <div class="setting-label">
+                <h3>监听剪贴板链接</h3>
+                <p>复制 URL 时在灵动岛显示快速跳转提示。</p>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="clipboard-toggle" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-group-title">链接处理器</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>自定义链接处理器</h3>
+                <p>检测到特定链接时，使用指定应用打开。</p>
+              </div>
+              <div id="link-handlers-list" class="handlers-list"></div>
+              <div class="actions" style="margin-top: 16px;">
+                <button id="add-handler-btn" class="btn btn-primary" type="button">添加处理器</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 邮件页面 -->
+        <div class="page" id="page-email">
+          <div class="setting-group">
+            <div class="setting-group-title">快捷键</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>打开邮箱快捷键</h3>
+                <p>按下此快捷键可快速打开邮箱窗口。点击输入框后按下组合键进行录制。</p>
+              </div>
+              <input id="email-shortcut-input" class="input path" type="text" readonly placeholder="Ctrl+Alt+E" />
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-group-title">IMAP 账号</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>用户名</h3>
+                <p>登录邮箱时使用的用户名（通常是完整邮箱地址）。</p>
+              </div>
+              <input id="email-username" class="input path" type="text" placeholder="user@example.com" />
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>授权码 / 密码</h3>
+                <p>IMAP 登录凭据，部分邮箱需使用专用授权码而非登录密码。</p>
+              </div>
+              <input id="email-auth" class="input path" type="password" placeholder="授权码或密码" />
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>IMAP 服务器地址</h3>
+                <p>如 imap.qq.com、imap.gmail.com 等。</p>
+              </div>
+              <input id="email-address" class="input path" type="text" placeholder="imap.example.com" />
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>端口</h3>
+                <p>IMAP SSL 端口，默认 993。</p>
+              </div>
+              <input id="email-port" class="input path" type="number" min="1" max="65535" value="993" />
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-group-title">轮询</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>轮询间隔（秒）</h3>
+                <p>后台定时获取最新邮件 UID，UID 变化时弹出通知。默认 1 秒。</p>
+              </div>
+              <input id="email-poll-interval" class="input path" type="number" min="1" step="1" value="1" />
+            </div>
+          </div>
+        </div>
+
         <!-- ADB 镜像页面 -->
         <div class="page" id="page-sadb">
           <div class="setting-group">
@@ -642,6 +614,39 @@
           </div>
         </div>
 
+        <!-- 插件管理页面 -->
+        <div class="page" id="page-plugins">
+          <div class="setting-group">
+            <div class="setting-group-title">InfLink-rs</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>InfLink-rs 下载教程</h3>
+                <p>仅提供下载教程，不再执行 InfLink 插件文件写入。</p>
+              </div>
+              <div class="mono" id="InfLink-rs-docs-link">https://docs.pyisland.com/guide/qa/ncm-music.html</div>
+              <div class="actions">
+                <button id="open-inflink-btn" class="btn" type="button">打开下载地址</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-group-title">PluginMarket</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>PluginMarket main.js 源修复</h3>
+                <p>仅执行源地址替换（旧源 → BetterNCM 官方源）。</p>
+              </div>
+              <div class="input-group">
+                <input id="betterncm-path" class="input path" value="C:\betterncm" />
+                <div class="actions">
+                  <button id="install-betterncm-btn" class="btn btn-primary" type="button">执行源修复</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 黑名单页面 -->
         <div class="page" id="page-blacklist">
           <div class="setting-group">
@@ -670,6 +675,8 @@
             </div>
           </div>
         </div>
+
+        <!-- 日志页面 -->
         <div class="page" id="page-log">
           <div class="setting-group">
             <div class="setting-group-title">日志输出</div>
@@ -723,6 +730,7 @@
             </div>
           </div>
         </div>
+
         <!-- 关于与更新页面 -->
         <div class="page" id="page-about">
           <div class="setting-group">
@@ -865,21 +873,22 @@
   <script>
     // ==================== 页面导航 ====================
 const pageInfo = {
-  general:          { title: "常规设置",     desc: "配置快捷键和外观选项。" },
-  screens:          { title: "屏幕设置",     desc: "多屏幕定位,偏移和缩放" },
-  tools:          { title: "工具设置",     desc: "配置辅助工具" },
-  downloader:          { title: "aria2c下载器",     desc: "IDM平替" },
-  music:            { title: "音乐",          desc: "配置音乐歌词显示策略。" },
-  "lyric-offset":   { title: "歌词补偿·按播放器", desc: "每个播放器单独存储补偿时长，点 ± 立即生效。" },
-  weather:          { title: "天气",          desc: "配置天气显示位置。" },
-  ai:               { title: "AI Agent",      desc: "配置 OpenAI 兼容的 API 和模型参数。" },
-  "clipboard-links":{ title: "剪贴板与链接", desc: "配置剪贴板监听和链接处理器。" },
-  email:            { title: "邮件",          desc: "配置邮件轮询和通知占位功能。" },
-  plugins:          { title: "插件管理",     desc: "管理 InfLink 和 PluginMarket 相关设置。" },
-  sadb:             { title: "ADB 镜像",     desc: "配置 Android 设备屏幕镜像连接参数。" },
-  blacklist:        { title: "黑名单",        desc: "添加进程名，当焦点窗口或全屏程序匹配时自动隐藏灵动岛。" },
-  log:              { title: "日志",          desc: "配置日志等级、日志文件和 Tag 过滤。" },
-  about:            { title: "关于与更新",   desc: "查看版本信息和检查软件更新。" },
+  general:          { title: "常规设置",          desc: "配置快捷键和外观选项。" },
+  screens:          { title: "屏幕设置",          desc: "多屏幕定位,偏移和缩放" },
+  tools:            { title: "工具设置",          desc: "配置辅助工具" },
+  downloader:       { title: "aria2c下载器",      desc: "IDM平替" },
+  music:            { title: "音乐",             desc: "配置音乐歌词显示策略。" },
+  "lyric-offset":   { title: "歌词补偿·按播放器",  desc: "每个播放器单独存储补偿时长，点 ± 立即生效。" },
+  weather:          { title: "天气",             desc: "配置天气显示位置。" },
+  ai:               { title: "AI Agent",         desc: "配置 OpenAI 兼容的 API 和模型参数。" },
+  "agent-handler":  { title: "Agent消息显示",     desc: "通过hooks实时处理agent的待操作内容和通报结果" },
+  "clipboard-links":{ title: "剪贴板与链接",       desc: "配置剪贴板监听和链接处理器。" },
+  email:            { title: "邮件",              desc: "配置邮件轮询和通知占位功能。" },
+  plugins:          { title: "插件管理",          desc: "管理 InfLink 和 PluginMarket 相关设置。" },
+  sadb:             { title: "ADB 镜像",         desc: "配置 Android 设备屏幕镜像连接参数。" },
+  blacklist:        { title: "黑名单",           desc: "添加进程名，当焦点窗口或全屏程序匹配时自动隐藏灵动岛。" },
+  log:              { title: "日志",             desc: "配置日志等级、日志文件和 Tag 过滤。" },
+  about:            { title: "关于与更新",        desc: "查看版本信息和检查软件更新。" },
 };
 
 const navItems = document.querySelectorAll(".nav-item");
