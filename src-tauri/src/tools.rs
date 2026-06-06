@@ -387,9 +387,16 @@ pub fn get_latest_release(url: &str) -> Result<GithubResult, String> {
     })
 }
 
-//以下为aria2c相关
+
 #[tauri::command]
-pub fn tools_downloader(idir: String, name: String) -> Result<InstallResult, String> {
+pub async fn tools_downloader(idir: String, name: String) -> Result<InstallResult, String> {
+    tauri::async_runtime::spawn_blocking(move || tools_downloader_blocking(idir, name))
+        .await
+        .map_err(|e| format!("tools_downloader 子线程执行失败: {}", e))?
+}
+
+#[tauri::command]
+fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult, String> {
     let (check, exe) = match name.as_str() {
         "aria2c" => {
             (&RE0, "aria2c.exe")
