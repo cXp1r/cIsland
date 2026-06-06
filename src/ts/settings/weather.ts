@@ -5,28 +5,24 @@ import type { CityResult } from "./types";
 
 const TAG = "Settings/Weather";
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  search: $<HTMLInputElement>("weather-city-search"),
+  results: $<HTMLDivElement>("city-results"),
+  current: $<HTMLDivElement>("city-current"),
+  tag: $<HTMLSpanElement>("city-tag"),
+  clearBtn: $<HTMLButtonElement>("clear-city-btn"),
+};
 
 let citySearchTimer: number | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    search: $<HTMLInputElement>("weather-city-search"),
-    results: $<HTMLDivElement>("city-results"),
-    current: $<HTMLDivElement>("city-current"),
-    tag: $<HTMLSpanElement>("city-tag"),
-    clearBtn: $<HTMLButtonElement>("clear-city-btn"),
-  };
-}
-
 function renderCity(name: string): void {
-  const e = getEls();
   if (name) {
-    e.tag.textContent = name;
-    e.current.style.display = "flex";
+    els.tag.textContent = name;
+    els.current.style.display = "flex";
   } else {
-    e.tag.textContent = "";
-    e.current.style.display = "none";
+    els.tag.textContent = "";
+    els.current.style.display = "none";
   }
 }
 
@@ -37,29 +33,28 @@ async function load(): Promise<void> {
 
 function bindEvents(): void {
   if (bound) return;
-  const e = getEls();
 
-  e.search.addEventListener("input", () => {
+  els.search.addEventListener("input", () => {
     if (citySearchTimer) clearTimeout(citySearchTimer);
-    const query = e.search.value.trim();
+    const query = els.search.value.trim();
 
     if (!query) {
-      e.results.classList.remove("active");
-      e.results.innerHTML = "";
+      els.results.classList.remove("active");
+      els.results.innerHTML = "";
       return;
     }
 
     citySearchTimer = window.setTimeout(async () => {
       try {
         const results = await invoke<CityResult[]>("search_city", { query });
-        e.results.innerHTML = "";
+        els.results.innerHTML = "";
 
         if (results.length === 0) {
           const empty = document.createElement("div");
           empty.className = "city-result-item";
           empty.style.color = "var(--text-muted)";
           empty.textContent = "No matching city";
-          e.results.appendChild(empty);
+          els.results.appendChild(empty);
         } else {
           results.forEach((city) => {
             const item = document.createElement("div");
@@ -82,18 +77,18 @@ function bindEvents(): void {
                 lon: city.longitude,
               });
               renderCity(city.name);
-              e.search.value = "";
-              e.results.classList.remove("active");
-              e.results.innerHTML = "";
+              els.search.value = "";
+              els.results.classList.remove("active");
+              els.results.innerHTML = "";
               showStatus(`weather city set to ${city.name}`);
             });
 
-            e.results.appendChild(item);
+            els.results.appendChild(item);
           });
         }
 
-        e.results.classList.add("active");
-        e.results.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        els.results.classList.add("active");
+        els.results.scrollIntoView({ behavior: "smooth", block: "nearest" });
       } catch (err) {
         loge(TAG, "search city failed:", err);
       }
@@ -101,12 +96,12 @@ function bindEvents(): void {
   });
 
   document.addEventListener("click", (event) => {
-    if (!e.search.contains(event.target as Node) && !e.results.contains(event.target as Node)) {
-      e.results.classList.remove("active");
+    if (!els.search.contains(event.target as Node) && !els.results.contains(event.target as Node)) {
+      els.results.classList.remove("active");
     }
   });
 
-  e.clearBtn.addEventListener("click", async () => {
+  els.clearBtn.addEventListener("click", async () => {
     await invoke("save_weather_city", { city: "", lat: 0.0, lon: 0.0 });
     renderCity("");
     showStatus("weather city cleared");

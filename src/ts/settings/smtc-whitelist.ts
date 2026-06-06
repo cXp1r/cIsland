@@ -4,11 +4,11 @@ import { loge } from "../index/logger";
 
 const TAG = "Settings/SmtcWhitelist";
 
-const smtcWhitelistInput = document.getElementById("smtc-whitelist-input") as HTMLInputElement | null;
-const smtcWhitelistAddBtn = document.getElementById("smtc-whitelist-add-btn") as HTMLButtonElement | null;
-const smtcWhitelistList = document.getElementById("smtc-whitelist-list") as HTMLDivElement | null;
-const smtcWhitelistEnabledToggle = document.getElementById("smtc-whitelist-enabled") as HTMLInputElement | null;
-const smtcWhitelistContentGroup = document.getElementById("smtc-whitelist-content-group") as HTMLDivElement | null;
+const smtcWhitelistInput = document.getElementById("smtc-whitelist-input") as HTMLInputElement;
+const smtcWhitelistAddBtn = document.getElementById("smtc-whitelist-add-btn") as HTMLButtonElement;
+const smtcWhitelistList = document.getElementById("smtc-whitelist-list") as HTMLDivElement;
+const smtcWhitelistEnabledToggle = document.getElementById("smtc-whitelist-enabled") as HTMLInputElement;
+const smtcWhitelistContentGroup = document.getElementById("smtc-whitelist-content-group") as HTMLDivElement;
 
 let smtcWhitelistApps: string[] = [];
 

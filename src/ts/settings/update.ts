@@ -18,10 +18,10 @@ const checkPreviewUpdateBtn = document.getElementById("check-preview-update-btn"
 const downloadUpdateBtn = document.getElementById("download-update-btn") as HTMLButtonElement;
 const openReleaseBtn = document.getElementById("open-release-btn") as HTMLButtonElement;
 const openGithubBtn = document.getElementById("open-github-btn") as HTMLButtonElement;
-const previewUpdatesToggle = document.getElementById("preview-updates-toggle") as HTMLInputElement | null;
-const previewToggleRow = document.getElementById("preview-toggle-row") as HTMLElement | null;
-const disablePreviewWrap = document.getElementById("disable-preview-wrap") as HTMLElement | null;
-const disablePreviewBtn = document.getElementById("disable-preview-btn") as HTMLButtonElement | null;
+const previewUpdatesToggle = document.getElementById("preview-updates-toggle") as HTMLInputElement;
+const previewToggleRow = document.getElementById("preview-toggle-row") as HTMLElement;
+const disablePreviewWrap = document.getElementById("disable-preview-wrap") as HTMLElement;
+const disablePreviewBtn = document.getElementById("disable-preview-btn") as HTMLButtonElement;
 
 const logPathText = document.getElementById("log-path-text") as HTMLParagraphElement;
 const openLogDirBtn = document.getElementById("open-log-dir-btn") as HTMLButtonElement;

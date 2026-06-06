@@ -6,60 +6,54 @@ import type { AISettingsResponse, AiWindowSettingsConfig } from "./types";
 
 const TAG = "Settings/AI";
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-ai"),
+  apiUrl: $<HTMLInputElement>("ai-api-url"),
+  apiKey: $<HTMLInputElement>("ai-api-key"),
+  model: $<HTMLInputElement>("ai-model"),
+  detectBtn: $<HTMLButtonElement>("ai-detect-btn"),
+  result: $<HTMLParagraphElement>("ai-model-type-result"),
+  windowSize: $<HTMLSelectElement>("agent-window-size"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: (AISettingsResponse & AiWindowSettingsConfig) | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    apiUrl: $<HTMLInputElement>("ai-api-url"),
-    apiKey: $<HTMLInputElement>("ai-api-key"),
-    model: $<HTMLInputElement>("ai-model"),
-    detectBtn: $<HTMLButtonElement>("ai-detect-btn"),
-    result: $<HTMLParagraphElement>("ai-model-type-result"),
-    windowSize: $<HTMLSelectElement>("agent-window-size"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-ai")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function readAi() {
-  const e = getEls();
   return {
-    apiUrl: e.apiUrl.value.trim(),
-    apiKey: e.apiKey.value.trim(),
-    model: e.model.value.trim(),
+    apiUrl: els.apiUrl.value.trim(),
+    apiKey: els.apiKey.value.trim(),
+    model: els.model.value.trim(),
   };
 }
 
 function renderResult(): void {
-  const e = getEls();
   if (cache!.is_reasoning_model) {
-    e.result.textContent = "reasoning model";
-    e.result.style.color = "#39d98a";
+    els.result.textContent = "reasoning model";
+    els.result.style.color = "#39d98a";
   } else if (cache!.model) {
-    e.result.textContent = "normal model";
-    e.result.style.color = "#93a4c8";
+    els.result.textContent = "normal model";
+    els.result.style.color = "#93a4c8";
   } else {
-    e.result.textContent = "not detected";
-    e.result.style.color = "#93a4c8";
+    els.result.textContent = "not detected";
+    els.result.style.color = "#93a4c8";
   }
 }
 
 function render(): void {
-  const e = getEls();
-  e.apiUrl.value = cache!.api_url || "";
-  e.apiKey.value = cache!.api_key || "";
-  e.model.value = cache!.model || "";
-  e.windowSize.value = cache!.agent_window_size || "medium";
+  els.apiUrl.value = cache!.api_url || "";
+  els.apiKey.value = cache!.api_key || "";
+  els.model.value = cache!.model || "";
+  els.windowSize.value = cache!.agent_window_size || "medium";
   renderResult();
 }
 
 async function save(): Promise<void> {
-  const e = getEls();
   const ai = readAi();
 
   try {
@@ -73,7 +67,7 @@ async function save(): Promise<void> {
     }
 
     await invoke("save_settings", {
-      agentWindowSize: e.windowSize.value,
+      agentWindowSize: els.windowSize.value,
     });
 
     cache = {
@@ -81,17 +75,17 @@ async function save(): Promise<void> {
       api_key: ai.apiKey,
       model: ai.model,
       is_reasoning_model: cache?.is_reasoning_model ?? false,
-      agent_window_size: e.windowSize.value,
+      agent_window_size: els.windowSize.value,
     };
 
     if (ai.apiUrl && ai.apiKey && ai.model) {
-      e.result.textContent = "detecting...";
-      e.result.style.color = "#93a4c8";
+      els.result.textContent = "detecting...";
+      els.result.style.color = "#93a4c8";
       try {
         await invoke("ai_detect_model_type");
       } catch {
-        e.result.textContent = "detect failed";
-        e.result.style.color = "#ff6f7f";
+        els.result.textContent = "detect failed";
+        els.result.style.color = "#ff6f7f";
       }
     }
 
@@ -102,7 +96,6 @@ async function save(): Promise<void> {
 }
 
 async function detect(): Promise<void> {
-  const e = getEls();
   const ai = readAi();
 
   if (!ai.apiUrl || !ai.apiKey || !ai.model) {
@@ -110,10 +103,10 @@ async function detect(): Promise<void> {
     return;
   }
 
-  e.detectBtn.disabled = true;
-  e.detectBtn.textContent = "detecting...";
-  e.result.textContent = "detecting...";
-  e.result.style.color = "#93a4c8";
+  els.detectBtn.disabled = true;
+  els.detectBtn.textContent = "detecting...";
+  els.result.textContent = "detecting...";
+  els.result.style.color = "#93a4c8";
 
   try {
     await invoke("ai_save_settings", {
@@ -124,21 +117,20 @@ async function detect(): Promise<void> {
     await invoke("ai_detect_model_type");
     showStatus("model detection started");
   } catch (err) {
-    e.result.textContent = "detect failed";
-    e.result.style.color = "#ff6f7f";
+    els.result.textContent = "detect failed";
+    els.result.style.color = "#ff6f7f";
     showStatus(`detect failed: ${String(err)}`, true, 4500);
   } finally {
-    e.detectBtn.disabled = false;
-    e.detectBtn.textContent = "detect model type";
+    els.detectBtn.disabled = false;
+    els.detectBtn.textContent = "detect model type";
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
-  const e = getEls();
 
-  e.detectBtn.addEventListener("click", () => void detect());
-  e.saveBtn.addEventListener("click", () => {
+  els.detectBtn.addEventListener("click", () => void detect());
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
 

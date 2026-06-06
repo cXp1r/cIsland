@@ -2,37 +2,34 @@ import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./shared";
 import type { EmailSettingsConfig } from "./types";
 
-const shortcutHint = "璇锋寜涓嬪揩鎹烽敭...";
+const shortcutHint = "Press shortcut...";
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-email"),
+  emailPollIntervalInput: $<HTMLInputElement>("email-poll-interval"),
+  emailUsernameInput: $<HTMLInputElement>("email-username"),
+  emailAuthInput: $<HTMLInputElement>("email-auth"),
+  emailAddressInput: $<HTMLInputElement>("email-address"),
+  emailPortInput: $<HTMLInputElement>("email-port"),
+  emailShortcutInput: $<HTMLInputElement>("email-shortcut-input"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: EmailSettingsConfig | null = null;
 let bound = false;
 let isRecording = false;
 
-function getEls() {
-  return {
-    emailPollIntervalInput: $<HTMLInputElement>("email-poll-interval"),
-    emailUsernameInput: $<HTMLInputElement>("email-username"),
-    emailAuthInput: $<HTMLInputElement>("email-auth"),
-    emailAddressInput: $<HTMLInputElement>("email-address"),
-    emailPortInput: $<HTMLInputElement>("email-port"),
-    emailShortcutInput: $<HTMLInputElement>("email-shortcut-input"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-email")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function render(): void {
-  const e = getEls();
-  e.emailPollIntervalInput.value = String(Math.max(1, cache!.email_poll_interval_secs || 1));
-  e.emailUsernameInput.value = cache!.email_username || "";
-  e.emailAuthInput.value = cache!.email_auth || "";
-  e.emailAddressInput.value = cache!.email_address || "";
-  e.emailPortInput.value = String(cache!.email_port || 993);
-  e.emailShortcutInput.value = cache!.email_shortcut || "Ctrl+Alt+E";
+  els.emailPollIntervalInput.value = String(Math.max(1, cache!.email_poll_interval_secs || 1));
+  els.emailUsernameInput.value = cache!.email_username || "";
+  els.emailAuthInput.value = cache!.email_auth || "";
+  els.emailAddressInput.value = cache!.email_address || "";
+  els.emailPortInput.value = String(cache!.email_port || 993);
+  els.emailShortcutInput.value = cache!.email_shortcut || "Ctrl+Alt+E";
 }
 
 function setupShortcutRecorder(input: HTMLInputElement): void {
@@ -76,16 +73,15 @@ function checkShortcut(input: HTMLInputElement): string | false {
 }
 
 function readCurrent(): EmailSettingsConfig | null {
-  const e = getEls();
-  const emailShortcut = checkShortcut(e.emailShortcutInput);
+  const emailShortcut = checkShortcut(els.emailShortcutInput);
   if (!emailShortcut) return null;
 
   return {
-    email_poll_interval_secs: Math.max(1, Number.parseInt(e.emailPollIntervalInput.value) || 1),
-    email_username: e.emailUsernameInput.value.trim(),
-    email_auth: e.emailAuthInput.value.trim(),
-    email_address: e.emailAddressInput.value.trim(),
-    email_port: Number.parseInt(e.emailPortInput.value) || 993,
+    email_poll_interval_secs: Math.max(1, Number.parseInt(els.emailPollIntervalInput.value) || 1),
+    email_username: els.emailUsernameInput.value.trim(),
+    email_auth: els.emailAuthInput.value.trim(),
+    email_address: els.emailAddressInput.value.trim(),
+    email_port: Number.parseInt(els.emailPortInput.value) || 993,
     email_shortcut: emailShortcut,
   };
 }
@@ -114,17 +110,16 @@ async function save(): Promise<void> {
       emailShortcut: current.email_shortcut,
     });
     cache = current;
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("settings saved");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`save failed: ${String(e)}`, true, 4500);
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
-  const e = getEls();
-  setupShortcutRecorder(e.emailShortcutInput);
-  e.saveBtn.addEventListener("click", () => {
+  setupShortcutRecorder(els.emailShortcutInput);
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

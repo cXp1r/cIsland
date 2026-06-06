@@ -4,11 +4,11 @@ import { loge } from "../index/logger";
 
 const TAG = "Settings/Blacklist";
 
-const blacklistInput = document.getElementById("blacklist-input") as HTMLInputElement | null;
-const blacklistAddBtn = document.getElementById("blacklist-add-btn") as HTMLButtonElement | null;
-const blacklistList = document.getElementById("blacklist-list") as HTMLDivElement | null;
-const blacklistEnabledToggle = document.getElementById("blacklist-enabled-toggle") as HTMLInputElement | null;
-const blacklistContentGroup = document.getElementById("blacklist-content-group") as HTMLDivElement | null;
+const blacklistInput = document.getElementById("blacklist-input") as HTMLInputElement;
+const blacklistAddBtn = document.getElementById("blacklist-add-btn") as HTMLButtonElement;
+const blacklistList = document.getElementById("blacklist-list") as HTMLDivElement;
+const blacklistEnabledToggle = document.getElementById("blacklist-enabled-toggle") as HTMLInputElement;
+const blacklistContentGroup = document.getElementById("blacklist-content-group") as HTMLDivElement;
 
 let blacklistProcesses: string[] = [];
 

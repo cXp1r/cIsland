@@ -1,31 +1,29 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./shared";
 import { getLinkHandlers, initLinkHandlers } from "./link-handler";
+import { showStatus } from "./shared";
 import type { ClipboardLinksSettingsConfig } from "./types";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-clipboard-links"),
+  clipboardToggle: $<HTMLInputElement>("clipboard-toggle"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: ClipboardLinksSettingsConfig | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    clipboardToggle: $<HTMLInputElement>("clipboard-toggle"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-clipboard-links")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function render(): void {
-  getEls().clipboardToggle.checked = cache!.clipboard_enabled;
+  els.clipboardToggle.checked = cache!.clipboard_enabled;
 }
 
 function readCurrent(): ClipboardLinksSettingsConfig {
   return {
-    clipboard_enabled: getEls().clipboardToggle.checked,
+    clipboard_enabled: els.clipboardToggle.checked,
   };
 }
 
@@ -35,18 +33,15 @@ function isEqual(a: ClipboardLinksSettingsConfig, b: ClipboardLinksSettingsConfi
 
 async function save(): Promise<void> {
   const current = readCurrent();
-  if (cache && isEqual(current, cache)) {
-    await invoke("save_link_handlers", { handlers: getLinkHandlers() });
-    showStatus("settings saved");
-    return;
-  }
 
   try {
-    await invoke("save_settings", {
-      clipboardEnabled: current.clipboard_enabled,
-    });
+    if (!cache || !isEqual(current, cache)) {
+      await invoke("save_settings", {
+        clipboardEnabled: current.clipboard_enabled,
+      });
+      cache = current;
+    }
     await invoke("save_link_handlers", { handlers: getLinkHandlers() });
-    cache = current;
     showStatus("settings saved");
   } catch (e) {
     showStatus(`save failed: ${String(e)}`, true, 4500);
@@ -56,7 +51,7 @@ async function save(): Promise<void> {
 function bindEvents(): void {
   if (bound) return;
   initLinkHandlers();
-  getEls().saveBtn.addEventListener("click", () => {
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

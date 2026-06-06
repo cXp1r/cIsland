@@ -69,6 +69,8 @@ export const adbPath = moduleUI.adb.path;
 export const sadbIpInput = $<HTMLInputElement>("sadb-ip");
 export const sadbPortInput = $<HTMLInputElement>("sadb-port");
 
+const pageTools = $<HTMLElement>("page-tools");
+const saveBtn = $<HTMLButtonElement>("save-btn");
 const adbKillServerBtn = $<HTMLButtonElement>("adb-kill-server-btn");
 const adbConnBtn = $<HTMLButtonElement>("adb-connect-device-btn");
 
@@ -322,8 +324,8 @@ export function initTools(): void {
   if (bound) return;
   bindToolsModules();
   bindAdbActions();
-  $<HTMLButtonElement>("save-btn").addEventListener("click", () => {
-    if (document.getElementById("page-tools")?.classList.contains("active")) {
+  saveBtn.addEventListener("click", () => {
+    if (pageTools.classList.contains("active")) {
       void save();
     }
   });

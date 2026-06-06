@@ -11,9 +11,9 @@ export function setLogFilterTags(tags: string[]) {
   renderLogFilterTags();
 }
 
-const logFilterTagInput = document.getElementById("log-filter-tag-input") as HTMLInputElement | null;
-const logFilterTagAddBtn = document.getElementById("log-filter-tag-add-btn") as HTMLButtonElement | null;
-const logFilterTagList = document.getElementById("log-filter-tag-list") as HTMLDivElement | null;
+const logFilterTagInput = document.getElementById("log-filter-tag-input") as HTMLInputElement;
+const logFilterTagAddBtn = document.getElementById("log-filter-tag-add-btn") as HTMLButtonElement;
+const logFilterTagList = document.getElementById("log-filter-tag-list") as HTMLDivElement;
 
 function renderLogFilterTags() {
   if (!logFilterTagList) return;

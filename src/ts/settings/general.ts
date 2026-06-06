@@ -2,35 +2,32 @@ import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./shared";
 import type { GeneralSettingsConfig } from "./types";
 
-const shortcutHint = "璇锋寜涓嬪揩鎹烽敭...";
+const shortcutHint = "Press shortcut...";
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-general"),
+  shortcutInput: $<HTMLInputElement>("shortcut-input"),
+  searchShortcutInput: $<HTMLInputElement>("search-shortcut-input"),
+  hideAndSeeInput: $<HTMLInputElement>("hide-and-see-input"),
+  indicatorColorInput: $<HTMLInputElement>("indicator-color"),
+  autoStartToggle: $<HTMLInputElement>("auto-start-toggle"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: GeneralSettingsConfig | null = null;
 let bound = false;
 let isRecording = false;
 
-function getEls() {
-  return {
-    shortcutInput: $<HTMLInputElement>("shortcut-input"),
-    searchShortcutInput: $<HTMLInputElement>("search-shortcut-input"),
-    hideAndSeeInput: $<HTMLInputElement>("hide-and-see-input"),
-    indicatorColorInput: $<HTMLInputElement>("indicator-color"),
-    autoStartToggle: $<HTMLInputElement>("auto-start-toggle"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-general")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function render(): void {
-  const e = getEls();
-  e.shortcutInput.value = cache!.shortcut_key;
-  e.searchShortcutInput.value = cache!.search_shortcut;
-  e.hideAndSeeInput.value = cache!.hide_and_see_key;
-  e.indicatorColorInput.value = cache!.indicator_color || "#2edb67";
-  e.autoStartToggle.checked = cache!.auto_start;
+  els.shortcutInput.value = cache!.shortcut_key;
+  els.searchShortcutInput.value = cache!.search_shortcut;
+  els.hideAndSeeInput.value = cache!.hide_and_see_key;
+  els.indicatorColorInput.value = cache!.indicator_color || "#2edb67";
+  els.autoStartToggle.checked = cache!.auto_start;
 }
 
 function setupShortcutRecorder(input: HTMLInputElement): void {
@@ -74,8 +71,7 @@ function checkShortcut(input: HTMLInputElement): string | false {
 }
 
 function readCurrent(): GeneralSettingsConfig | null {
-  const e = getEls();
-  const shortcuts = [e.shortcutInput, e.hideAndSeeInput, e.searchShortcutInput].map(checkShortcut);
+  const shortcuts = [els.shortcutInput, els.hideAndSeeInput, els.searchShortcutInput].map(checkShortcut);
   if (shortcuts.some((value) => !value)) return null;
   const [shortcutKey, hideAndSeeKey, searchShortcut] = shortcuts;
 
@@ -83,8 +79,8 @@ function readCurrent(): GeneralSettingsConfig | null {
     shortcut_key: shortcutKey as string,
     hide_and_see_key: hideAndSeeKey as string,
     search_shortcut: searchShortcut as string,
-    indicator_color: e.indicatorColorInput.value,
-    auto_start: e.autoStartToggle.checked,
+    indicator_color: els.indicatorColorInput.value,
+    auto_start: els.autoStartToggle.checked,
   };
 }
 
@@ -110,17 +106,16 @@ async function save(): Promise<void> {
       autoStart: current.auto_start,
     });
     cache = current;
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("settings saved");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`save failed: ${String(e)}`, true, 4500);
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
-  const e = getEls();
-  [e.shortcutInput, e.hideAndSeeInput, e.searchShortcutInput].forEach(setupShortcutRecorder);
-  e.saveBtn.addEventListener("click", () => {
+  [els.shortcutInput, els.hideAndSeeInput, els.searchShortcutInput].forEach(setupShortcutRecorder);
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

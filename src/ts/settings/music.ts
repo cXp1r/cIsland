@@ -3,33 +3,29 @@ import { showStatus } from "./shared";
 import type { MusicSettingsConfig } from "./types";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-music"),
+  lyricModeSelect: $<HTMLSelectElement>("lyric-mode"),
+  lyricOffsetEnabledToggle: $<HTMLInputElement>("lyric-offset-enabled"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: MusicSettingsConfig | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    lyricModeSelect: $<HTMLSelectElement>("lyric-mode"),
-    lyricOffsetEnabledToggle: $<HTMLInputElement>("lyric-offset-enabled"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-music")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function render(): void {
-  const e = getEls();
-  e.lyricModeSelect.value = cache!.lyric_mode || "lyric";
-  e.lyricOffsetEnabledToggle.checked = cache!.lyric_offset_enabled;
+  els.lyricModeSelect.value = cache!.lyric_mode || "lyric";
+  els.lyricOffsetEnabledToggle.checked = cache!.lyric_offset_enabled;
 }
 
 function readCurrent(): MusicSettingsConfig {
-  const e = getEls();
   return {
-    lyric_mode: e.lyricModeSelect.value,
-    lyric_offset_enabled: e.lyricOffsetEnabledToggle.checked,
+    lyric_mode: els.lyricModeSelect.value,
+    lyric_offset_enabled: els.lyricOffsetEnabledToggle.checked,
   };
 }
 
@@ -48,15 +44,15 @@ async function save(): Promise<void> {
       lyricOffsetEnabled: current.lyric_offset_enabled,
     });
     cache = current;
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("settings saved");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`save failed: ${String(e)}`, true, 4500);
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
-  getEls().saveBtn.addEventListener("click", () => {
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

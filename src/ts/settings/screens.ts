@@ -1,39 +1,35 @@
 import { invoke } from "@tauri-apps/api/core";
-import { initScreensFrame, setScreenData } from "./screens-frame";
+import { getSelectedScreenId, initScreensFrame, setScreenData } from "./screens-frame";
 import { showStatus } from "./shared";
 import type { ScreensSettingsConfig } from "./types";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-screens"),
+  offsetX: $<HTMLInputElement>("offsetX"),
+  offsetY: $<HTMLInputElement>("offsetY"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: ScreensSettingsConfig | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    offsetX: $<HTMLInputElement>("offsetX"),
-    offsetY: $<HTMLInputElement>("offsetY"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-screens")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function render(): void {
-  const e = getEls();
   setScreenData(cache!.monitor_info, cache!.primary_monitor_info);
-  e.offsetX.value = String(cache!.offset_x);
-  e.offsetY.value = String(cache!.offset_y);
+  els.offsetX.value = String(cache!.offset_x);
+  els.offsetY.value = String(cache!.offset_y);
   requestAnimationFrame(() => initScreensFrame());
 }
 
 function readCurrent() {
-  const e = getEls();
   return {
-    offset_x: Number.parseInt(e.offsetX.value) || 0,
-    offset_y: Number.parseInt(e.offsetY.value) || 0,
-    monitor_id: document.querySelector<HTMLElement>(".screen-div.selected")?.id,
+    offset_x: Number.parseInt(els.offsetX.value) || 0,
+    offset_y: Number.parseInt(els.offsetY.value) || 0,
+    monitor_id: getSelectedScreenId(),
   };
 }
 
@@ -60,15 +56,15 @@ async function save(): Promise<void> {
       offset_x: current.offset_x,
       offset_y: current.offset_y,
     };
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("settings saved");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`save failed: ${String(e)}`, true, 4500);
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
-  getEls().saveBtn.addEventListener("click", () => {
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

@@ -1,38 +1,34 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./shared";
 import { getLogFilterTags, initLogFilter, setLogFilterTags } from "./log-filter";
+import { showStatus } from "./shared";
 import type { LogSettingsConfig } from "./types";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-log"),
+  logLevelSelect: $<HTMLSelectElement>("log-level-select"),
+  logFilterInvertToggle: $<HTMLInputElement>("log-filter-invert"),
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: LogSettingsConfig | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    logLevelSelect: $<HTMLSelectElement>("log-level-select"),
-    logFilterInvertToggle: $<HTMLInputElement>("log-filter-invert"),
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-log")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function render(): void {
-  const e = getEls();
-  e.logLevelSelect.value = cache!.log_level || "info";
-  e.logFilterInvertToggle.checked = cache!.log_filter_invert;
+  els.logLevelSelect.value = cache!.log_level || "info";
+  els.logFilterInvertToggle.checked = cache!.log_filter_invert;
   setLogFilterTags(cache!.log_filter_tags);
 }
 
 function readCurrent(): LogSettingsConfig {
-  const e = getEls();
   return {
-    log_level: e.logLevelSelect.value,
+    log_level: els.logLevelSelect.value,
     log_filter_tags: getLogFilterTags(),
-    log_filter_invert: e.logFilterInvertToggle.checked,
+    log_filter_invert: els.logFilterInvertToggle.checked,
   };
 }
 
@@ -57,16 +53,16 @@ async function save(): Promise<void> {
       logFilterInvert: current.log_filter_invert,
     });
     cache = current;
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("settings saved");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`save failed: ${String(e)}`, true, 4500);
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
   initLogFilter();
-  getEls().saveBtn.addEventListener("click", () => {
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

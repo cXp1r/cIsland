@@ -4,21 +4,19 @@ import { adbPath, sadbIpInput, sadbPortInput } from "./tools";
 import type { SadbSettingsConfig } from "./types";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const els = {
+  page: $<HTMLElement>("page-sadb"),
+  sadbIpInput,
+  sadbPortInput,
+  adbPath,
+  saveBtn: $<HTMLButtonElement>("save-btn"),
+};
 
 let cache: SadbSettingsConfig | null = null;
 let bound = false;
 
-function getEls() {
-  return {
-    sadbIpInput,
-    sadbPortInput,
-    adbPath,
-    saveBtn: $<HTMLButtonElement>("save-btn"),
-  };
-}
-
 function active(): boolean {
-  return document.getElementById("page-sadb")?.classList.contains("active") ?? false;
+  return els.page.classList.contains("active");
 }
 
 function clampPort(raw: string): number {
@@ -28,18 +26,16 @@ function clampPort(raw: string): number {
 }
 
 function render(): void {
-  const e = getEls();
-  e.sadbIpInput.value = cache!.sadb_ip || "";
-  e.sadbPortInput.value = String(cache!.sadb_port || 5555);
-  e.adbPath.value = cache!.adb_path || "";
+  els.sadbIpInput.value = cache!.sadb_ip || "";
+  els.sadbPortInput.value = String(cache!.sadb_port || 5555);
+  els.adbPath.value = cache!.adb_path || "";
 }
 
 function readCurrent(): SadbSettingsConfig {
-  const e = getEls();
   return {
-    sadb_ip: e.sadbIpInput.value.trim(),
-    sadb_port: clampPort(e.sadbPortInput.value),
-    adb_path: e.adbPath.value,
+    sadb_ip: els.sadbIpInput.value.trim(),
+    sadb_port: clampPort(els.sadbPortInput.value),
+    adb_path: els.adbPath.value,
   };
 }
 
@@ -60,15 +56,15 @@ async function save(): Promise<void> {
       adbPath: current.adb_path,
     });
     cache = current;
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("settings saved");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`save failed: ${String(e)}`, true, 4500);
   }
 }
 
 function bindEvents(): void {
   if (bound) return;
-  getEls().saveBtn.addEventListener("click", () => {
+  els.saveBtn.addEventListener("click", () => {
     if (active()) void save();
   });
   bound = true;

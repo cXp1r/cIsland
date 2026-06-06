@@ -34,6 +34,8 @@ const canvas         = document.getElementById('grid-canvas')       as HTMLCanva
 const ctx            = canvas.getContext('2d')!;
 const world          = document.getElementById('world')             as HTMLDivElement;
 const worldContainer = document.getElementById('world-container')   as HTMLDivElement;
+const frameFitBtn    = document.getElementById("frame-fit-btn")     as HTMLButtonElement;
+const screenEls = new Map<string, HTMLDivElement>();
 
 
 function resizeCanvas(): void {
@@ -85,7 +87,8 @@ function drawGrid(): void {
 
 
 export function renderScreens(data: MonitorInfo[]): void {
-  world.querySelectorAll('.screen-div').forEach(e => e.remove());
+  screenEls.forEach((screen) => screen.remove());
+  screenEls.clear();
 
   data.forEach((s, i) => {
     const div = document.createElement('div');
@@ -104,6 +107,7 @@ export function renderScreens(data: MonitorInfo[]): void {
       selectScreen(s.name);
     });
     world.appendChild(div);
+    screenEls.set(s.name, div);
   });
 }
 
@@ -115,10 +119,14 @@ function applyOffset(): void {
 
 function selectScreen(id: string): void {
   if (selectedId) {
-    document.getElementById(selectedId)?.classList.remove('selected');
+    screenEls.get(selectedId)?.classList.remove('selected');
   }
   selectedId = id;
-  document.getElementById(id)?.classList.add('selected');
+  screenEls.get(id)?.classList.add('selected');
+}
+
+export function getSelectedScreenId(): string {
+  return selectedId;
 }
 
 
@@ -153,7 +161,7 @@ frame.addEventListener('mouseleave', stopDrag);
 worldContainer.addEventListener('click', (e: MouseEvent) => {
   if (e.target === worldContainer || e.target === world) {
     if (selectedId) {
-      document.getElementById(selectedId)?.classList.remove('selected');
+      screenEls.get(selectedId)?.classList.remove('selected');
       selectedId = "";
     }
   }
@@ -258,7 +266,7 @@ export function initScreensFrame(): void {
   centerAll();
 }
 
-document.getElementById("frame-fit-btn")?.addEventListener("click", () => {
+frameFitBtn.addEventListener("click", () => {
   centerAll();
 });
 

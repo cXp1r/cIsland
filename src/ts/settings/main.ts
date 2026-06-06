@@ -89,35 +89,31 @@ function isPageId(value: string): value is PageId {
   return value in pageInfo;
 }
 
-async function navigateTo(pageId: PageId): Promise<void> {
-  document.querySelectorAll<HTMLElement>(".nav-item").forEach((item) => item.classList.remove("active"));
-  document.querySelector<HTMLElement>(`.nav-item[data-page="${pageId}"]`)?.classList.add("active");
-  document.querySelectorAll<HTMLElement>(".page").forEach((page) => page.classList.remove("active"));
-  document.getElementById(`page-${pageId}`)?.classList.add("active");
+type SettingsDom = {
+  navItems: HTMLElement[];
+  navButtons: HTMLElement[];
+  pages: HTMLElement[];
+  navByPage: Map<PageId, HTMLElement>;
+  pageById: Map<PageId, HTMLElement>;
+  title: HTMLElement;
+  desc: HTMLElement;
+};
 
-  const title = document.getElementById("page-title");
-  const desc = document.getElementById("page-desc");
-  if (title) title.textContent = pageInfo[pageId].title;
-  if (desc) desc.textContent = pageInfo[pageId].desc;
+let settingsDom: SettingsDom;
+
+async function navigateTo(pageId: PageId): Promise<void> {
+  settingsDom.navItems.forEach((item) => item.classList.remove("active"));
+  settingsDom.navByPage.get(pageId)?.classList.add("active");
+  settingsDom.pages.forEach((page) => page.classList.remove("active"));
+  settingsDom.pageById.get(pageId)?.classList.add("active");
+
+  settingsDom.title.textContent = pageInfo[pageId].title;
+  settingsDom.desc.textContent = pageInfo[pageId].desc;
 
   await pageInit[pageId]();
 }
 
-function initNavigation(): void {
-  document.querySelectorAll<HTMLElement>(".nav-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const page = item.dataset.page || "";
-      if (isPageId(page)) void navigateTo(page);
-    });
-  });
 
-  document.querySelectorAll<HTMLElement>("[data-nav-to]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const page = button.dataset.navTo || "";
-      if (isPageId(page)) void navigateTo(page);
-    });
-  });
-}
 
 const initDirs = Promise.all([
   invoke<string>("get_exe_dir").then((d) => {
@@ -132,8 +128,36 @@ const initDirs = Promise.all([
 ]);
 
 document.addEventListener("DOMContentLoaded", () => {
+  const navItems = Array.from(document.querySelectorAll<HTMLElement>(".nav-item"));
+  const navToButtons = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-to]"));
+  const pages = Array.from(document.querySelectorAll<HTMLElement>(".page"));
+  const pageIds = Object.keys(pageInfo) as PageId[];
+
+  settingsDom = {
+    navItems,
+    navButtons: Array.from(new Set([...navItems, ...navToButtons])),
+    pages,
+    navByPage: new Map(
+      navItems
+        .map((item) => [item.dataset.page || "", item] as const)
+        .filter((entry): entry is readonly [PageId, HTMLElement] => isPageId(entry[0]))
+    ),
+    pageById: new Map(
+      pageIds
+        .map((pageId) => [pageId, pages.find((page) => page.id === `page-${pageId}`)] as const)
+        .filter((entry): entry is readonly [PageId, HTMLElement] => !!entry[1])
+    ),
+    title: document.getElementById("page-title") as HTMLElement,
+    desc: document.getElementById("page-desc") as HTMLElement,
+  };
+
   initDirs.then(() => {
-    initNavigation();
+    settingsDom.navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const page = button.dataset.page || button.dataset.navTo || "";
+        if (isPageId(page)) void navigateTo(page);
+      });
+    });
     void navigateTo("general");
   });
 });
