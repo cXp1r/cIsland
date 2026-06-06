@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { TestResult } from "./types";
 
 const AgentList = [
     "claude",
@@ -6,26 +7,56 @@ const AgentList = [
     //目前就这两个支持
 ]
 const buttonList = document.getElementById("agent-list") as HTMLDivElement;
-function scan() {
-    AgentList.forEach(async (a) => {
-        const foundPath = await invoke<string>(
-                        "find_path_by_where",
-                        {
-                            name: a
-                        }
-                    );
-                    console.log(foundPath);
-        buttonList.innerHTML += `<div class="setting-item">
-              <div class="setting-label">
-                <h3>${a}</h3>
-                <p>安装地址:${foundPath}</p>
-              </div>
-              <div class="setting-control">
-                <button class="agent-handler-install-btn btn" type="button" name="${a}">安装hooks</button>
-              </div>
-            </div>`
-    })
-    
+
+async function scan() {
+    buttonList.innerHTML = "检测待安装Hooks的agent"; 
+
+    for (const a of AgentList) {
+        const foundPath = await invoke<string>("find_path_by_where", {
+            name: a
+        });
+
+
+        const item = document.createElement("div");
+        item.className = "setting-item";
+
+
+        const label = document.createElement("div");
+        label.className = "setting-label";
+
+        const title = document.createElement("h3");
+        title.textContent = a;
+
+        const desc = document.createElement("p");
+        desc.textContent = `安装地址: ${foundPath}`;
+
+        label.appendChild(title);
+        label.appendChild(desc);
+
+
+        const control = document.createElement("div");
+        control.className = "setting-control";
+
+        const btn = document.createElement("button");
+        btn.className = "agent-handler-install-btn btn";
+        btn.type = "button";
+        btn.dataset.name = a;
+        btn.textContent = "安装hooks";
+
+
+        btn.addEventListener("click", () => {
+            console.log(btn.dataset.name);
+            invoke("custom_caller");
+        });
+
+        control.appendChild(btn);
+
+        // 合并
+        item.appendChild(label);
+        item.appendChild(control);
+
+        buttonList.appendChild(item);
+    }
 }
 export function initAgentHandlerInstaller() {
     scan();
