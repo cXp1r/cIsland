@@ -70,7 +70,7 @@ listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
 export function initDownloader() {
     thread.value = aria2cThread.value;
     console.log(aria2cThread.value, thread.value);
-    saveDir.value = userDir + "\\downloads";
+    saveDir.value = userDir + "downloads";
     downloadBtn.addEventListener("click", async () => {
         let urlq = url.value.trim()
         if (urlq !== ""){
