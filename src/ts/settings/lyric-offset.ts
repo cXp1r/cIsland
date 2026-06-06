@@ -108,7 +108,7 @@ function buildRow(entry: PlayerOffsetEntry): HTMLDivElement {
 
   if (state.activeAppId && entry.app_id === state.activeAppId) {
     const badge = document.createElement("span");
-    badge.textContent = "Current";
+    badge.textContent = "当前";
     badge.style.cssText = "font-size:11px;padding:2px 8px;border-radius:10px;background:var(--primary);color:#fff;";
     label.appendChild(badge);
   }
@@ -123,9 +123,9 @@ function buildRow(entry: PlayerOffsetEntry): HTMLDivElement {
   value.style.cssText = "min-width:80px;text-align:center;font-variant-numeric:tabular-nums;";
   delBtn.type = "button";
   delBtn.className = "btn btn-small";
-  delBtn.textContent = "Clear";
+  delBtn.textContent = "清除";
   delBtn.style.color = "var(--danger, #ff6f7f)";
-  delBtn.title = "Remove this player's lyric offset";
+  delBtn.title = "移除此播放器的歌词补偿";
 
   const applyDisabledByRange = (nextMs: number): void => {
     minusBtn.disabled = nextMs <= state.minMs;
@@ -153,7 +153,7 @@ function buildRow(entry: PlayerOffsetEntry): HTMLDivElement {
     } catch (e) {
       entry.ms = prev;
       value.textContent = formatMs(prev);
-      setSubpageStatus(`Save failed: ${String(e)}`, 4000);
+      setSubpageStatus(`保存失败: ${String(e)}`, 4000);
     } finally {
       applyDisabledByRange(entry.ms);
     }
@@ -168,9 +168,9 @@ function buildRow(entry: PlayerOffsetEntry): HTMLDivElement {
       await invoke("delete_lyric_offset_player", { appId: entry.app_id });
       state.players = state.players.filter((p) => p.app_id !== entry.app_id);
       renderList();
-      setSubpageStatus(`${entry.app_id} cleared`);
+      setSubpageStatus(`${entry.app_id} 已清除`);
     } catch (e) {
-      setSubpageStatus(`Delete failed: ${String(e)}`, 4000);
+      setSubpageStatus(`删除失败: ${String(e)}`, 4000);
     } finally {
       delBtn.disabled = false;
     }
@@ -201,7 +201,7 @@ async function reload(): Promise<void> {
     syncToggles();
     renderList();
   } catch (e) {
-    setSubpageStatus(`Load failed: ${String(e)}`, 4000);
+    setSubpageStatus(`加载失败: ${String(e)}`, 4000);
   }
 }
 
@@ -211,11 +211,11 @@ async function handleToggleChange(enabled: boolean): Promise<void> {
 
   try {
     await invoke("set_lyric_offset_enabled", { enabled });
-    setSubpageStatus(enabled ? "Lyric offset enabled" : "Lyric offset disabled");
+    setSubpageStatus(enabled ? "歌词补偿已启用" : "歌词补偿已禁用");
   } catch (e) {
     state.enabled = !enabled;
     syncToggles();
-    setSubpageStatus(`Toggle failed: ${String(e)}`, 4000);
+    setSubpageStatus(`切换失败: ${String(e)}`, 4000);
   }
 }
 

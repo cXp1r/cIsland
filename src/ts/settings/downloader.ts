@@ -46,7 +46,7 @@ function createProgressItem(uuid: string): void {
 
   wrapper.id = uuid;
   header.style.cssText = "display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);";
-  state.innerText = "Downloading...";
+  state.innerText = "下载中...";
   percent.innerText = "0%";
   track.style.cssText = "width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;";
   bar.style.cssText = "width:0%;height:100%;background:var(--primary);border-radius:3px;transition:width 0.2s ease;";
@@ -77,14 +77,14 @@ void listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
 
   if (item) {
     item.state.innerText = res.ok
-      ? `Download complete: ${truncate(res.filename, 25)}`
-      : "Download failed";
+      ? `下载完成: ${truncate(res.filename, 25)}`
+      : "下载失败";
   }
 
   showStatus(
     res.ok
-      ? `Download complete: ${truncate(res.filename, 25)}, path: ${truncate(res.path, 40)}`
-      : "Download failed",
+      ? `下载完成: ${truncate(res.filename, 25)}，路径: ${truncate(res.path, 40)}`
+      : "下载失败",
     !res.ok,
     5000
   );
@@ -100,7 +100,7 @@ export function initSettingsDownloader(): void {
   downloadBtn.addEventListener("click", () => {
     const downloadUrl = url.value.trim();
     if (!downloadUrl) {
-      showStatus("Please enter download URL.", true);
+      showStatus("请输入下载链接。", true);
       return;
     }
 

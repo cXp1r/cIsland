@@ -52,7 +52,7 @@ function bindEvents(): void {
           const empty = document.createElement("div");
           empty.className = "city-result-item";
           empty.style.color = "var(--text-muted)";
-          empty.textContent = "No matching city";
+          empty.textContent = "没有匹配的城市";
           els.results.appendChild(empty);
         } else {
           results.forEach((city) => {
@@ -79,7 +79,7 @@ function bindEvents(): void {
               els.search.value = "";
               els.results.classList.remove("active");
               els.results.innerHTML = "";
-              showStatus(`weather city set to ${city.name}`);
+              showStatus(`天气城市已设置为 ${city.name}`);
             });
 
             els.results.appendChild(item);
@@ -103,7 +103,7 @@ function bindEvents(): void {
   els.clearBtn.addEventListener("click", async () => {
     await invoke("save_weather_city", { city: "", lat: 0.0, lon: 0.0 });
     renderCity("");
-    showStatus("weather city cleared");
+    showStatus("天气城市已清除");
   });
 
   bound = true;

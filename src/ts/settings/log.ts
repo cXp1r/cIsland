@@ -52,9 +52,9 @@ async function save(): Promise<void> {
       logFilterInvert: current.log_filter_invert,
     });
     cache = current;
-    showStatus("settings saved");
+    showStatus("设置已保存");
   } catch (e) {
-    showStatus(`save failed: ${String(e)}`, true, 4500);
+    showStatus(`保存失败: ${String(e)}`, true, 4500);
   }
 }
 

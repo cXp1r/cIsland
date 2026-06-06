@@ -33,13 +33,13 @@ function readAi() {
 
 function renderResult(): void {
   if (cache!.is_reasoning_model) {
-    els.result.textContent = "reasoning model";
+    els.result.textContent = "推理模型";
     els.result.style.color = "#39d98a";
   } else if (cache!.model) {
-    els.result.textContent = "normal model";
+    els.result.textContent = "普通模型";
     els.result.style.color = "#93a4c8";
   } else {
-    els.result.textContent = "not detected";
+    els.result.textContent = "未检测";
     els.result.style.color = "#93a4c8";
   }
 }
@@ -78,19 +78,19 @@ async function save(): Promise<void> {
     };
 
     if (ai.apiUrl && ai.apiKey && ai.model) {
-      els.result.textContent = "detecting...";
+      els.result.textContent = "检测中...";
       els.result.style.color = "#93a4c8";
       try {
         await invoke("ai_detect_model_type");
       } catch {
-        els.result.textContent = "detect failed";
+        els.result.textContent = "检测失败";
         els.result.style.color = "#ff6f7f";
       }
     }
 
-    showStatus("settings saved");
+    showStatus("设置已保存");
   } catch (err) {
-    showStatus(`save failed: ${String(err)}`, true, 4500);
+    showStatus(`保存失败: ${String(err)}`, true, 4500);
   }
 }
 
@@ -98,13 +98,13 @@ async function detect(): Promise<void> {
   const ai = readAi();
 
   if (!ai.apiUrl || !ai.apiKey || !ai.model) {
-    showStatus("Please fill AI settings first.", true);
+    showStatus("请先填写 AI 设置。", true);
     return;
   }
 
   els.detectBtn.disabled = true;
-  els.detectBtn.textContent = "detecting...";
-  els.result.textContent = "detecting...";
+  els.detectBtn.textContent = "检测中...";
+  els.result.textContent = "检测中...";
   els.result.style.color = "#93a4c8";
 
   try {
@@ -114,14 +114,14 @@ async function detect(): Promise<void> {
       model: ai.model,
     });
     await invoke("ai_detect_model_type");
-    showStatus("model detection started");
+    showStatus("模型检测已开始");
   } catch (err) {
-    els.result.textContent = "detect failed";
+    els.result.textContent = "检测失败";
     els.result.style.color = "#ff6f7f";
-    showStatus(`detect failed: ${String(err)}`, true, 4500);
+    showStatus(`检测失败: ${String(err)}`, true, 4500);
   } finally {
     els.detectBtn.disabled = false;
-    els.detectBtn.textContent = "detect model type";
+    els.detectBtn.textContent = "检测模型类型";
   }
 }
 
@@ -136,7 +136,7 @@ function bindEvents(): void {
   void listen<{ is_reasoning_model: boolean }>("ai-model-type-detected", (event) => {
     if (cache) cache.is_reasoning_model = event.payload.is_reasoning_model;
     renderResult();
-    showStatus(event.payload.is_reasoning_model ? "detected: reasoning model" : "detected: normal model");
+    showStatus(event.payload.is_reasoning_model ? "已检测为推理模型" : "已检测为普通模型");
     void emit("ai-settings-changed", {});
   });
 

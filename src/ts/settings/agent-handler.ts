@@ -11,32 +11,32 @@ async function findAgentPath(agent: string): Promise<string> {
   try {
     return await invoke<string>("find_path_by_where", { name: agent });
   } catch {
-    return "not found in PATH";
+    return "PATH 中未找到";
   }
 }
 
 function renderResult(result: AgentHooksInstallResult): string {
   return [
-    `agent: ${result.agent}`,
-    `ipc: ${result.ipc_helper_path}`,
-    ...result.targets.map((target) => `target: ${target}`),
+    `代理: ${result.agent}`,
+    `IPC 助手: ${result.ipc_helper_path}`,
+    ...result.targets.map((target) => `目标: ${target}`),
   ].join("\n");
 }
 
 async function installAgent(agent: string, button: HTMLButtonElement, desc: HTMLParagraphElement): Promise<void> {
-  const originalText = button.textContent || "install hooks";
+  const originalText = button.textContent || "安装 Hook";
   button.disabled = true;
-  button.textContent = "installing...";
+  button.textContent = "安装中...";
 
   try {
     const results = await invoke<AgentHooksInstallResult[]>("install_agent_hooks", {
       agents: [agent],
     });
     desc.textContent = results.map(renderResult).join("\n\n");
-    showStatus(`${agent} hooks installed`, false, 5000);
+    showStatus(`${agent} Hook 已安装`, false, 5000);
   } catch (e) {
-    desc.textContent = `install failed: ${String(e)}`;
-    showStatus(`${agent} hooks install failed: ${String(e)}`, true, 7000);
+    desc.textContent = `安装失败: ${String(e)}`;
+    showStatus(`${agent} Hook 安装失败: ${String(e)}`, true, 7000);
   } finally {
     button.disabled = false;
     button.textContent = originalText;
@@ -59,7 +59,7 @@ async function scan(): Promise<void> {
 
     const desc = document.createElement("p");
     desc.style.whiteSpace = "pre-line";
-    desc.textContent = `path: ${foundPath}`;
+    desc.textContent = `路径: ${foundPath}`;
 
     label.appendChild(title);
     label.appendChild(desc);
@@ -71,7 +71,7 @@ async function scan(): Promise<void> {
     btn.className = "agent-handler-install-btn btn";
     btn.type = "button";
     btn.dataset.name = agent;
-    btn.textContent = "install hooks";
+    btn.textContent = "安装 Hook";
     btn.addEventListener("click", () => void installAgent(agent, btn, desc));
 
     control.appendChild(btn);

@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { $, showStatus } from "./shared";
 import type { EmailSettingsConfig } from "./types";
 
-const shortcutHint = "Press shortcut...";
+const shortcutHint = "请按快捷键...";
 const els = {
   page: $<HTMLElement>("page-email"),
   emailPollIntervalInput: $<HTMLInputElement>("email-poll-interval"),
@@ -109,9 +109,9 @@ async function save(): Promise<void> {
       emailShortcut: current.email_shortcut,
     });
     cache = current;
-    showStatus("settings saved");
+    showStatus("设置已保存");
   } catch (e) {
-    showStatus(`save failed: ${String(e)}`, true, 4500);
+    showStatus(`保存失败: ${String(e)}`, true, 4500);
   }
 }
 

@@ -126,8 +126,8 @@ async function handleInstall(ui: ModuleUI): Promise<void> {
   const label = displayName(ui.name);
 
   if (!installDir) {
-    setResult(ui.result, `Please set ${label} install dir first.`, true);
-    showStatus(`Please set ${label} install dir first.`, true);
+    setResult(ui.result, `请先设置 ${label} 安装目录。`, true);
+    showStatus(`请先设置 ${label} 安装目录。`, true);
     return;
   }
 
@@ -140,11 +140,11 @@ async function handleInstall(ui: ModuleUI): Promise<void> {
     });
 
     if (ui.path) ui.path.value = result.path;
-    setResult(ui.result, `Initialized\nInstall dir: ${result.install_dir}\nPath: ${result.path}`);
-    showStatus(`${label} initialized. Save settings to keep it.`, false, 5000);
+    setResult(ui.result, `初始化完成\n安装目录: ${result.install_dir}\n路径: ${result.path}`);
+    showStatus(`${label} 初始化完成，保存设置后生效。`, false, 5000);
   } catch (e) {
-    setResult(ui.result, `Init failed: ${String(e)}`, true);
-    showStatus(`${label} init failed: ${String(e)}`, true, 7000);
+    setResult(ui.result, `初始化失败: ${String(e)}`, true);
+    showStatus(`${label} 初始化失败: ${String(e)}`, true, 7000);
   } finally {
     setButtonBusy(ui.initBtn, false);
   }
@@ -155,17 +155,17 @@ async function handleFindPath(ui: ModuleUI): Promise<void> {
 
   const originalDisabled = ui.path.disabled;
   ui.path.disabled = true;
-  setResult(ui.result, `Searching ${ui.name} from PATH...`);
+  setResult(ui.result, `正在从 PATH 查找 ${ui.name}...`);
 
   try {
     const foundPath = await invoke<string>("find_path_by_where", { name: ui.name });
     ui.path.value = foundPath;
     ui.installDir.value = get_parent(foundPath) || defaultInstallDir(ui.name);
-    setResult(ui.result, `Found ${ui.name}\nPath: ${foundPath}`);
-    showStatus(`Found ${ui.name} from PATH. Save settings to keep it.`, false, 5000);
+    setResult(ui.result, `已找到 ${ui.name}\n路径: ${foundPath}`);
+    showStatus(`已从 PATH 找到 ${ui.name}，保存设置后生效。`, false, 5000);
   } catch (e) {
-    setResult(ui.result, `PATH search failed: ${String(e)}`, true);
-    showStatus(`PATH search failed for ${ui.name}: ${String(e)}`, true, 6000);
+    setResult(ui.result, `PATH 查找失败: ${String(e)}`, true);
+    showStatus(`${ui.name} PATH 查找失败: ${String(e)}`, true, 6000);
   } finally {
     ui.path.disabled = originalDisabled;
   }
@@ -174,26 +174,26 @@ async function handleFindPath(ui: ModuleUI): Promise<void> {
 async function handleTest(ui: ModuleUI): Promise<void> {
   const path = readValue(ui.path);
   if (!path) {
-    setResult(ui.result, `Please set ${ui.name} executable path first.`, true);
+    setResult(ui.result, `请先设置 ${ui.name} 可执行文件路径。`, true);
     return;
   }
 
   setButtonBusy(ui.testBtn, true);
-  setResult(ui.result, `Testing ${ui.name}...`);
+  setResult(ui.result, `正在测试 ${ui.name}...`);
 
   try {
     const testOpt = await invoke<TestResult>("test", { path, tag: ui.name });
     setResult(
       ui.result,
       [
-        testOpt.ok ? "Command passed" : "Command failed",
+        testOpt.ok ? "命令执行成功" : "命令执行失败",
         testOpt.stdout.trim() ? `stdout:\n${testOpt.stdout.trim()}` : "",
         testOpt.stderr.trim() ? `stderr:\n${testOpt.stderr.trim()}` : "",
       ].filter(Boolean).join("\n"),
       !testOpt.ok
     );
   } catch (e) {
-    setResult(ui.result, `Test failed: ${String(e)}`, true);
+    setResult(ui.result, `测试失败: ${String(e)}`, true);
   } finally {
     setButtonBusy(ui.testBtn, false);
   }
@@ -202,27 +202,27 @@ async function handleTest(ui: ModuleUI): Promise<void> {
 async function handleCheck(ui: ModuleUI): Promise<void> {
   const path = readValue(ui.path);
   if (!path) {
-    setResult(ui.result, `Please set ${ui.name} executable path first.`, true);
+    setResult(ui.result, `请先设置 ${ui.name} 可执行文件路径。`, true);
     return;
   }
 
   setButtonBusy(ui.checkBtn, true);
-  setResult(ui.result, `Checking ${ui.name} version...`);
+  setResult(ui.result, `正在检查 ${ui.name} 版本...`);
 
   try {
     const checkOpt = await invoke<CheckResult>("check", { path, tag: ui.name });
     setResult(
       ui.result,
       [
-        checkOpt.ok ? "Command passed" : "Command failed",
-        `Version: ${checkOpt.version || "unknown"}`,
+        checkOpt.ok ? "命令执行成功" : "命令执行失败",
+        `版本: ${checkOpt.version || "未知"}`,
         checkOpt.stdout.trim() ? `stdout:\n${checkOpt.stdout.trim()}` : "",
         checkOpt.stderr.trim() ? `stderr:\n${checkOpt.stderr.trim()}` : "",
       ].filter(Boolean).join("\n"),
       !checkOpt.ok
     );
   } catch (e) {
-    setResult(ui.result, `Check failed: ${String(e)}`, true);
+    setResult(ui.result, `检查失败: ${String(e)}`, true);
   } finally {
     setButtonBusy(ui.checkBtn, false);
   }
@@ -246,8 +246,8 @@ function bindToolsModules(): void {
   bindModule(moduleUI.hook, {
     check: async (ui) => {
       const installDir = readValue(ui.installDir) || defaultInstallDir("hook");
-      setResult(ui.result, `Global install dir: ${installDir}\nIPC Helper: ${installDir}\\agent-hooks-ipc.exe`);
-      showStatus("Hook install dir shown.", false, 4000);
+      setResult(ui.result, `全局安装目录: ${installDir}\nIPC 助手: ${installDir}\\agent-hooks-ipc.exe`);
+      showStatus("Hook 安装目录已显示。", false, 4000);
     },
   });
 
@@ -259,28 +259,28 @@ function bindAdbActions(): void {
     const ip = sadbIpInput.value.trim();
     const port = clampPort(sadbPortInput.value, 5555);
     const serial = `${ip}:${port}`;
-    const originalText = adbConnBtn.textContent || "connect";
+    const originalText = adbConnBtn.textContent || "连接";
 
     if (!ip) {
-      setResult(moduleUI.adb.result, "Please set default IP first.", true);
-      showStatus("Please set default IP first.", true);
+      setResult(moduleUI.adb.result, "请先设置默认 IP。", true);
+      showStatus("请先设置默认 IP。", true);
       return;
     }
 
     adbConnBtn.disabled = true;
-    adbConnBtn.textContent = "connecting...";
-    setResult(moduleUI.adb.result, `Connecting ${serial}...`);
+    adbConnBtn.textContent = "连接中...";
+    setResult(moduleUI.adb.result, `正在连接 ${serial}...`);
 
     try {
       await invoke<TestResult>("custom_caller", {
         path: adbPath.value,
         args: ["connect", serial],
       });
-      setResult(moduleUI.adb.result, `Device connected\nSerial: ${serial}\nADB: ${adbPath.value}`);
-      showStatus(`Device connected: ${serial}`, false, 4500);
+      setResult(moduleUI.adb.result, `设备已连接\nSerial: ${serial}\nADB: ${adbPath.value}`);
+      showStatus(`设备已连接: ${serial}`, false, 4500);
     } catch (e) {
-      setResult(moduleUI.adb.result, `Device connect failed\nSerial: ${serial}\nError: ${String(e)}`, true);
-      showStatus(`Device connect failed: ${String(e)}`, true, 6000);
+      setResult(moduleUI.adb.result, `设备连接失败\nSerial: ${serial}\n错误: ${String(e)}`, true);
+      showStatus(`设备连接失败: ${String(e)}`, true, 6000);
     } finally {
       adbConnBtn.disabled = false;
       adbConnBtn.textContent = originalText;
@@ -288,11 +288,11 @@ function bindAdbActions(): void {
   });
 
   adbKillServerBtn.addEventListener("click", async () => {
-    const originalText = adbKillServerBtn.textContent || "kill server";
+    const originalText = adbKillServerBtn.textContent || "停止服务";
 
     adbKillServerBtn.disabled = true;
-    adbKillServerBtn.textContent = "running...";
-    setResult(moduleUI.adb.result, "Running adb kill-server...");
+    adbKillServerBtn.textContent = "执行中...";
+    setResult(moduleUI.adb.result, "正在执行 adb kill-server...");
 
     try {
       const result = await invoke<TestResult>("custom_caller", {
@@ -302,16 +302,16 @@ function bindAdbActions(): void {
       setResult(
         moduleUI.adb.result,
         [
-          result.ok ? "ADB server stopped" : "ADB server stop failed",
+          result.ok ? "ADB 服务已停止" : "ADB 服务停止失败",
           result.stdout.trim() ? `stdout:\n${result.stdout.trim()}` : "",
           result.stderr.trim() ? `stderr:\n${result.stderr.trim()}` : "",
         ].filter(Boolean).join("\n"),
         !result.ok
       );
-      showStatus(result.ok ? "ADB server stopped" : "ADB server stop failed", !result.ok, 4500);
+      showStatus(result.ok ? "ADB 服务已停止" : "ADB 服务停止失败", !result.ok, 4500);
     } catch (e) {
-      setResult(moduleUI.adb.result, `Kill server failed: ${String(e)}`, true);
-      showStatus(`Kill server failed: ${String(e)}`, true, 6000);
+      setResult(moduleUI.adb.result, `停止服务失败: ${String(e)}`, true);
+      showStatus(`停止服务失败: ${String(e)}`, true, 6000);
     } finally {
       adbKillServerBtn.disabled = false;
       adbKillServerBtn.textContent = originalText;
@@ -393,9 +393,9 @@ async function save(): Promise<void> {
       aria2cRpcSecret: current.aria2c_rpc_secret,
     });
     cache = current;
-    showStatus("璁剧疆宸蹭繚瀛?");
+    showStatus("保存成功");
   } catch (e) {
-    showStatus(`淇濆瓨澶辫触: ${String(e)}`, true, 4500);
+    showStatus(`保存失败: ${String(e)}`, true, 4500);
   }
 }
 

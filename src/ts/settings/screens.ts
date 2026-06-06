@@ -55,9 +55,9 @@ async function save(): Promise<void> {
       offset_x: current.offset_x,
       offset_y: current.offset_y,
     };
-    showStatus("settings saved");
+    showStatus("设置已保存");
   } catch (e) {
-    showStatus(`save failed: ${String(e)}`, true, 4500);
+    showStatus(`保存失败: ${String(e)}`, true, 4500);
   }
 }
 
