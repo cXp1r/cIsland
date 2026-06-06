@@ -65,7 +65,7 @@ pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result
         current_version
     ));
 
-    let release = crate::tools::get_latest_release(api_url)?;
+    let release = crate::tools::get_latest_release(api_url, None)?;
 
     let tag = &release.tag_name;
     let latest_version = if tag.starts_with("tauri-v") {
