@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getSelectedScreenId, initScreensFrame, setScreenData } from "./screens-frame";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import type { ScreensSettingsConfig } from "./types";
 
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   page: $<HTMLElement>("page-screens"),
   offsetX: $<HTMLInputElement>("offsetX"),

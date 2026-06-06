@@ -1,10 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { loge } from "../index/logger";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import type { CityResult } from "./types";
 
 const TAG = "Settings/Weather";
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   search: $<HTMLInputElement>("weather-city-search"),
   results: $<HTMLDivElement>("city-results"),

@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import { adbPath, sadbIpInput, sadbPortInput } from "./tools";
 import type { SadbSettingsConfig } from "./types";
 
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   page: $<HTMLElement>("page-sadb"),
   sadbIpInput,

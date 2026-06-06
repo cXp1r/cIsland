@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { configDir } from "./main";
+import { $ } from "./shared";
 import type { UpdateInfo } from "./types";
-
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 const openCfgBtn = $<HTMLButtonElement>("open-cfg-btn");
 const currentVersionEl = $<HTMLSpanElement>("current-version");
@@ -114,20 +113,8 @@ export function initSettingsAbout(): void {
     void invoke("open_path", { path: `${configDir}settings.json` });
   });
 
-  void invoke<boolean>("get_preview_updates").then((enabled) => {
-    previewUpdatesToggle.checked = enabled;
-  }).catch(() => {});
-
-  previewUpdatesToggle.addEventListener("change", () => {
-    void invoke("set_preview_updates", { enabled: previewUpdatesToggle.checked });
-  });
-
   void invoke<boolean>("get_show_preview_toggle").then(applyPreviewVisibility).catch(() => {});
 
-  disablePreviewBtn.addEventListener("click", () => {
-    void invoke("set_show_preview_toggle", { enabled: false });
-    applyPreviewVisibility(false);
-  });
 
   void invoke<string>("get_app_version").then((ver) => {
     currentVersionEl.textContent = `v${ver}`;
@@ -203,4 +190,3 @@ export function initSettingsAbout(): void {
 
   bound = true;
 }
-

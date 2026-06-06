@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import type { GeneralSettingsConfig } from "./types";
 
 const shortcutHint = "Press shortcut...";
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   page: $<HTMLElement>("page-general"),
   shortcutInput: $<HTMLInputElement>("shortcut-input"),

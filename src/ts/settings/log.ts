@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getLogFilterTags, initLogFilter, setLogFilterTags } from "./log-filter";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import type { LogSettingsConfig } from "./types";
 
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   page: $<HTMLElement>("page-log"),
   logLevelSelect: $<HTMLSelectElement>("log-level-select"),

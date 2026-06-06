@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import type { EmailSettingsConfig } from "./types";
 
 const shortcutHint = "Press shortcut...";
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   page: $<HTMLElement>("page-email"),
   emailPollIntervalInput: $<HTMLInputElement>("email-poll-interval"),

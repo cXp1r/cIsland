@@ -1,11 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { loge } from "../index/logger";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import type { AISettingsResponse, AiWindowSettingsConfig } from "./types";
 
 const TAG = "Settings/AI";
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const els = {
   page: $<HTMLElement>("page-ai"),
   apiUrl: $<HTMLInputElement>("ai-api-url"),

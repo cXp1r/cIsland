@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./shared";
+import { $, showStatus } from "./shared";
 import { logi } from "../logger";
 import type { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
 import { configDir } from "./main";
@@ -24,7 +24,6 @@ type ModuleHandlers = Partial<Record<"init" | "getPath" | "test" | "check", (ui:
 
 const TAG = "Settings/Tools";
 const DEFAULT_SECRET = "灯灯侑侑天下第一";
-const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 let bound = false;
 let cache: ToolsSettingsResponse | null = null;
