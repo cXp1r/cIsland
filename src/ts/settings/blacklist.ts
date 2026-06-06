@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./settings-shared";
+import { showStatus } from "./shared";
 import { loge } from "../index/logger";
 
 const TAG = "Settings/Blacklist";
@@ -97,7 +97,7 @@ async function addBlacklistEntry() {
   await saveBlacklist();
 }
 
-export function initBlacklist(): void {
+export function initSettingsBlacklist(): void {
   if (blacklistEnabledToggle) {
     blacklistEnabledToggle.addEventListener("change", async () => {
       const enabled = blacklistEnabledToggle.checked;

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus } from "./settings-shared";
+import { showStatus } from "./shared";
 import { loge } from "../index/logger";
 
 const TAG = "Settings/SmtcWhitelist";
@@ -96,7 +96,7 @@ async function addSmtcWhitelistEntry() {
   await saveSmtcWhitelist();
 }
 
-export function initSmtcWhitelist(): void {
+export function initSettingsSmtcWhitelist(): void {
   if (smtcWhitelistEnabledToggle) {
     smtcWhitelistEnabledToggle.addEventListener("change", async () => {
       const enabled = smtcWhitelistEnabledToggle.checked;

@@ -1,12 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
-import { showStatus, openExternal, INFLINK_URL } from "./settings-shared";
+import { showStatus, openExternal, INFLINK_URL } from "./shared";
 import type { PluginMarketRepairResult } from "./types";
 
 const betterncmPathInput = document.getElementById("betterncm-path") as HTMLInputElement;
 const repairBtn = document.getElementById("install-betterncm-btn") as HTMLButtonElement;
 const openInfLinkBtn = document.getElementById("open-inflink-btn") as HTMLButtonElement;
 
-export function initBetterncm(): void {
+export function initSettingsBetterncm(): void {
   openInfLinkBtn.addEventListener("click", () => {
     openExternal(INFLINK_URL);
   });

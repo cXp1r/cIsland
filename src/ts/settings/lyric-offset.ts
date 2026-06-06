@@ -221,7 +221,7 @@ async function handleToggleChange(refs: Refs, enabled: boolean) {
   }
 }
 
-export function initLyricOffset(): void {
+export function initSettingsLyricOffset(): void {
   const refs: Refs = {
     mainToggle: document.getElementById("lyric-offset-enabled") as HTMLInputElement | null,
     subToggle: document.getElementById("lyric-offset-enabled-sub") as HTMLInputElement | null,

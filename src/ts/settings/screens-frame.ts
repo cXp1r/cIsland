@@ -1,7 +1,3 @@
-// ────────────────────────────────────────────────
-// Types
-// ────────────────────────────────────────────────
-
 export interface MonitorInfo {
     name: string
     x: number
@@ -17,33 +13,21 @@ interface Vec2 {
   y: number;
 }
 
-// ────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────
 
 const SCALE_MIN = 0.05;
 const SCALE_MAX = 5;
 const PADDING   = 20;
 
-// ────────────────────────────────────────────────
-// Default data
-// ────────────────────────────────────────────────
 
 let screenData: MonitorInfo[] = [
   { name: 'Unknown', x: 0,  y: 0, width: 1920, height: 1080, scale_factor: 1, is_primary: false }
 ];
 
-// ────────────────────────────────────────────────
-// State
-// ────────────────────────────────────────────────
 
 let offset: Vec2     = { x: 0, y: 0 };
 let scale: number    = 1;
 let selectedId: string  = "";
 
-// ────────────────────────────────────────────────
-// DOM refs
-// ────────────────────────────────────────────────
 
 const frame          = document.getElementById('screens-frame')     as HTMLDivElement;
 const canvas         = document.getElementById('grid-canvas')       as HTMLCanvasElement;
@@ -51,10 +35,6 @@ const ctx            = canvas.getContext('2d')!;
 const world          = document.getElementById('world')             as HTMLDivElement;
 const worldContainer = document.getElementById('world-container')   as HTMLDivElement;
 
-
-// ────────────────────────────────────────────────
-// Grid canvas
-// ────────────────────────────────────────────────
 
 function resizeCanvas(): void {
   canvas.width  = frame.clientWidth;
@@ -102,9 +82,7 @@ function drawGrid(): void {
   }
 }
 
-// ────────────────────────────────────────────────
-// World / DOM rendering
-// ────────────────────────────────────────────────
+
 
 export function renderScreens(data: MonitorInfo[]): void {
   world.querySelectorAll('.screen-div').forEach(e => e.remove());
@@ -143,9 +121,6 @@ function selectScreen(id: string): void {
   document.getElementById(id)?.classList.add('selected');
 }
 
-// ────────────────────────────────────────────────
-// Drag to pan
-// ────────────────────────────────────────────────
 
 let isDragging  = false;
 let dragStart:   Vec2 = { x: 0, y: 0 };
@@ -174,7 +149,7 @@ const stopDrag = (): void => {
 frame.addEventListener('mouseup',    stopDrag);
 frame.addEventListener('mouseleave', stopDrag);
 
-// Deselect on background click
+
 worldContainer.addEventListener('click', (e: MouseEvent) => {
   if (e.target === worldContainer || e.target === world) {
     if (selectedId) {
@@ -184,7 +159,7 @@ worldContainer.addEventListener('click', (e: MouseEvent) => {
   }
 });
 
-// ── Touch ──
+
 worldContainer.addEventListener('touchstart', (e: TouchEvent) => {
   const t = e.touches[0];
   isDragging  = true;
@@ -202,7 +177,7 @@ frame.addEventListener('touchmove', (e: TouchEvent) => {
 
 frame.addEventListener('touchend', () => { isDragging = false; });
 
-// ── Wheel zoom ──
+
 worldContainer.addEventListener('wheel', (e: WheelEvent) => {
   e.preventDefault();
   const rect    = frame.getBoundingClientRect();
@@ -216,9 +191,6 @@ worldContainer.addEventListener('wheel', (e: WheelEvent) => {
   applyOffset();
 }, { passive: false });
 
-// ────────────────────────────────────────────────
-// Controls
-// ────────────────────────────────────────────────
 
 function centerAll(): void {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -238,12 +210,8 @@ function centerAll(): void {
   applyOffset();
 }
 
-// Exposed to HTML onclick
-(window as any).resetOffset = (): void => { centerAll(); };
 
-// ────────────────────────────────────────────────
-// Public API
-// ────────────────────────────────────────────────
+
 
 export function setScreenData(data: MonitorInfo[], selected: MonitorInfo): void {
     
@@ -261,10 +229,6 @@ export function setScreenData(data: MonitorInfo[], selected: MonitorInfo): void 
 
 (window as any).setScreenData = setScreenData;
 
-// ────────────────────────────────────────────────
-// ResizeObserver — debounced, skip if size unchanged
-// ────────────────────────────────────────────────
-
 let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
 new ResizeObserver(() => {
@@ -280,13 +244,11 @@ new ResizeObserver(() => {
   }, 50);
 }).observe(frame);
 
-// ────────────────────────────────────────────────
-// Init — lazy, called once when screens page becomes visible
-// ────────────────────────────────────────────────
+
 
 let initialized = false;
 
-export function init(): void {
+export function initScreensFrame(): void {
   if (initialized) return;
   if (frame.clientWidth === 0 || frame.clientHeight === 0) return;
   initialized = true;
@@ -296,7 +258,10 @@ export function init(): void {
   centerAll();
 }
 
-// Exposed globally so non-module scripts can call window.initScreensFrame()
+document.getElementById("frame-fit-btn")?.addEventListener("click", () => {
+  centerAll();
+});
+
 (window as any).initScreensFrame = (): void => {
-  requestAnimationFrame(() => init());
+  requestAnimationFrame(() => initScreensFrame());
 };

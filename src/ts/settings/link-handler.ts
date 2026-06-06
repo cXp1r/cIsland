@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { loge } from "../index/logger";
-import { showStatus } from "./settings-shared";
+import { showStatus } from "./shared";
 import type { LinkHandler } from "./types";
 
 const TAG = "Settings/LinkHandler";

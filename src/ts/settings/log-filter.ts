@@ -1,4 +1,4 @@
-import { showStatus } from "./settings-shared";
+import { showStatus } from "./shared";
 
 let logFilterTags: string[] = [];
 

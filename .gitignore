@@ -27,6 +27,8 @@ node_modules/
 dist/
 target/
 *.exe
+!cc-hook.exe
+!cc-hook-core.exe
 *.msi
 .vscode/
 .kiro/
@@ -36,4 +38,4 @@ target/
 claude-psmux-team/
 release.md
 release.bat
-新增视图.md
+

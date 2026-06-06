@@ -880,7 +880,7 @@
       </footer>
     </div>
   </div>
-  <script>
+  <script type="application/json" id="legacy-settings-nav-disabled">
     // ==================== 页面导航 ====================
 const pageInfo = {
   general:          { title: "常规设置",          desc: "配置快捷键和外观选项。" },
@@ -925,8 +925,6 @@ document.querySelectorAll("[data-nav-to]").forEach(btn => {
   btn.addEventListener("click", () => navigateTo(btn.dataset.navTo ?? ""));
 });
   </script>
-  <script type="module" src="src/ts/settings/settings.ts"></script>
-  
   <script type="module" src="src/ts/settings/main.ts"></script>
   
 </body>

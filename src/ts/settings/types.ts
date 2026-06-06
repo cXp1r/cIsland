@@ -31,10 +31,59 @@ export type SettingsResponse = {
   primary_monitor_info: MonitorInfo;
   offset_x: number;
   offset_y: number;
+  tools: ToolsSettingsResponse;
+};
+
+export type GeneralSettingsConfig = {
+  shortcut_key: string;
+  hide_and_see_key: string;
+  search_shortcut: string;
+  indicator_color: string;
+  auto_start: boolean;
+};
+
+export type ScreensSettingsConfig = {
+  monitor_info: MonitorInfo[];
+  primary_monitor_info: MonitorInfo;
+  offset_x: number;
+  offset_y: number;
+};
+
+export type MusicSettingsConfig = {
+  lyric_mode: string;
+  lyric_offset_enabled: boolean;
+};
+
+export type ClipboardLinksSettingsConfig = {
+  clipboard_enabled: boolean;
+};
+
+export type EmailSettingsConfig = {
+  email_poll_interval_secs: number;
+  email_username: string;
+  email_auth: string;
+  email_address: string;
+  email_port: number;
+  email_shortcut: string;
+};
+
+export type SadbSettingsConfig = {
+  sadb_ip: string;
+  sadb_port: number;
+  adb_path: string;
+};
+
+export type LogSettingsConfig = {
+  log_level: string;
+  log_filter_tags: string[];
+  log_filter_invert: boolean;
+};
+
+export type AiWindowSettingsConfig = {
+  agent_window_size: string;
 };
 
 export type ToolsSettingsResponse = {
-  adb_install_dir: string;
   adb_path: string;
   aria2c_path: string;
   aria2c_thread: number;
@@ -112,6 +161,12 @@ export type InstallResult = {
   install_dir: string;
   path: string;
   downloaded_zip: string;
+};
+
+export type AgentHooksInstallResult = {
+  agent: string;
+  ipc_helper_path: string;
+  targets: string[];
 };
 
 export type Aria2cRpcProgress = {

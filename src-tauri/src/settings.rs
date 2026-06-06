@@ -136,7 +136,6 @@ pub(crate) struct SettingsData {
     #[serde(default = "default_aria2c_rpc_secret")]
     pub aria2c_rpc_secret: String,
 }
-
 fn default_aria2c_rpc_port() -> u16 {
     6800
 }
@@ -409,10 +408,18 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
         "email_address": email_address,
         "email_port": email_port,
         "email_shortcut": state.email_shortcut.lock().unwrap().clone(),
+
         "monitor_info": state.monitor_info.lock().unwrap().clone(),
         "primary_monitor_info": state.primary_monitor_info.lock().unwrap().clone(),
         "offset_x": state.offset_x.load(Ordering::Relaxed),
         "offset_y": state.offset_y.load(Ordering::Relaxed),
+        "tools": {
+            "adb_path": state.adb_path.lock().unwrap().clone(),
+            "aria2c_path": state.aria2c_path.lock().unwrap().clone(),
+            "aria2c_thread": state.aria2c_thread.load(Ordering::Relaxed),
+            "aria2c_rpc_port": state.aria2c_rpc_port.load(Ordering::Relaxed),
+            "aria2c_rpc_secret": state.aria2c_rpc_secret.lock().unwrap().clone(),
+        }
     })
 }
 
@@ -420,14 +427,14 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
 pub fn save_settings(
     app: tauri::AppHandle,
     state: tauri::State<'_, IslandState>,
-    clipboard_enabled: bool,
-    shortcut_key: String,
-    hide_and_see_key: String,
-    search_shortcut: String,
-    lyric_mode: String,
+    clipboard_enabled: Option<bool>,
+    shortcut_key: Option<String>,
+    hide_and_see_key: Option<String>,
+    search_shortcut: Option<String>,
+    lyric_mode: Option<String>,
     lyric_offset_enabled: Option<bool>,
-    indicator_color: String,
-    agent_window_size: String,
+    indicator_color: Option<String>,
+    agent_window_size: Option<String>,
     weather_city: Option<String>,
     weather_lat: Option<f64>,
     weather_lon: Option<f64>,
@@ -443,10 +450,33 @@ pub fn save_settings(
     email_address: Option<String>,
     email_port: Option<u16>,
     email_shortcut: Option<String>,
+    adb_path: Option<String>,
+    aria2c_thread: Option<u8>,
+    aria2c_path: Option<String>,
+    aria2c_rpc_secret: Option<String>,
+    aria2c_rpc_port: Option<u16>,
+    sadb_ip: Option<String>,
+    sadb_port: Option<u16>,
     monitor_id: Option<String>,
     offset_x: Option<i32>,
     offset_y: Option<i32>,
 ) {
+    let shortcut_changed = shortcut_key.is_some()
+        || hide_and_see_key.is_some()
+        || search_shortcut.is_some()
+        || email_shortcut.is_some();
+    let lyric_mode_changed = lyric_mode.is_some();
+    let indicator_color_changed = indicator_color.is_some();
+    let agent_window_size_changed = agent_window_size.is_some();
+
+    let clipboard_enabled = clipboard_enabled.unwrap_or_else(|| state.clipboard_enabled.load(Ordering::Relaxed));
+    let shortcut_key = shortcut_key.unwrap_or_else(|| state.shortcut_key.lock().unwrap().clone());
+    let hide_and_see_key = hide_and_see_key.unwrap_or_else(|| state.hide_and_see_key.lock().unwrap().clone());
+    let search_shortcut = search_shortcut.unwrap_or_else(|| state.search_shortcut.lock().unwrap().clone());
+    let lyric_mode = lyric_mode.unwrap_or_else(|| state.lyric_mode.lock().unwrap().clone());
+    let indicator_color = indicator_color.unwrap_or_else(|| state.indicator_color.lock().unwrap().clone());
+    let agent_window_size = agent_window_size.unwrap_or_else(|| state.agent_window_size.lock().unwrap().clone());
+
     if let (Some(offset_x),Some(offset_y)) = (offset_x, offset_y) {
         state.offset_x.store(offset_x, Ordering::Relaxed);
         state.offset_y.store(offset_y, Ordering::Relaxed);
@@ -503,6 +533,9 @@ pub fn save_settings(
     if let Some(lon) = weather_lon {
         *state.weather_lon.lock().unwrap() = lon;
     }
+    if let Some(ref sc) = email_shortcut {
+        *state.email_shortcut.lock().unwrap() = sc.clone();
+    }
     let mut smtc_whitelist_changed = false;
     if let Some(enabled) = smtc_whitelist_enabled {
         state.smtc_whitelist_enabled.store(enabled, Ordering::Relaxed);
@@ -525,16 +558,23 @@ pub fn save_settings(
 
     // 通知前端指示器颜色变更
     if let Some(win) = app.get_webview_window("main") {
-        let _ = win.emit("indicator-color-changed", &indicator_color);
-        let _ = win.emit("agent-window-size-changed", &agent_window_size);
+        if indicator_color_changed {
+            let _ = win.emit("indicator-color-changed", &indicator_color);
+        }
+        if agent_window_size_changed {
+            let _ = win.emit("agent-window-size-changed", &agent_window_size);
+        }
     }
 
     // 通知前端歌词模式变更
-    if let Some(win) = app.get_webview_window("main") {
-        let _ = win.emit("lyric-mode-changed", &lyric_mode);
+    if lyric_mode_changed {
+        if let Some(win) = app.get_webview_window("main") {
+            let _ = win.emit("lyric-mode-changed", &lyric_mode);
+        }
     }
     
     // 重新注册快捷键
+    if shortcut_changed {
     use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
     let _ = app.global_shortcut().unregister_all();
     let pending_url = state.pending_url.clone();
@@ -600,15 +640,15 @@ pub fn save_settings(
     }
 
     // 邮件快捷键
-    if let Some(ref sc) = email_shortcut {
-        *state.email_shortcut.lock().unwrap() = sc.clone();
+    {
         let app_h = app.clone();
-        let sc_str = sc.clone();
+        let sc_str = state.email_shortcut.lock().unwrap().clone();
         let _ = app.global_shortcut().on_shortcut(sc_str.as_str(), move |_app, _shortcut, event| {
             if event.state == ShortcutState::Pressed {
                 crate::window::open_email_window(app_h.clone(), None);
             }
         });
+    }
     }
 
     // 持久化到文件
@@ -679,6 +719,34 @@ pub fn save_settings(
     }
     if let Some(sc) = email_shortcut {
         settings_data.email_shortcut = sc;
+    }
+    if let Some(path) = adb_path {
+        settings_data.adb_path = path.clone();
+        *state.adb_path.lock().unwrap() = path;
+    }
+    if let Some(aria2c_thread) = aria2c_thread {
+        settings_data.aria2c_thread = aria2c_thread;
+        state.aria2c_thread.store(aria2c_thread, Ordering::Relaxed);
+    }
+    if let Some(path) = aria2c_path {
+        settings_data.aria2c_path = path.clone();
+        *state.aria2c_path.lock().unwrap() = path;
+    }
+    if let Some(secret) = aria2c_rpc_secret {
+        settings_data.aria2c_rpc_secret = secret.clone();
+        *state.aria2c_rpc_secret.lock().unwrap() = secret;
+    }
+    if let Some(port) = aria2c_rpc_port {
+        settings_data.aria2c_rpc_port = port;
+        state.aria2c_rpc_port.store(port, Ordering::Relaxed);
+    }
+    if let Some(ip) = sadb_ip {
+        settings_data.sadb_ip = ip.clone();
+        *state.sadb_ip.lock().unwrap() = ip;
+    }
+    if let Some(port) = sadb_port {
+        settings_data.sadb_port = port;
+        state.sadb_port.store(port, Ordering::Relaxed);
     }
     let _ = save_settings_to_file(&settings_data);
 }
