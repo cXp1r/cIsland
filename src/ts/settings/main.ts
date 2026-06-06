@@ -15,7 +15,6 @@ import { initSettingsScreens } from "./screens";
 import { initSettingsSmtcWhitelist } from "./smtc-whitelist";
 import { initSettingsTools } from "./tools";
 import { initSettingsWeather } from "./weather";
-import { initSettingsWindow } from "./window";
 import { initSettingsAgentHandlerInstaller } from "./agent-handler";
 
 export let exeDir = "";
@@ -134,7 +133,6 @@ const initDirs = Promise.all([
 
 document.addEventListener("DOMContentLoaded", () => {
   initDirs.then(() => {
-    initSettingsWindow();
     initNavigation();
     void navigateTo("general");
   });
