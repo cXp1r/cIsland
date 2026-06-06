@@ -4,6 +4,7 @@ use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::Ordering;
+use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 use crate::IslandState;
@@ -17,6 +18,71 @@ use regex::Regex;
 static RE0: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(aria2-[\d\.]+)-win-64bit[^\.]+.zip").unwrap()
 });
+
+fn local_backup_suffix() -> String {
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    format!("{}bak", secs)
+}
+
+fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
+    if !install_dir_path.exists() {
+        return Ok(());
+    }
+
+    let should_backup = if install_dir_path.is_dir() {
+        let mut entries = fs::read_dir(install_dir_path)
+            .map_err(|e| format!("读取安装目录失败 {}: {}", install_dir_path.display(), e))?;
+        entries
+            .next()
+            .transpose()
+            .map_err(|e| format!("读取安装目录内容失败 {}: {}", install_dir_path.display(), e))?
+            .is_some()
+    } else {
+        true
+    };
+
+    if !should_backup {
+        return Ok(());
+    }
+
+    let name = install_dir_path
+        .file_name()
+        .ok_or_else(|| format!("安装目录名称无效: {}", install_dir_path.display()))?
+        .to_string_lossy();
+    let parent = install_dir_path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let suffix = local_backup_suffix();
+    let mut backup_path = parent.join(format!("{}{}", name, suffix));
+    let mut index = 1;
+
+    while backup_path.exists() {
+        backup_path = parent.join(format!("{}{}-{}", name, suffix, index));
+        index += 1;
+    }
+
+    logger::debug(
+        TAG,
+        &format!(
+            "安装目录已存在，备份到 {}",
+            backup_path.display()
+        ),
+    );
+    fs::rename(install_dir_path, &backup_path).map_err(|e| {
+        format!(
+            "备份安装目录失败 {} -> {}: {}",
+            install_dir_path.display(),
+            backup_path.display(),
+            e
+        )
+    })?;
+
+    Ok(())
+}
 
 
 #[derive(Debug, Serialize)]
@@ -334,23 +400,7 @@ pub fn tools_downloader(idir: String, name: String) -> Result<InstallResult, Str
         _ => return Err("Unknown name".into()),
     };
     let install_dir_path = Path::new(&idir);
-    // 清除已存在文件~
-    if install_dir_path.exists() {
-        logger::debug(TAG, "文件已存在, 清空中");
-        for entry in fs::read_dir(install_dir_path)
-            .map_err(|e| format!("failed to read install dir: {}", e))?
-        {
-            let entry = entry.map_err(|e| format!("failed to read dir entry: {}", e))?;
-            let path = entry.path();
-            if path.is_dir() {
-                fs::remove_dir_all(&path)
-                    .map_err(|e| format!("failed to remove dir {}: {}", path.display(), e))?;
-            } else {
-                fs::remove_file(&path)
-                    .map_err(|e| format!("failed to remove file {}: {}", path.display(), e))?;
-            }
-        }
-    }
+    backup_install_dir_if_needed(install_dir_path)?;
     fs::create_dir_all(install_dir_path).map_err(|e| format!("failed to create install dir: {}", e))?;
 
     let gr = get_latest_release("https://api.github.com/repos/aria2/aria2/releases/latest")?;
