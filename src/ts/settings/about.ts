@@ -21,10 +21,6 @@ const checkPreviewUpdateBtn = $<HTMLButtonElement>("check-preview-update-btn");
 const downloadUpdateBtn = $<HTMLButtonElement>("download-update-btn");
 const openReleaseBtn = $<HTMLButtonElement>("open-release-btn");
 const openGithubBtn = $<HTMLButtonElement>("open-github-btn");
-const previewUpdatesToggle = $<HTMLInputElement>("preview-updates-toggle");
-const previewToggleRow = $<HTMLElement>("preview-toggle-row");
-const disablePreviewWrap = $<HTMLElement>("disable-preview-wrap");
-const disablePreviewBtn = $<HTMLButtonElement>("disable-preview-btn");
 const logPathText = $<HTMLParagraphElement>("log-path-text");
 const openLogDirBtn = $<HTMLButtonElement>("open-log-dir-btn");
 
@@ -41,10 +37,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function applyPreviewVisibility(enabled: boolean): void {
-  previewToggleRow.style.display = enabled ? "" : "none";
-  disablePreviewWrap.style.display = enabled ? "" : "none";
-}
 
 async function checkUpdate(isPreview: boolean, button: HTMLButtonElement): Promise<void> {
   const defaultText = isPreview ? "预览版检查更新" : "稳定版检查更新";
@@ -112,9 +104,6 @@ export function initSettingsAbout(): void {
   openCfgBtn.addEventListener("click", () => {
     void invoke("open_path", { path: `${configDir}settings.json` });
   });
-
-  void invoke<boolean>("get_show_preview_toggle").then(applyPreviewVisibility).catch(() => {});
-
 
   void invoke<string>("get_app_version").then((ver) => {
     currentVersionEl.textContent = `v${ver}`;
