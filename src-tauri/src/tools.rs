@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::{self, Cursor, Read};
+use std::io::{self, Read};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -352,12 +352,14 @@ pub struct Asserts {
     pub size: u64,
 }
 
-pub fn get_latest_release(url: &str) -> Result<GithubResult, String> {
+
+pub fn get_latest_release(url: &str, auth: Option<&str>) -> Result<GithubResult, String> {
     let client = crate::shared_http_client();
     let resp = client
         .get(url)
         .header("User-Agent", "DynamicIsland-Updater")
         .header("Accept", "application/vnd.github+json")
+        .header("Authorization", format!("Bearer {}", auth.unwrap_or_else(|| "")))
         .send()
         .map_err(|e| {
             let msg = format!("请求失败: {}", e);
@@ -379,12 +381,62 @@ pub fn get_latest_release(url: &str) -> Result<GithubResult, String> {
         };
         return Err(friendly);
     }
-
     resp.json().map_err(|e| {
         let msg = format!("解析 JSON 失败: {}", e);
         crate::logger::warn(TAG, &msg);
         msg
     })
+}
+
+pub fn download_from_github(idir: &str, link: &str, is_aria2c_rpc: bool) -> Result<String, String> {
+    download_from_github_matching(idir, link, is_aria2c_rpc, |_| true)
+}
+
+
+fn download_from_github_matching<F>(
+    idir: &str,
+    link: &str,
+    is_aria2c_rpc: bool,
+    mut accept: F,
+) -> Result<String, String>
+//接收一个用于判断是否继续的闭包
+where
+    F: FnMut(&Asserts) -> bool,
+{
+    let install_dir_path = Path::new(idir);
+    fs::create_dir_all(install_dir_path)
+        .map_err(|e| format!("failed to create install dir: {}", e))?;
+    //先占位
+    let gr = get_latest_release(link, None)?;
+    for a in &gr.assets {
+        if !accept(a) { continue; }
+
+        if is_aria2c_rpc {
+            return Err("aria2c RPC 下载分支待实现".into());
+        }
+
+        let file_name = Path::new(&a.name)
+            .file_name()
+            .ok_or_else(|| format!("GitHub asset 文件名无效: {}", a.name))?;
+        let file_path = install_dir_path.join(file_name);
+        let mut resp = crate::shared_http_client()
+            .get(&a.browser_download_url)
+            .send()
+            .map_err(|e| format!("failed to download {}: {}", a.name, e))?;
+
+        if !resp.status().is_success() {
+            return Err(format!("{} download failed: HTTP {}", a.name, resp.status()));
+        }
+
+        let mut file = File::create(&file_path)
+            .map_err(|e| format!("failed to create download file {}: {}", file_path.display(), e))?;
+        io::copy(&mut resp, &mut file)
+            .map_err(|e| format!("failed to save download file {}: {}", file_path.display(), e))?;
+
+        return Ok(file_path.to_string_lossy().to_string());
+    }
+
+    Err("候选项里没有预期程序(包)".into())
 }
 
 
@@ -395,11 +447,10 @@ pub async fn tools_downloader(idir: String, name: String) -> Result<InstallResul
         .map_err(|e| format!("tools_downloader 子线程执行失败: {}", e))?
 }
 
-#[tauri::command]
 fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult, String> {
-    let (check, exe) = match name.as_str() {
+    let exe = match name.as_str() {
         "aria2c" => {
-            (&RE0, "aria2c.exe")
+            "aria2c.exe"
         },
         "adb" => {
             return tools_download_and_install_adb(idir);
@@ -410,37 +461,26 @@ fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult
     backup_install_dir_if_needed(install_dir_path)?;
     fs::create_dir_all(install_dir_path).map_err(|e| format!("failed to create install dir: {}", e))?;
 
-    let gr = get_latest_release("https://api.github.com/repos/aria2/aria2/releases/latest")?;
-    for a in &gr.assets {
-        if !a.content_type.ends_with("zip") { continue };
-        if check.is_match(&a.name) {
-            let resp = crate::shared_http_client()
-                .get(&a.browser_download_url)
-                .send()
-                .map_err(|e| format!("failed to download {}: {}", name, e))?;
+    let zip_path = download_from_github_matching(
+        &idir,
+        "https://api.github.com/repos/aria2/aria2/releases/latest",
+        false,
+        |asset| asset.content_type.ends_with("zip") && RE0.is_match(&asset.name),
+    )?;
+    let file = File::open(&zip_path)
+        .map_err(|e| format!("failed to open downloaded zip {}: {}", zip_path, e))?;
+    let mut archive = ZipArchive::new(file)
+        .map_err(|e| format!("failed to read {} zip: {}", name, e))?;
+    extract_archive(&mut archive, install_dir_path)?;
 
-            if !resp.status().is_success() {
-                return Err(format!("{} download failed: HTTP {}", name, resp.status()));
-            }
-
-            let bytes = resp
-                .bytes()
-                .map_err(|e| format!("failed to read {} zip: {}", name, e))?;
-
-            let cursor = Cursor::new(bytes);
-            let mut archive = ZipArchive::new(cursor).map_err(|e| format!("failed to read {} zip: {}", name, e))?;
-            extract_archive(&mut archive, install_dir_path)?;
-            return Ok(InstallResult {
-                install_dir: idir.clone(),
-                path: install_dir_path
-                    .join(exe)
-                    .to_string_lossy()
-                    .to_string(),
-                downloaded_zip: "".to_string(),
-            })
-        }
-    }
-    return Err("候选项里没有预期程序(包)".into())
+    Ok(InstallResult {
+        install_dir: idir.clone(),
+        path: install_dir_path
+            .join(exe)
+            .to_string_lossy()
+            .to_string(),
+        downloaded_zip: zip_path,
+    })
 }
 
 use reqwest::Client;
