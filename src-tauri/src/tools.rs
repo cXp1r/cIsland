@@ -501,82 +501,6 @@ fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult
 use reqwest::Client;
 use serde_json::json;
 
-pub async fn add_uri(
-    client: &Client,
-    url: &str,
-    secret: &str,
-    port: u16,
-    x: u8,
-    dir: &str,
-) -> Result<String, String> {
-
-    let body = json!({
-        "jsonrpc": "2.0",
-        "id": "qwer",
-        "method": "aria2.addUri",
-        "params": [
-            format!("token:{}", secret),
-            [url],
-            {
-                "split": x,
-                "max-connection-per-server": x,
-                "dir": dir,
-            }
-        ]
-    });
-
-    let res = client
-        .post(format!("http://127.0.0.1:{}/jsonrpc", port))
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let value: serde_json::Value = res
-        .json()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let gid = value["result"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
-
-    Ok(gid)
-}
-
-pub async fn tell_status(
-    client: &Client,
-    secret: &str,
-    port: u16,
-    gid: &str,
-) -> Result<serde_json::Value, String> {
-
-    let body = json!({
-        "jsonrpc": "2.0",
-        "id": "qwer",
-        "method": "aria2.tellStatus",
-        "params": [
-            format!("token:{}", secret),
-            gid
-        ]
-    });
-
-    let res = client
-        .post(format!("http://127.0.0.1:{}/jsonrpc", port))
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let value = res
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    Ok(value)
-}
-
 #[derive(Debug, Clone)]
 pub struct Aria2cRpc {
     pub client: Client,
@@ -586,9 +510,65 @@ pub struct Aria2cRpc {
 }
 
 impl Aria2cRpc {
+    async fn add_uri(&self, url: &str, dir: &str) -> Result<String, String> {
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": "qwer",
+            "method": "aria2.addUri",
+            "params": [
+                format!("token:{}", self.secret),
+                [url],
+                {
+                    "split": self.thread,
+                    "max-connection-per-server": self.thread,
+                    "dir": dir,
+                }
+            ]
+        });
+
+        let res = self
+            .client
+            .post(format!("http://127.0.0.1:{}/jsonrpc", self.port))
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let value: serde_json::Value = res
+            .json()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(value["result"].as_str().unwrap_or("").to_string())
+    }
+
+    async fn tell_status(&self, gid: &str) -> Result<serde_json::Value, String> {
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": "qwer",
+            "method": "aria2.tellStatus",
+            "params": [
+                format!("token:{}", self.secret),
+                gid
+            ]
+        });
+
+        let res = self
+            .client
+            .post(format!("http://127.0.0.1:{}/jsonrpc", self.port))
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        res.json::<serde_json::Value>()
+            .await
+            .map_err(|e| e.to_string())
+    }
+
     //前端会生成一个唯一uuid给core,进度条会根据uuid来选择,然后结束后告诉前端uuid来重置
     pub async fn new_task(&self, dir: &str, url: &str, uuid: &str, window: Option<tauri::WebviewWindow>) -> Result<(), String> {
-        let gid = add_uri(&self.client, &url, &self.secret, self.port, self.thread, dir).await?;
+        let gid = self.add_uri(url, dir).await?;
 
         let rpc = self.clone();
         let uuid = uuid.to_string();
@@ -596,12 +576,7 @@ impl Aria2cRpc {
             Some(win) => {
                 tokio::spawn(async move {
                     loop {
-                        let status = tell_status(
-                            &rpc.client,
-                            &rpc.secret,
-                            rpc.port,
-                            &gid
-                        ).await;
+                        let status = rpc.tell_status(&gid).await;
                         if let Ok(v) = status {
                             let result = &v["result"];
 
@@ -674,12 +649,7 @@ impl Aria2cRpc {
             None => {
                 tokio::spawn(async move {
                     loop {
-                        let status = tell_status(
-                            &rpc.client,
-                            &rpc.secret,
-                            rpc.port,
-                            &gid
-                        ).await;
+                        let status = rpc.tell_status(&gid).await;
                         if let Ok(v) = status {
                             let result = &v["result"];
 
