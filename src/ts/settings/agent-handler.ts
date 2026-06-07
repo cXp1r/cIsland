@@ -1,11 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./shared";
 import type { AgentHooksInstallResult } from "./types";
+import { configDir } from "./main";
 
 const AGENTS = ["claude", "codex"] as const;
 const buttonList = document.getElementById("agent-list") as HTMLDivElement;
 
 let initialized = false;
+
+function getHookCorePath(): string {
+  const input = document.getElementById("hook-installer-dir") as HTMLInputElement | null;
+  const installDir = (input?.value.trim() || `${configDir}agent-hooks`).replace(/[\\/]+$/, "");
+  return `${installDir}\\cc-hook-core.exe`;
+}
 
 async function findAgentPath(agent: string): Promise<string> {
   try {
@@ -17,9 +24,9 @@ async function findAgentPath(agent: string): Promise<string> {
 
 function renderResult(result: AgentHooksInstallResult): string {
   return [
-    `代理: ${result.agent}`,
-    `IPC 助手: ${result.ipc_helper_path}`,
-    ...result.targets.map((target) => `目标: ${target}`),
+    `hook目标: ${result.agent}`,
+    `IPC core: ${result.ipc_helper_path}`,
+    ...result.targets.map((target) => `安装位置: ${target}`),
   ].join("\n");
 }
 
@@ -31,6 +38,7 @@ async function installAgent(agent: string, button: HTMLButtonElement, desc: HTML
   try {
     const results = await invoke<AgentHooksInstallResult[]>("install_agent_hooks", {
       agents: [agent],
+      ipcHelper: getHookCorePath(),
     });
     desc.textContent = results.map(renderResult).join("\n\n");
     showStatus(`${agent} Hook 已安装`, false, 5000);
