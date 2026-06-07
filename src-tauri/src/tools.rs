@@ -3,20 +3,70 @@ use std::io::{self, Read};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
+use regex::Regex;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
+use tauri_plugin_opener::OpenerExt;
 use zip::ZipArchive;
 use crate::IslandState;
 use crate::{CREATE_NO_WINDOW, logger};
 use tauri::Emitter;
+
 const PLATFORM_TOOLS_URL: &str = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
 const TAG: &str = "Tools";
 
-use std::sync::LazyLock;
-use regex::Regex;
 static RE0: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(aria2-[\d\.]+)-win-64bit[^\.]+.zip").unwrap()
 });
+
+#[derive(Debug, Serialize)]
+pub struct CheckResult {
+    ok: bool,
+    version: String,
+    stdout: String,
+    stderr: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct InstallResult {
+    install_dir: String,
+    path: String,
+    downloaded_zip: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TestResult {
+    ok: bool,
+    stdout: String,
+    stderr: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GithubResult {
+    pub tag_name: String,
+    pub body: Option<String>,
+    pub published_at: Option<String>,
+    pub assets: Vec<Asserts>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Asserts {
+    pub name: String,
+    pub content_type: String,
+    pub browser_download_url: String,
+    pub size: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct Aria2cRpc {
+    pub client: Client,
+    pub port: u16,
+    pub secret: String,
+    pub thread: u8,
+}
 
 fn local_backup_suffix() -> String {
     let secs = SystemTime::now()
@@ -83,31 +133,6 @@ fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-
-#[derive(Debug, Serialize)]
-pub struct CheckResult {
-    ok: bool,
-    version: String,
-    stdout: String,
-    stderr: String,
-}
-
-
-#[derive(Debug, Serialize)]
-pub struct InstallResult {
-    install_dir: String,
-    path: String,
-    downloaded_zip: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct TestResult {
-    ok: bool,
-    stdout: String,
-    stderr: String,
-}
-
-use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn open_path(app: tauri::AppHandle, path: String) {
@@ -334,24 +359,6 @@ pub fn tools_download_and_install_adb(
     })
 }
 
-
-
-#[derive(Debug, Deserialize)]
-pub struct GithubResult {
-    pub tag_name: String,
-    pub body: Option<String>,
-    pub published_at: Option<String>,
-    pub assets: Vec<Asserts>,
-}
-#[derive(Debug, Deserialize)]
-pub struct Asserts {
-    pub name: String,
-    pub content_type: String,
-    pub browser_download_url: String,
-    pub size: u64,
-}
-
-
 pub fn get_latest_release(url: &str, auth: Option<&str>) -> Result<GithubResult, String> {
     let client = crate::shared_http_client();
     let resp = match auth {
@@ -496,17 +503,6 @@ fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult
             .to_string(),
         downloaded_zip: zip_path,
     })
-}
-
-use reqwest::Client;
-use serde_json::json;
-
-#[derive(Debug, Clone)]
-pub struct Aria2cRpc {
-    pub client: Client,
-    pub port: u16,
-    pub secret: String,
-    pub thread: u8,
 }
 
 impl Aria2cRpc {
