@@ -165,6 +165,18 @@ export function createApprovalCard(request: HookRequest): HTMLElement {
 
 export function createQuestionCard(request: HookRequest): HTMLElement {
     const questions = parseQuestions(request);
+    const answerPayload = {
+        questions: questions.map((q) => ({
+            question: q.question,
+            header: q.header,
+            options: q.options.map((opt) => ({
+                label: opt.label,
+                description: opt.description,
+            })),
+            multiSelect: false,
+        })),
+        answers: {} as Record<string, string>,
+    };
 
     return createAgentCard({
         request,
@@ -195,7 +207,12 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
             card.querySelectorAll(".oi-option").forEach(opt => {
                 opt.addEventListener("click", async () => {
                     const answer = opt.getAttribute("data-answer") || "";
-                    await respondToHook(request.uuid, { type: "answer", answer });
+                    const question = questions.find((q) => q.options.some((option) => option.label === answer));
+                    const payload = {
+                        ...answerPayload,
+                        answers: question ? { [question.question]: answer } : {},
+                    };
+                    await respondToHook(request.uuid, { type: "answer", answer: payload });
                     card.remove();
                 });
             });
@@ -243,6 +260,7 @@ export function createNotification(request: HookRequest): HTMLElement {
         },
     });
 }
+
 function parseQuestions(request: HookRequest): Array<{
     question: string;
     header: string;

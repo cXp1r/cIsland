@@ -271,7 +271,7 @@ pub enum HookAction {
     /// 拒绝操作
     Deny,
     /// 回答问题
-    Answer { answer: String },
+    Answer { answer: Value },
     /// 自定义指令（高级用法）
     Custom { directive: CcDirective },
 }

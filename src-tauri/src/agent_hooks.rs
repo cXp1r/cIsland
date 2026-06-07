@@ -225,7 +225,13 @@ fn build_directive(action: HookAction, hook_event: &CcHookEvent) -> Option<CcDir
                 _ => None,
             }
         }
-        HookAction::Answer { answer: _ } => None,
+        HookAction::Answer { answer: a } => Some(CcDirective::PermissionRequest(CcPermReqResp {
+                    behavior: CcPermBehavior::Allow,
+                    updated_input: Some(a),
+                    updated_permissions: None,
+                    message: None,
+                    interrupt: None,
+                })),
         HookAction::Custom { directive } => Some(directive),
     }
 }
@@ -235,7 +241,6 @@ fn format_directive_for_claude(directive: &CcDirective) -> serde_json::Value {
         CcDirective::PreToolUse(resp) => {
             serde_json::json!({
                 "continue": true,
-                "suppressOutput": true,
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",
                     "permissionDecision": resp.permission_decision,
@@ -244,11 +249,10 @@ fn format_directive_for_claude(directive: &CcDirective) -> serde_json::Value {
                     "additionalContext": resp.additional_context
                 }
             })
-        }
+        },
         CcDirective::PermissionRequest(resp) => {
             serde_json::json!({
                 "continue": true,
-                "suppressOutput": true,
                 "hookSpecificOutput": {
                     "hookEventName": "PermissionRequest",
                     "decision": {
@@ -260,7 +264,7 @@ fn format_directive_for_claude(directive: &CcDirective) -> serde_json::Value {
                     }
                 }
             })
-        }
+        },
     }
 }
 

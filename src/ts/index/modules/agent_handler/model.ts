@@ -86,7 +86,7 @@ export interface HookRequest {
 export type HookAction =
   | { type: "allow" }
   | { type: "deny" }
-  | { type: "answer"; answer: string }
+  | { type: "answer"; answer: unknown }
   | { type: "custom"; directive: CcDirective };
 
 export interface HookResponse {
