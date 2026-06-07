@@ -198,19 +198,12 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                                 </div>
                             `).join("")}
                         </div>
-                        ${isMultiQuestion ? `
-                            <div class="oi-custom-input-wrap oi-question-custom-input-wrap">
-                                <input type="text" class="oi-custom-input oi-question-custom-input" data-question-index="${qi}" placeholder="Custom answer..." />
-                            </div>
-                        ` : ""}
+                        <div class="oi-custom-input-wrap oi-question-custom-input-wrap">
+                            <input type="text" class="oi-custom-input oi-question-custom-input" data-question-index="${qi}" placeholder="Custom answer..." />
+                        </div>
                     </div>
                 `).join("")}
             </div>
-            ${isMultiQuestion ? "" : `
-                <div class="oi-custom-input-wrap">
-                    <input type="text" class="oi-custom-input" placeholder="Custom answer..." />
-                </div>
-            `}
         `,
         actionsHtml: isMultiQuestion ? `
             <div class="oi-actions">
@@ -232,7 +225,7 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                     });
                 });
 
-                card.querySelector(".oi-custom-input")?.addEventListener("keydown", async (e: KeyboardEvent) => {
+                (card.querySelector(".oi-custom-input") as HTMLInputElement).addEventListener("keydown", async (e: KeyboardEvent) => {
                     if (e.key === "Enter") {
                         const input = e.target as HTMLInputElement;
                         const answer = input?.value?.trim();
@@ -244,15 +237,15 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                 });
                 return;
             }
+            
 
             const selectedAnswers = new Map<string, string>();
             const submitButton = card.querySelector('[data-action="submit"]') as HTMLButtonElement | null;
             const inputs = Array.from(card.querySelectorAll(".oi-question-custom-input")) as HTMLInputElement[];
-            const input = card.querySelector(".oi-custom-input") as HTMLInputElement | null;
 
             const syncSubmitState = () => {
                 const hasActive = selectedAnswers.size > 0;
-                const hasInput = inputs.some((el) => !!el.value.trim()) || !!input?.value?.trim();
+                const hasInput = inputs.some((el) => !!el.value.trim());
                 if (submitButton) {
                     submitButton.disabled = !hasActive && !hasInput;
                 }
@@ -274,13 +267,6 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                 });
             });
 
-            input?.addEventListener("input", syncSubmitState);
-            input?.addEventListener("keydown", async (e: KeyboardEvent) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    submitButton?.click();
-                }
-            });
             inputs.forEach((el) => {
                 el.addEventListener("input", syncSubmitState);
                 el.addEventListener("keydown", async (e: KeyboardEvent) => {
@@ -292,7 +278,6 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
             });
 
             submitButton?.addEventListener("click", async () => {
-                const answer = input?.value?.trim();
                 const hasActive = selectedAnswers.size > 0;
                 const customAnswers = new Map<string, string>();
                 inputs.forEach((el) => {
@@ -304,7 +289,7 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                     }
                 });
 
-                if (!hasActive && !answer && customAnswers.size === 0) return;
+                if (!hasActive && customAnswers.size === 0) return;
 
                 const mergedAnswers = new Map<string, string>();
                 questions.forEach((question) => {
@@ -338,12 +323,6 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                     ...basePayload,
                     answers: Object.fromEntries(mergedAnswers.entries()),
                 };
-
-                if (!hasActive && answer) {
-                    await respondToHook(request.uuid, { type: "answer", answer });
-                    card.remove();
-                    return;
-                }
 
                 await respondToHook(request.uuid, { type: "answer", answer: payload });
                 card.remove();
