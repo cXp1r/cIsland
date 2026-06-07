@@ -542,17 +542,7 @@ impl Aria2cRpc {
         Ok(value["result"].as_str().unwrap_or("").to_string())
     }
 
-    async fn tell_status(&self, gid: &str) -> Result<serde_json::Value, String> {
-        let body = json!({
-            "jsonrpc": "2.0",
-            "id": "qwer",
-            "method": "aria2.tellStatus",
-            "params": [
-                format!("token:{}", self.secret),
-                gid
-            ]
-        });
-
+    async fn tell_status(&self, body: &serde_json::Value) -> Result<serde_json::Value, String> {
         let res = self
             .client
             .post(format!("http://127.0.0.1:{}/jsonrpc", self.port))
@@ -572,11 +562,21 @@ impl Aria2cRpc {
 
         let rpc = self.clone();
         let uuid = uuid.to_string();
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": "qwer",
+            "method": "aria2.tellStatus",
+            "params": [
+                format!("token:{}", self.secret),
+                gid
+            ]
+        });
+        
         match window {
             Some(win) => {
                 tokio::spawn(async move {
                     loop {
-                        let status = rpc.tell_status(&gid).await;
+                        let status = rpc.tell_status(&body).await;
                         if let Ok(v) = status {
                             let result = &v["result"];
 
@@ -649,7 +649,7 @@ impl Aria2cRpc {
             None => {
                 tokio::spawn(async move {
                     loop {
-                        let status = rpc.tell_status(&gid).await;
+                        let status = rpc.tell_status(&body).await;
                         if let Ok(v) = status {
                             let result = &v["result"];
 
