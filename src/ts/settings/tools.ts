@@ -244,9 +244,10 @@ function bindToolsModules(): void {
   });
 
   bindModule(moduleUI.hook, {
+    init: handleInstall,
     check: async (ui) => {
       const installDir = readValue(ui.installDir) || defaultInstallDir("hook");
-      setResult(ui.result, `全局安装目录: ${installDir}\nIPC 助手: ${installDir}\\agent-hooks-ipc.exe`);
+      setResult(ui.result, `全局安装目录: ${installDir}\nIPC 助手: ${installDir}\\cc-hook-core.exe`);
       showStatus("Hook 安装目录已显示。", false, 4000);
     },
   });

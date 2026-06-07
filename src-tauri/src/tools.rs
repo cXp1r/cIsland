@@ -34,7 +34,6 @@ pub struct CheckResult {
 pub struct InstallResult {
     install_dir: String,
     path: String,
-    downloaded_zip: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -355,7 +354,6 @@ pub fn tools_download_and_install_adb(
     Ok(InstallResult {
         install_dir,
         path: adb_path.to_string_lossy().into_owned(),
-        downloaded_zip: "".to_string(),
     })
 }
 
@@ -414,10 +412,18 @@ pub fn download_from_github(idir: &str, link: &str, is_aria2c_rpc: bool) -> Resu
     download_from_github_matching(idir, link, is_aria2c_rpc, |_| true)
 }
 
+fn accept_aria2_asset(asset: &Asserts) -> bool {
+    asset.content_type.ends_with("zip") && RE0.is_match(&asset.name)
+}
+
+fn accept_hook_asset(asset: &Asserts) -> bool {
+    asset.name == "cc-hook-core.exe"
+}
+
 
 fn download_from_github_matching<F>(
     idir: &str,
-    link: &str,
+    short_link: &str,
     is_aria2c_rpc: bool,
     mut accept: F,
 ) -> Result<String, String>
@@ -429,7 +435,8 @@ where
     fs::create_dir_all(install_dir_path)
         .map_err(|e| format!("failed to create install dir: {}", e))?;
     //先占位
-    let gr = get_latest_release(link, None)?;
+    let link = format!("https://api.github.com/repos/{}/releases/latest", short_link);
+    let gr = get_latest_release(&link, None)?;
     for a in &gr.assets {
         if !accept(a) { continue; }
 
@@ -470,9 +477,12 @@ pub async fn tools_downloader(idir: String, name: String, ) -> Result<InstallRes
 }
 
 fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult, String> {
-    let exe = match name.as_str() {
+    let (exe, accept, short_link): (&str, fn(&Asserts) -> bool, &str) = match name.as_str() {
         "aria2c" => {
-            "aria2c.exe"
+            ("aria2c.exe", accept_aria2_asset, "aria2/aria2")
+        },
+        "hook" => {
+            ("cc-hook-core.exe", accept_hook_asset, "cXp1r/cc-hook-core")
         },
         "adb" => {
             return tools_download_and_install_adb(idir);
@@ -483,26 +493,36 @@ fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult
     backup_install_dir_if_needed(install_dir_path)?;
     fs::create_dir_all(install_dir_path).map_err(|e| format!("failed to create install dir: {}", e))?;
 
-    let zip_path = download_from_github_matching(
+    let path = download_from_github_matching(
         &idir,
-        "https://api.github.com/repos/aria2/aria2/releases/latest",
+        short_link,
         false,
-        |asset| asset.content_type.ends_with("zip") && RE0.is_match(&asset.name),
+        accept,
     )?;
-    let file = File::open(&zip_path)
-        .map_err(|e| format!("failed to open downloaded zip {}: {}", zip_path, e))?;
-    let mut archive = ZipArchive::new(file)
-        .map_err(|e| format!("failed to read {} zip: {}", name, e))?;
-    extract_archive(&mut archive, install_dir_path)?;
+    println!("{path}");
+    if path.ends_with(".exe") {
+        Ok(InstallResult {
+            install_dir: idir.clone(),
+            path,
+        })
+    } else if path.ends_with(".zip") {
+        let file = File::open(&path)
+            .map_err(|e| format!("failed to open downloaded zip {}: {}", path, e))?;
+        let mut archive = ZipArchive::new(file)
+            .map_err(|e| format!("failed to read {} zip: {}", name, e))?;
+        extract_archive(&mut archive, install_dir_path)?;
 
-    Ok(InstallResult {
-        install_dir: idir.clone(),
-        path: install_dir_path
-            .join(exe)
-            .to_string_lossy()
-            .to_string(),
-        downloaded_zip: zip_path,
-    })
+        Ok(InstallResult {
+            install_dir: idir.clone(),
+            path: install_dir_path
+                .join(exe)
+                .to_string_lossy()
+                .to_string(),
+        })
+    } else {
+        Err("Unknown content type".into())
+    }
+    
 }
 
 impl Aria2cRpc {
@@ -552,6 +572,28 @@ impl Aria2cRpc {
             .map_err(|e| e.to_string())
     }
 
+    async fn force_remove(&self, gid: &str) -> Result<serde_json::Value, String> {
+        let body = json!({
+                    "jsonrpc": "2.0",
+                    "id": "qwer",
+                    "method": "aria2.forceRemove",
+                    "params": [
+                        format!("token:{}", self.secret),
+                        gid
+                    ]
+                });
+        let res = self
+            .client
+            .post(format!("http://127.0.0.1:{}/jsonrpc", self.port))
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        res.json::<serde_json::Value>()
+            .await
+            .map_err(|e| e.to_string())
+    }
     //前端会生成一个唯一uuid给core,进度条会根据uuid来选择,然后结束后告诉前端uuid来重置
     pub async fn new_task(&self, dir: &str, url: &str, uuid: &str, window: Option<tauri::WebviewWindow>) -> Result<(), String> {
         let gid = self.add_uri(url, dir).await?;
