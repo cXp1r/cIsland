@@ -91,15 +91,6 @@ fn build_hooks(ipc_helper: &Path, agent: &str) -> Value {
         "SubagentStop": [{
             "hooks": [make_ipc_hook(ipc_helper, agent)]
         }],
-        "UserPromptSubmit": [{
-            "hooks": [make_ipc_hook(ipc_helper, agent)]
-        }],
-        "SessionStart": [{
-            "hooks": [make_ipc_hook(ipc_helper, agent)]
-        }],
-        "SessionEnd": [{
-            "hooks": [make_ipc_hook(ipc_helper, agent)]
-        }],
         "PreCompact": [{
             "hooks": [make_ipc_hook(ipc_helper, agent)]
         }]
