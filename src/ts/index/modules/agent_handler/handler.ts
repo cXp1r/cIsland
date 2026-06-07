@@ -71,14 +71,13 @@ export function initAgentHandler() {
 }
 
 async function handleHookRequest(request: HookRequest) {
-
-    if (request.hook_event === "PermissionRequest") {
-        showCard(createApprovalCard(request), request);
+    if (request.tool_name === "AskUserQuestion") {
+        showCard(createQuestionCard(request), request);
         return;
     }
 
-    if (request.tool_name === "AskUserQuestion") {
-        showCard(createQuestionCard(request), request);
+    if (request.hook_event === "PermissionRequest") {
+        showCard(createApprovalCard(request), request);
         return;
     }
 
