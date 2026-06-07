@@ -316,7 +316,23 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                     }
                 });
 
-                if (mergedAnswers.size !== questions.length) return;
+                if (mergedAnswers.size !== questions.length) {
+                    const firstMissingIndex = questions.findIndex((question) => !mergedAnswers.has(question.question));
+                    const firstMissingBlock = firstMissingIndex >= 0
+                        ? card.querySelector(`.oi-question-block[data-question-index="${firstMissingIndex}"]`) as HTMLElement | null
+                        : null;
+
+                    if (firstMissingBlock) {
+                        firstMissingBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+                        firstMissingBlock.classList.remove("oi-question-block-missing");
+                        void firstMissingBlock.offsetWidth;
+                        firstMissingBlock.classList.add("oi-question-block-missing");
+                        window.setTimeout(() => {
+                            firstMissingBlock.classList.remove("oi-question-block-missing");
+                        }, 1200);
+                    }
+                    return;
+                }
 
                 const payload = {
                     ...basePayload,
