@@ -1,10 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { marked } from "marked";
-import katex from "katex";
 // @ts-ignore
 import "katex/dist/katex.min.css";
-import { hljs } from "../highlight-setup";
 import {
   capsule,
   agentMessages, agentInput, agentSendBtn, agentStopBtn,
@@ -34,123 +32,6 @@ const TAG: string = "Ai";
 
 
 
-// KaTeX 数学渲染
-
-function renderLatex(tex: string, displayMode: boolean): string {
-
-  try {
-
-    return katex.renderToString(tex, {
-
-      displayMode,
-
-      throwOnError: false,
-
-      trust: true,
-
-    });
-
-  } catch {
-
-    return tex;
-
-  }
-
-}
-
-
-
-// 预处理数学公式：先将 LaTeX 替换为占位符，markdown 处理后再恢复
-
-function renderMarkdown(text: string): string {
-
-  const mathBlocks: string[] = [];
-
-  let placeholder = (i: number) => `%%MATH_BLOCK_${i}%%`;
-
-
-
-  // 1. 块级公式 $$...$$ 
-
-  let processed = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, tex) => {
-
-    const idx = mathBlocks.length;
-
-    mathBlocks.push(renderLatex(tex.trim(), true));
-
-    return placeholder(idx);
-
-  });
-
-
-
-  // 2. 块级公式 \[...\]
-
-  processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (_, tex) => {
-
-    const idx = mathBlocks.length;
-
-    mathBlocks.push(renderLatex(tex.trim(), true));
-
-    return placeholder(idx);
-
-  });
-
-
-
-  // 3. 行内公式 \(...\)
-
-  processed = processed.replace(/\\\(([\s\S]*?)\\\)/g, (_, tex) => {
-
-    const idx = mathBlocks.length;
-
-    mathBlocks.push(renderLatex(tex.trim(), false));
-
-    return placeholder(idx);
-
-  });
-
-
-
-  // 4. 行内公式 $...$（避免匹配货币符号如 $5）
-
-  processed = processed.replace(/(?<!\$)\$(?!\$)([^\n$]+?)\$(?!\$)/g, (_, tex) => {
-
-    const idx = mathBlocks.length;
-
-    mathBlocks.push(renderLatex(tex.trim(), false));
-
-    return placeholder(idx);
-
-  });
-
-
-
-  // 5. Markdown 渲染
-
-  try {
-
-    let html = marked.parse(processed, { async: false }) as string;
-
-    // 6. 恢复数学公式
-
-    mathBlocks.forEach((rendered, i) => {
-
-      html = html.replace(placeholder(i), rendered);
-
-    });
-
-    return html;
-
-  } catch {
-
-    return text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
-
-  }
-
-}
-
-
 
 marked.setOptions({
 
@@ -159,70 +40,6 @@ marked.setOptions({
   breaks: true,
 
 });
-
-
-
-// 高亮代码块并添加复制按钮
-
-function highlightAndAddCopyButtons(container: HTMLElement) {
-
-  container.querySelectorAll("pre code").forEach((block) => {
-
-    // 高亮
-
-    try {
-
-      hljs.highlightElement(block as HTMLElement);
-
-    } catch { /* ignore */ }
-
-
-
-    // 复制按钮（避免重复添加）
-
-    const pre = block.parentElement;
-
-    if (pre && !pre.querySelector(".code-copy-btn")) {
-
-      const btn = document.createElement("button");
-
-      btn.className = "code-copy-btn";
-
-      btn.textContent = "复制";
-
-      btn.addEventListener("click", (e) => {
-
-        e.stopPropagation();
-
-        const code = block.textContent || "";
-
-        navigator.clipboard.writeText(code).then(() => {
-
-          btn.textContent = "✓ 已复制";
-
-          btn.classList.add("copied");
-
-          setTimeout(() => {
-
-            btn.textContent = "复制";
-
-            btn.classList.remove("copied");
-
-          }, 1500);
-
-        });
-
-      });
-
-      pre.style.position = "relative";
-
-      pre.appendChild(btn);
-
-    }
-
-  });
-
-}
 
 
 
