@@ -34,6 +34,7 @@ use ai::ChatMessage;
 use email::Email;
 use link_handler::LinkHandler;
 use std::process::{Child, Command};
+use crate::tools::Aria2cRpc;
 use crate::window::MonitorInfo;
 
 
@@ -414,15 +415,15 @@ pub fn run() {
                 "--continue=true".into(),
             ];
 
-            let aria2c_process = match Command::new(settings.aria2c_path)
+            let (aria2c_process, aria2c_rpc) = match Command::new(settings.aria2c_path)
                 .args(&args)
                 .creation_flags(CREATE_NO_WINDOW)
                 .spawn()
                 {
-                    Ok(c) => Some(c),
+                    Ok(c) => (Some(c), Some(Aria2cRpc{ client: reqwest::Client::new(), port: settings.aria2c_rpc_port, secret: settings.aria2c_rpc_secret.clone(), thread: settings.aria2c_thread})),
                     Err(e) => {
                         logger::debug("Aria2c", &e.to_string());
-                        None
+                        (None, None)
                     },
                 };
             media::update_smtc_whitelist(
@@ -496,6 +497,7 @@ pub fn run() {
                 aria2c_thread: aria2c_thread.clone(),
                 aria2c_path: aria2c_path.clone(),
                 aria2c_process: Arc::new(Mutex::new(aria2c_process)),
+                aria2c_rpc: Arc::new(Mutex::new(aria2c_rpc)),
                 aria2c_rpc_client,
                 aria2c_rpc_secret,
                 aria2c_rpc_port,
@@ -1584,6 +1586,8 @@ pub struct IslandState {
     pub aria2c_rpc_client: reqwest::Client,
     pub aria2c_rpc_secret: Arc<Mutex<String>>,
     pub aria2c_rpc_port: Arc<AtomicU16>,
+    //上面的是负责持久化到设置的变量,下面这个是负责下载任务的,一旦服务器启动,没有变更的义务
+    pub aria2c_rpc: Arc<Mutex<Option<Aria2cRpc>>>,
 }
 
 unsafe impl Send for IslandState {}

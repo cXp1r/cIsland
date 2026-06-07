@@ -3,7 +3,6 @@ use std::io::{self, Read};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::Ordering;
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
@@ -457,7 +456,7 @@ where
 
 
 #[tauri::command]
-pub async fn tools_downloader(idir: String, name: String) -> Result<InstallResult, String> {
+pub async fn tools_downloader(idir: String, name: String, ) -> Result<InstallResult, String> {
     tauri::async_runtime::spawn_blocking(move || tools_downloader_blocking(idir, name))
         .await
         .map_err(|e| format!("tools_downloader 子线程执行失败: {}", e))?
@@ -578,103 +577,154 @@ pub async fn tell_status(
     Ok(value)
 }
 
+#[derive(Debug, Clone)]
+pub struct Aria2cRpc {
+    pub client: Client,
+    pub port: u16,
+    pub secret: String,
+    pub thread: u8,
+}
+
+impl Aria2cRpc {
+    //前端会生成一个唯一uuid给core,进度条会根据uuid来选择,然后结束后告诉前端uuid来重置
+    pub async fn new_task(&self, dir: &str, url: &str, uuid: &str, window: Option<tauri::WebviewWindow>) -> Result<(), String> {
+        let gid = add_uri(&self.client, &url, &self.secret, self.port, self.thread, dir).await?;
+
+        let rpc = self.clone();
+        let uuid = uuid.to_string();
+        match window {
+            Some(win) => {
+                tokio::spawn(async move {
+                    loop {
+                        let status = tell_status(
+                            &rpc.client,
+                            &rpc.secret,
+                            rpc.port,
+                            &gid
+                        ).await;
+                        if let Ok(v) = status {
+                            let result = &v["result"];
+
+                            let completed: f64 = result["completedLength"]
+                                .as_str()
+                                .unwrap_or("0")
+                                .parse()
+                                .unwrap_or(0.0);
+
+                            let total: f64 = result["totalLength"]
+                                .as_str()
+                                .unwrap_or("1")
+                                .parse()
+                                .unwrap_or(1.0);
+
+                            let speed = result["downloadSpeed"]
+                                .as_str()
+                                .unwrap_or("0");
+
+                            let progress = completed / total;
+
+                            let _ = win.emit("aria2c-rpc-progress", serde_json::json!({
+                                "gid": gid,
+                                "progress": progress,
+                                "speed": speed,
+                                "uuid": &uuid,
+                            }));
+
+                            let status_str = result["status"]
+                                .as_str()
+                                .unwrap_or("");
+
+                            if status_str == "complete" {
+                                let path = result["files"]
+                                    .as_array()
+                                    .and_then(|files| files.first())
+                                    .and_then(|f| f["path"].as_str())
+                                    .unwrap_or("");
+
+                                let filename = std::path::Path::new(path)
+                                    .file_name()
+                                    .and_then(|s| s.to_str())
+                                    .unwrap_or("");
+
+                                let _ = win.emit("aria2c-rpc-end", serde_json::json!({
+                                    "ok": if filename.is_empty() { false } else {true},
+                                    "path": path,
+                                    "filename": filename,
+                                    "uuid": &uuid,
+                                }));
+
+                                break;
+                            }
+
+                            if status_str == "error" || status_str == "removed" {
+                                let _ = win.emit("aria2c-rpc-end", serde_json::json!({
+                                    "ok": false,
+                                    "uuid": &uuid,
+                                }));
+                                break;
+                            }
+                        }
+
+                        tokio::time::sleep(
+                            std::time::Duration::from_secs(1)
+                        ).await;
+                    }
+                });
+            },
+            None => {
+                tokio::spawn(async move {
+                    loop {
+                        let status = tell_status(
+                            &rpc.client,
+                            &rpc.secret,
+                            rpc.port,
+                            &gid
+                        ).await;
+                        if let Ok(v) = status {
+                            let result = &v["result"];
+
+                            let status_str = result["status"]
+                                .as_str()
+                                .unwrap_or("");
+
+                            if status_str == "complete" {
+                                break;
+                            }
+
+                            if status_str == "error" || status_str == "removed" {
+                                break;
+                            }
+                        }
+                        tokio::time::sleep(
+                            std::time::Duration::from_secs(1)
+                        ).await;
+                    }
+                });
+
+            }
+        }
+        //这个地方ok没有任何意义的
+        Ok(())
+    }
+}
+
+
+
 #[tauri::command]
 pub async fn aria2c_rpc_download(
     dir: &str,
     window: tauri::WebviewWindow,
     state: tauri::State<'_, IslandState>,
     url: &str,
-    uuid: &str,//前端会生成一个唯一uuid给core,进度条会根据uuid来选择,然后结束后告诉前端uuid来重置
+    uuid: &str,
 ) -> Result<(), String> {
-    let client = state.aria2c_rpc_client.clone();
-    let port = state.aria2c_rpc_port.load(Ordering::Relaxed);
-    let secret = state.aria2c_rpc_secret.lock().unwrap().clone();
-    let x = state.aria2c_thread.load(Ordering::Relaxed);
+    let ar = state.aria2c_rpc.lock().unwrap().clone();
 
-    let gid = add_uri(&client, &url, &secret, port, x, dir).await?;
-
-    let client_clone = client.clone();
-    let win = window.clone();
-    let uuid = uuid.to_string();
-    tokio::spawn(async move {
-
-        loop {
-
-            let status = tell_status(
-                &client_clone,
-                &secret,
-                port,
-                &gid
-            ).await;
-
-            if let Ok(v) = status {
-
-                let result = &v["result"];
-
-                let completed: f64 = result["completedLength"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .parse()
-                    .unwrap_or(0.0);
-
-                let total: f64 = result["totalLength"]
-                    .as_str()
-                    .unwrap_or("1")
-                    .parse()
-                    .unwrap_or(1.0);
-
-                let speed = result["downloadSpeed"]
-                    .as_str()
-                    .unwrap_or("0");
-
-                let progress = completed / total;
-                let _ = win.emit("aria2c-rpc-progress", serde_json::json!({
-                    "gid": gid,
-                    "progress": progress,
-                    "speed": speed,
-                    "uuid": &uuid,
-                }));
-
-                let status_str = result["status"]
-                    .as_str()
-                    .unwrap_or("");
-
-                if status_str == "complete" {
-                    let path = result["files"]
-                        .as_array()
-                        .and_then(|files| files.first())
-                        .and_then(|f| f["path"].as_str())
-                        .unwrap_or("");
-
-                    let filename = std::path::Path::new(path)
-                        .file_name()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("");
-
-                    let _ = win.emit("aria2c-rpc-end", serde_json::json!({
-                        "ok": if filename.is_empty() { false } else {true},
-                        "path": path,
-                        "filename": filename,
-                        "uuid": &uuid,
-                    }));
-
-                    break;
-                }
-
-                if status_str == "error" || status_str == "removed" {
-                    let _ = win.emit("aria2c-rpc-end", serde_json::json!({
-                        "ok": false,
-                        "uuid": &uuid,
-                    }));
-                    break;
-                }
-            }
-
-            tokio::time::sleep(
-                std::time::Duration::from_secs(1)
-            ).await;
+    match ar {
+        Some(ar) => ar.new_task(dir, url, uuid, Some(window.clone())).await,
+        None => {
+            logger::warn("Aria2cRpc", "Aria2c Rpc Server Not Found");
+            Err("Aria2c Rpc Server Not Found".into())
         }
-    });
-
-    Ok(())
+    }
 }
