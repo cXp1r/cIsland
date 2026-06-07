@@ -249,7 +249,7 @@ fn format_directive_for_claude(directive: &CcDirective) -> serde_json::Value {
                     "additionalContext": resp.additional_context
                 }
             })
-        },
+        }
         CcDirective::PermissionRequest(resp) => {
             serde_json::json!({
                 "continue": true,
@@ -264,7 +264,13 @@ fn format_directive_for_claude(directive: &CcDirective) -> serde_json::Value {
                     }
                 }
             })
-        },
+        }
+        CcDirective::Stop(resp) => {
+            serde_json::json!({
+                "decision": resp.decision,
+                "reason": resp.reason
+            })
+        }
     }
 }
 
@@ -286,8 +292,4 @@ pub async fn respond_to_hook(uuid: String, action: HookAction) -> Result<(), Str
     }
 
     Ok(())
-}
-
-pub fn hook_request_event_name() -> &'static str {
-    "hook_request"
 }
