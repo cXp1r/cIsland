@@ -355,17 +355,33 @@ pub struct Asserts {
 
 pub fn get_latest_release(url: &str, auth: Option<&str>) -> Result<GithubResult, String> {
     let client = crate::shared_http_client();
-    let resp = client
-        .get(url)
-        .header("User-Agent", "DynamicIsland-Updater")
-        .header("Accept", "application/vnd.github+json")
-        .header("Authorization", format!("Bearer {}", auth.unwrap_or_else(|| "")))
-        .send()
-        .map_err(|e| {
-            let msg = format!("请求失败: {}", e);
-            crate::logger::warn(TAG, &msg);
-            msg
-        })?;
+    let resp = match auth {
+        Some(a) => {
+            client
+                .get(url)
+                .header("User-Agent", "DynamicIsland-Updater")
+                .header("Accept", "application/vnd.github+json")
+                .header("Authorization", format!("Bearer {}", a))
+                .send()
+                .map_err(|e| {
+                    let msg = format!("请求失败: {}", e);
+                    crate::logger::warn(TAG, &msg);
+                    msg
+                })?
+        },
+        None => {
+            client
+                .get(url)
+                .header("User-Agent", "DynamicIsland-Updater")
+                .header("Accept", "application/vnd.github+json")
+                .send()
+                .map_err(|e| {
+                    let msg = format!("请求失败: {}", e);
+                    crate::logger::warn(TAG, &msg);
+                    msg
+                })?
+        }
+    };
 
     let status = resp.status();
     crate::logger::info(TAG, &format!("GitHub API 响应: {}", status));
