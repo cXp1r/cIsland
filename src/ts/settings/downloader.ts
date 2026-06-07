@@ -1,12 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { aria2cThread } from "./tools";
 import { showStatus } from "./shared";
 import { userDir } from "./main";
 import type { Aria2cRpcEnd, Aria2cRpcProgress } from "./types";
 
 const url = document.getElementById("aria2c-url") as HTMLInputElement;
-const thread = document.getElementById("aria2c-downloader-thread") as HTMLInputElement;
 const saveDir = document.getElementById("aria2c-save-dir") as HTMLInputElement;
 const downloadBtn = document.getElementById("aria2c-download-btn") as HTMLButtonElement;
 const openDivBtn = document.getElementById("aria2c-open-dir-btn") as HTMLButtonElement;
@@ -91,7 +89,6 @@ void listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
 });
 
 export function initSettingsDownloader(): void {
-  thread.value = aria2cThread.value;
   saveDir.value = `${userDir}downloads`;
 
   if (bound) return;

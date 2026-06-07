@@ -77,11 +77,6 @@
     min-width: 0;
 }
 
-.downloader-thread {
-    flex: 0 0 clamp(36px, 10vw, 52px);
-    text-align: center;
-}
-
 #aria2c-progress-wrapper {
     flex: 1;
     min-height: 0;
