@@ -124,7 +124,7 @@ function createAgentCard(config: CardShellConfig): HTMLElement {
                 <div class="oi-subtitle">${escapeHtml(config.subtitle)}</div>
             </div>
         </div>
-        <div class="oi-body">
+        <div class="oi-body cscrollbar">
             ${config.bodyHtml}
         </div>
         ${config.actionsHtml}
@@ -142,7 +142,7 @@ export function createApprovalCard(request: HookRequest): HTMLElement {
         title: request.hook_event,
         subtitle: request.tool_name || "",
         statusVariant: isPermissionRequest ? "waiting" : "answer",
-        bodyHtml: `<div class="oi-command-preview cscrollbar">${renderCommandPreview(request.tool_name || "", request.tool_input)}</div>`,
+        bodyHtml: `<div class="oi-command-preview">${renderCommandPreview(request.tool_name || "", request.tool_input)}</div>`,
         actionsHtml: `
             <div class="oi-actions">
                 <button class="oi-btn oi-btn-secondary" data-action="deny">Deny</button>
