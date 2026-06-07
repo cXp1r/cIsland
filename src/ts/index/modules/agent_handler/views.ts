@@ -258,9 +258,13 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
                     const question = questions[Number(questionIndex)];
                     if (!question) return;
 
+                    const questionInput = card.querySelector(`.oi-question-custom-input[data-question-index="${questionIndex}"]`) as HTMLInputElement | null;
                     card.querySelectorAll(`.oi-option[data-question-index="${questionIndex}"]`).forEach((el) => {
                         el.classList.remove("active");
                     });
+                    if (questionInput?.value.trim()) {
+                        questionInput.value = "";
+                    }
                     opt.classList.add("active");
                     selectedAnswers.set(question.question, answer);
                     syncSubmitState();
@@ -269,6 +273,18 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
 
             inputs.forEach((el) => {
                 el.addEventListener("input", syncSubmitState);
+                el.addEventListener("focus", () => {
+                    const questionIndex = el.getAttribute("data-question-index");
+                    if (!questionIndex) return;
+                    const question = questions[Number(questionIndex)];
+                    if (!question) return;
+
+                    selectedAnswers.delete(question.question);
+                    card.querySelectorAll(`.oi-option[data-question-index="${questionIndex}"]`).forEach((option) => {
+                        option.classList.remove("active");
+                    });
+                    syncSubmitState();
+                });
                 el.addEventListener("keydown", async (e: KeyboardEvent) => {
                     if (e.key === "Enter") {
                         e.preventDefault();
