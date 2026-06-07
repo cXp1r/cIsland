@@ -87,7 +87,8 @@ export type HookAction =
   | { type: "allow" }
   | { type: "deny" }
   | { type: "answer"; answer: unknown }
-  | { type: "custom"; directive: CcDirective };
+  | { type: "custom"; directive: CcDirective }
+  | { type: "stop"; reason: string };
 
 export interface HookResponse {
   uuid: string;
@@ -96,7 +97,8 @@ export interface HookResponse {
 
 export type CcDirective =
   | { type: "pre_tool_use"; directive: CcPreToolUseResp }
-  | { type: "permission_request"; directive: CcPermReqResp };
+  | { type: "permission_request"; directive: CcPermReqResp }
+  | { type: "stop"; decision: string; reason: string };
 
 export interface CcPreToolUseResp {
   permission_decision?: CcPermBehavior;

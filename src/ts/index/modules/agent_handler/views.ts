@@ -1,4 +1,4 @@
-import { HookRequest } from "./model";
+﻿import { HookRequest } from "./model";
 import { respondToHook } from "./handler";
 import { renderMarkdown } from "../../md";
 
@@ -370,6 +370,68 @@ export function createNotification(request: HookRequest): HTMLElement {
     });
 }
 
+export function createStopCard(request: HookRequest): HTMLElement {
+    return createAgentCard({
+        request,
+        title: "Stop",
+        subtitle: request.tool_name || "",
+        statusVariant: "answer",
+        bodyHtml: `<div class="oi-md-preview cscrollbar">${renderMarkdown(request.hook_data.last_assistant_message || request.hook_data.message || "")}</div>`,
+        actionsHtml: `
+            <div class="oi-actions">
+                <input type="text" class="oi-custom-input oi-stop-input" placeholder="写下一轮提示词" />
+                <button class="oi-btn oi-btn-primary" data-action="submit" disabled>Submit</button>
+                <button class="oi-btn oi-btn-primary" data-action="dismiss">Dismiss</button>
+            </div>
+        `,
+        bindEvents: (card) => {
+            const input = card.querySelector(".oi-stop-input") as HTMLInputElement | null;
+            const submitButton = card.querySelector('[data-action="submit"]') as HTMLButtonElement | null;
+
+            const syncSubmitState = () => {
+                if (submitButton) {
+                    submitButton.disabled = !input?.value.trim();
+                }
+            };
+
+            input?.addEventListener("input", syncSubmitState);
+            input?.addEventListener("keydown", async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitButton?.click();
+                }
+            });
+
+            submitButton?.addEventListener("click", async () => {
+                const reason = input?.value.trim();
+                if (!reason) return;
+                await respondToHook(request.uuid, {
+                    type: "custom",
+                    directive: {
+                        type: "stop",
+                        decision: "block",
+                        reason,
+                    },
+                });
+                card.remove();
+            });
+
+            card.querySelector('[data-action="dismiss"]')?.addEventListener("click", async () => {
+                await respondToHook(request.uuid, {
+                    type: "custom",
+                    directive: {
+                        type: "stop",
+                        decision: "allow",
+                        reason: "",
+                    },
+                });
+                card.remove();
+            });
+
+            syncSubmitState();
+        },
+    });
+}
 function parseQuestions(request: HookRequest): Array<{
     question: string;
     header: string;

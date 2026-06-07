@@ -1,18 +1,12 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, agentHandler } from "../../dom";
-import { HookRequest, HookAction, CcHookEvent } from "./model";
-import { createApprovalCard, createNotification, createQuestionCard } from "./views";
+import { HookRequest, HookAction } from "./model";
+import { createApprovalCard, createNotification, createQuestionCard, createStopCard } from "./views";
 import { logi } from "../../logger";
 
 const TAG = "AgentHandler";
 
-const HEIGHTS = {
-    approval: 160,
-    diff: 390,
-    question1: 290,
-    question2: 380,
-};
 
 const NEED_APPROVAL_TOOLS = [
     "Bash",
@@ -22,7 +16,6 @@ const NEED_APPROVAL_TOOLS = [
 ];
 
 const INFO_TOOLS = [
-    "Stop",
     "Notification",
     "SessionEnd",
 ]
@@ -37,15 +30,16 @@ let activeUuid: string | null = null;
 
 function calculateHeight(request: HookRequest): number {
     //在适配之后暂时先用一个定值
-    return 390;
     if (request.tool_name === "AskUserQuestion") {
-        const questions = (request.tool_input as any)?.questions || [];
-        return questions.length > 1 ? HEIGHTS.question2 : HEIGHTS.question1;
+        return 400
+    }
+    if (request.tool_name === "Bash" || request.tool_name === "Read") {
+        return 200
     }
     if (request.tool_name === "Edit" || request.tool_name === "Write") {
-        return HEIGHTS.diff;
+        return 390;
     }
-    return HEIGHTS.approval;
+    return 400;
 }
 
 
@@ -86,7 +80,12 @@ async function handleHookRequest(request: HookRequest) {
         return;
     }
 
-    if (INFO_TOOLS.includes(request.hook_event)) {
+    if (request.hook_event === "Stop") {
+        showCard(createStopCard(request), request);
+        return;
+    }
+
+    if (INFO_TOOLS.includes(request.hook_event) || ERROR_TOOLS.includes(request.hook_event)) {
         showCard(createNotification(request), request);
         return;
     }

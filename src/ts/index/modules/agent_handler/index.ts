@@ -1,6 +1,6 @@
 export { initAgentHandler } from "./handler";
 export { respondToHook, hideAllCards } from "./handler";
-export { createApprovalCard, createQuestionCard } from "./views";
+export { createApprovalCard, createQuestionCard, createNotification, createStopCard } from "./views";
 
 export type {
     CcHookEvent,
