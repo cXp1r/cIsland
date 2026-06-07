@@ -165,7 +165,8 @@ export function createApprovalCard(request: HookRequest): HTMLElement {
 
 export function createQuestionCard(request: HookRequest): HTMLElement {
     const questions = parseQuestions(request);
-    const answerPayload = {
+    const isMultiQuestion = questions.length > 1;
+    const basePayload = {
         questions: questions.map((q) => ({
             question: q.question,
             header: q.header,
@@ -175,7 +176,6 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
             })),
             multiSelect: false,
         })),
-        answers: {} as Record<string, string>,
     };
 
     return createAgentCard({
@@ -184,58 +184,156 @@ export function createQuestionCard(request: HookRequest): HTMLElement {
         subtitle: "AskUserQuestion",
         statusVariant: "answer",
         bodyHtml: `
-            ${questions.map((q, qi) => `
-                <div class="oi-question-header">Question ${qi + 1}</div>
-                <div class="oi-question-text">${escapeHtml(q.question)}</div>
-                <div class="oi-options">
-                    ${q.options.map((opt, oi) => `
-                        <div class="oi-option" data-answer="${escapeHtml(opt.label)}">
-                            <span class="oi-option-index">${oi + 1}</span>
-                            <span class="oi-option-label">${escapeHtml(opt.label)}</span>
-                            ${opt.description ? `<span class="oi-option-desc">${escapeHtml(opt.description)}</span>` : ""}
+            <div class="oi-question-list">
+                ${questions.map((q, qi) => `
+                    <div class="oi-question-block" data-question-index="${qi}">
+                        <div class="oi-question-header">${escapeHtml(q.header || `Question ${qi + 1}`)}</div>
+                        <div class="oi-question-text">${escapeHtml(q.question)}</div>
+                        <div class="oi-options">
+                            ${q.options.map((opt, oi) => `
+                                <div class="oi-option" data-question-index="${qi}" data-answer="${escapeHtml(opt.label)}">
+                                    <span class="oi-option-index">${oi + 1}</span>
+                                    <span class="oi-option-label">${escapeHtml(opt.label)}</span>
+                                    ${opt.description ? `<span class="oi-option-desc">${escapeHtml(opt.description)}</span>` : ""}
+                                </div>
+                            `).join("")}
                         </div>
-                    `).join("")}
-                </div>
-            `).join("")}
-            <div class="oi-custom-input-wrap">
-                <input type="text" class="oi-custom-input" placeholder="Custom answer..." />
-                <button class="oi-btn oi-btn-primary" data-action="submit">Submit</button>
+                        ${isMultiQuestion ? `
+                            <div class="oi-custom-input-wrap oi-question-custom-input-wrap">
+                                <input type="text" class="oi-custom-input oi-question-custom-input" data-question-index="${qi}" placeholder="Custom answer..." />
+                            </div>
+                        ` : ""}
+                    </div>
+                `).join("")}
             </div>
+            ${isMultiQuestion ? "" : `
+                <div class="oi-custom-input-wrap">
+                    <input type="text" class="oi-custom-input" placeholder="Custom answer..." />
+                </div>
+            `}
         `,
-        actionsHtml: "",
+        actionsHtml: isMultiQuestion ? `
+            <div class="oi-actions">
+                <button class="oi-btn oi-btn-primary" data-action="submit" disabled>Submit</button>
+            </div>
+        ` : "",
         bindEvents: (card) => {
+            if (!isMultiQuestion) {
+                card.querySelectorAll(".oi-option").forEach(opt => {
+                    opt.addEventListener("click", async () => {
+                        const answer = opt.getAttribute("data-answer") || "";
+                        const question = questions.find((q) => q.options.some((option) => option.label === answer));
+                        const payload = {
+                            ...basePayload,
+                            answers: question ? { [question.question]: answer } : {},
+                        };
+                        await respondToHook(request.uuid, { type: "answer", answer: payload });
+                        card.remove();
+                    });
+                });
+
+                card.querySelector(".oi-custom-input")?.addEventListener("keydown", async (e: KeyboardEvent) => {
+                    if (e.key === "Enter") {
+                        const input = e.target as HTMLInputElement;
+                        const answer = input?.value?.trim();
+                        if (answer) {
+                            await respondToHook(request.uuid, { type: "answer", answer });
+                            card.remove();
+                        }
+                    }
+                });
+                return;
+            }
+
+            const selectedAnswers = new Map<string, string>();
+            const submitButton = card.querySelector('[data-action="submit"]') as HTMLButtonElement | null;
+            const inputs = Array.from(card.querySelectorAll(".oi-question-custom-input")) as HTMLInputElement[];
+            const input = card.querySelector(".oi-custom-input") as HTMLInputElement | null;
+
+            const syncSubmitState = () => {
+                const hasActive = selectedAnswers.size > 0;
+                const hasInput = inputs.some((el) => !!el.value.trim()) || !!input?.value?.trim();
+                if (submitButton) {
+                    submitButton.disabled = !hasActive && !hasInput;
+                }
+            };
+
             card.querySelectorAll(".oi-option").forEach(opt => {
-                opt.addEventListener("click", async () => {
+                opt.addEventListener("click", () => {
                     const answer = opt.getAttribute("data-answer") || "";
-                    const question = questions.find((q) => q.options.some((option) => option.label === answer));
-                    const payload = {
-                        ...answerPayload,
-                        answers: question ? { [question.question]: answer } : {},
-                    };
-                    await respondToHook(request.uuid, { type: "answer", answer: payload });
-                    card.remove();
+                    const questionIndex = opt.getAttribute("data-question-index") || "";
+                    const question = questions[Number(questionIndex)];
+                    if (!question) return;
+
+                    card.querySelectorAll(`.oi-option[data-question-index="${questionIndex}"]`).forEach((el) => {
+                        el.classList.remove("active");
+                    });
+                    opt.classList.add("active");
+                    selectedAnswers.set(question.question, answer);
+                    syncSubmitState();
                 });
             });
 
-            card.querySelector('[data-action="submit"]')?.addEventListener("click", async () => {
-                const input = card.querySelector(".oi-custom-input") as HTMLInputElement;
-                const answer = input?.value?.trim();
-                if (answer) {
-                    await respondToHook(request.uuid, { type: "answer", answer });
-                    card.remove();
+            input?.addEventListener("input", syncSubmitState);
+            input?.addEventListener("keydown", async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitButton?.click();
                 }
+            });
+            inputs.forEach((el) => {
+                el.addEventListener("input", syncSubmitState);
+                el.addEventListener("keydown", async (e: KeyboardEvent) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        submitButton?.click();
+                    }
+                });
             });
 
-            (card.querySelector(".oi-custom-input") as HTMLInputElement)?.addEventListener("keydown", async (e: KeyboardEvent) => {
-                if (e.key === "Enter") {
-                    const input = e.target as HTMLInputElement;
-                    const answer = input?.value?.trim();
-                    if (answer) {
-                        await respondToHook(request.uuid, { type: "answer", answer });
-                        card.remove();
+            submitButton?.addEventListener("click", async () => {
+                const answer = input?.value?.trim();
+                const hasActive = selectedAnswers.size > 0;
+                const customAnswers = new Map<string, string>();
+                inputs.forEach((el) => {
+                    const questionIndex = Number(el.getAttribute("data-question-index"));
+                    const question = questions[questionIndex];
+                    const value = el.value.trim();
+                    if (question && value) {
+                        customAnswers.set(question.question, value);
                     }
+                });
+
+                if (!hasActive && !answer && customAnswers.size === 0) return;
+
+                const mergedAnswers = new Map<string, string>();
+                questions.forEach((question) => {
+                    const selected = selectedAnswers.get(question.question);
+                    const custom = customAnswers.get(question.question);
+                    const value = selected || custom;
+                    if (value) {
+                        mergedAnswers.set(question.question, value);
+                    }
+                });
+
+                if (mergedAnswers.size !== questions.length) return;
+
+                const payload = {
+                    ...basePayload,
+                    answers: Object.fromEntries(mergedAnswers.entries()),
+                };
+
+                if (!hasActive && answer) {
+                    await respondToHook(request.uuid, { type: "answer", answer });
+                    card.remove();
+                    return;
                 }
+
+                await respondToHook(request.uuid, { type: "answer", answer: payload });
+                card.remove();
             });
+
+            syncSubmitState();
         },
     });
 }

@@ -282,6 +282,17 @@
     line-height: 1.4;
 }
 
+.oi-question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.oi-question-block {
+    display: flex;
+    flex-direction: column;
+}
+
 .oi-question-header {
     font-size: 11px;
     color: rgba(241,234,217,0.55);
@@ -311,6 +322,12 @@
 .oi-option:hover {
     background: rgba(255,255,255,0.065);
     border-color: rgba(255,255,255,0.13);
+}
+
+.oi-option.active {
+    background: rgba(241,234,217,0.12);
+    border-color: rgba(241,234,217,0.34);
+    box-shadow: inset 0 0 0 1px rgba(241,234,217,0.08);
 }
 
 .oi-option-index {
@@ -365,6 +382,11 @@
     margin-top: auto;
     padding-top: 12px;
     border-top: 1px dashed rgba(255,255,255,0.12);
+}
+
+.oi-actions .oi-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
 .oi-btn {
