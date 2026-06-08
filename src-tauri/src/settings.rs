@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 use std::fs;
+use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::atomic::Ordering;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
-use crate::IslandState;
+use crate::{CREATE_NO_WINDOW, IslandState, logger};
 use crate::link_handler::LinkHandler;
+use crate::tools::Aria2cRpc;
 use windows::Win32::Foundation::HWND;
 use crate::window::{MonitorInfo, get_primary_monitor_info};
 /// 歌词补偿：按播放器保存时 clamp 的边界与步长（毫秒）
@@ -55,7 +58,7 @@ pub(crate) struct SettingsData {
     pub offset_y: i32,
     #[serde(default = "get_primary_monitor_info")]
     pub primary_monitor_info: MonitorInfo,
-    #[serde(default)]
+    #[serde(default = "default_clipboard_enabled")]
     pub clipboard_enabled: bool,
     #[serde(default = "default_shortcut")]
     pub shortcut_key: String,
@@ -136,6 +139,11 @@ pub(crate) struct SettingsData {
     #[serde(default = "default_aria2c_rpc_secret")]
     pub aria2c_rpc_secret: String,
 }
+
+fn default_clipboard_enabled() -> bool {
+    true
+}
+
 fn default_aria2c_rpc_port() -> u16 {
     6800
 }
@@ -803,6 +811,33 @@ pub fn save_tools_settings(
     if let Some(port) = sadb_port {
         settings_data.sadb_port = port;
         state.sadb_port.store(port, Ordering::Relaxed);
+    }
+    let mut aria2c_process_guard = state.aria2c_process.lock().unwrap();
+    if aria2c_process_guard.is_none() && !settings_data.aria2c_path.trim().is_empty() {
+        let rpc_port = settings_data.aria2c_rpc_port;
+        let rpc_secret = settings_data.aria2c_rpc_secret.clone();
+        let thread = settings_data.aria2c_thread;
+        let args = vec![
+            "--enable-rpc".into(),
+            format!("--rpc-listen-port={}", rpc_port),
+            format!("--rpc-secret={}", rpc_secret),
+            "--continue=true".into(),
+        ];
+        
+
+        let (aria2c_process, aria2c_rpc) = match Command::new(&settings_data.aria2c_path)
+            .args(&args)
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+        {
+            Ok(c) => (Some(c), Some(Aria2cRpc{ client: reqwest::Client::new(), port: rpc_port, secret: rpc_secret, thread })),
+            Err(e) => {
+                logger::debug("Aria2c", &e.to_string());
+                (None, None)
+            },
+        };
+        *aria2c_process_guard = aria2c_process;
+        *state.aria2c_rpc.lock().unwrap() = aria2c_rpc;
     }
     let _ = save_settings_to_file(&settings_data);
 }
