@@ -381,7 +381,7 @@ export function createStopCard(request: HookRequest): HTMLElement {
             <div class="oi-actions">
                 <input type="text" class="oi-custom-input oi-stop-input" placeholder="写下一轮提示词" />
                 <button class="oi-btn oi-btn-primary" data-action="submit" disabled>Submit</button>
-                <button class="oi-btn oi-btn-primary" data-action="dismiss">Dismiss</button>
+                <button class="oi-btn oi-btn-primary" data-action="dismiss">End</button>
             </div>
         `,
         bindEvents: (card) => {
@@ -421,7 +421,7 @@ export function createStopCard(request: HookRequest): HTMLElement {
                     type: "custom",
                     directive: {
                         type: "stop",
-                        decision: "allow",
+                        decision: "approve",
                         reason: "",
                     },
                 });
