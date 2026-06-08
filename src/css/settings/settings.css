@@ -303,6 +303,7 @@
       color: var(--text);
       border-radius: 4px;
       font-size: 13px;
+      line-height: 1.4;
       padding: 8px 12px;
       outline: none;
       transition: border-color 0.15s ease;
@@ -323,6 +324,17 @@
     .input.path {
       width: 100%;
       margin-top: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .input-row .input.path {
+      margin-top: 0;
     }
 
     .select {
@@ -355,6 +367,7 @@
       transition: all 0.15s ease;
       font-weight: 500;
       font-size: 13px;
+      line-height: 1.4;
       padding: 8px 16px;
       background: var(--surface);
       color: var(--text);

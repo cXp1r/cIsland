@@ -287,7 +287,7 @@ pub fn run() {
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
             get_config_dir, get_user_dir, get_exe_dir,
             tools::tools_downloader, tools::find_path_by_where, tools::aria2c_rpc_download, //两个通用函数
-            tools::check, tools::test, tools::open_path, tools::custom_caller,
+            tools::check, tools::test, tools::open_path, tools::select_folder, tools::custom_caller,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,
             email::fetch_email_uid_list, email::fetch_email_metas_by_uids, email::fetch_email_bodies_by_uids, email::fetch_email_metas_and_bodies_by_uids, email::fetch_email_body_by_uid, email::read_email_body_by_uid,
             agent_hooks::respond_to_hook, agent_hooks_installer::install_agent_hooks,

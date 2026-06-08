@@ -251,8 +251,6 @@ function bindToolsModules(): void {
       showStatus("Hook 安装目录已显示。", false, 4000);
     },
   });
-
-  bound = true;
 }
 
 function bindAdbActions(): void {
@@ -320,15 +318,51 @@ function bindAdbActions(): void {
   });
 }
 
+function bindOpenFolderButtons(): void {
+  document.querySelectorAll<HTMLButtonElement>(".open-folder-btn").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const inputId = button.dataset.id;
+      const input = inputId ? document.getElementById(inputId) : null;
+
+      if (!(input instanceof HTMLInputElement)) {
+        showStatus("未找到绑定的输入框。", true, 4000);
+        return;
+      }
+
+      try {
+        const selected = await invoke<string | null>("select_folder", {
+          defaultDir: input.value.trim() || null,
+        });
+
+        if (!selected) return;
+        const snap = input.value;
+        input.value = selected;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        if (snap != selected) {
+          showStatus("新下载目录已选择, 点击初始化开始下载", false, 4000);
+        } else {
+          showStatus("无变化", false, 4000);
+        }
+        logi(TAG, "folder selected:", inputId, selected);
+      } catch (e) {
+        showStatus(`选择目录失败: ${String(e)}`, true, 5000);
+      }
+    });
+  });
+}
+
 export function initTools(): void {
   if (bound) return;
   bindToolsModules();
   bindAdbActions();
+  bindOpenFolderButtons();
   saveBtn.addEventListener("click", () => {
     if (pageTools.classList.contains("active")) {
       void save();
     }
   });
+  bound = true;
 }
 
 export function loadTools(r: ToolsSettingsResponse): void {

@@ -29,6 +29,7 @@ urlencoding = "2"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 dirs = "5"
 regex = "1"
+rfd = "0.15"
 url = "2"
 base64 = "0.22"
 flate2 = "1"

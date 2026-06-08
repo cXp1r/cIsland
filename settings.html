@@ -147,14 +147,24 @@
                 <h3>安装目录</h3>
                 <p>初始化会下载 aria2c，并解压到此目录下。</p>
               </div>
-              <input id="aria2c-install-dir" class="input path" type="text" placeholder="aria2c 工具安装目录" />
+              <div class="input-row">
+                <input
+                    id="aria2c-install-dir"
+                    class="input path"
+                    type="text"
+                    placeholder="aria2c 工具安装目录"
+                    style="flex:1; min-width:0;"
+                />
+
+                <button class="btn btn-primary open-folder-btn" type="button" data-id="aria2c-install-dir">选择目录</button>
+              </div>
             </div>
             <div class="setting-item" style="display: block; border: none; padding: 0;">
               <div class="setting-label">
                 <h3>aria2c 路径</h3>
                 <p>一个多线程下载器</p>
               </div>
-              <div id="jshint" style="display:flex; gap:10px; width:100%;">
+              <div id="jshint" class="input-row">
                 <input
                     id="aria2c-path"
                     class="input path"
@@ -175,7 +185,7 @@
                 <h3>aria2c服务器配置</h3>
                 <p>第一个为密钥, 第二个为端口值</p>
               </div>
-              <div style="display:flex; gap:10px; width:100%;">
+              <div class="input-row">
                 <input
                     id="aria2c-rpc-secret"
                     class="input path"
@@ -209,7 +219,10 @@
                 <h3>安装目录</h3>
                 <p>初始化会下载 由作者开发的工具</p>
               </div>
-              <input id="hook-installer-dir" class="input path" type="text" placeholder="hook 工具安装目录" />
+              <div class="input-row">
+                <input id="hook-installer-dir" class="input path" type="text" placeholder="hook 工具安装目录" style="flex:1; min-width:0;" />
+                <button class="btn btn-primary open-folder-btn" type="button" data-id="hook-installer-dir">选择目录</button>
+              </div>
               <div class="actions">
                 <button id="hook-init-btn" class="btn btn-primary" type="button">初始化 hooks</button>
                 <button id="hook-check-btn" class="btn" type="button">命令检验</button>
@@ -231,7 +244,7 @@
                 <h3>aria2c 下载器</h3>
                 <p>一个多线程下载器</p>
               </div>
-              <div style="display:flex; gap:10px; width:100%;">
+              <div class="input-row">
                 <input
                   id="aria2c-url"
                   class="input path"
@@ -586,7 +599,10 @@
                 <h3>安装目录</h3>
                 <p>初始化会下载 Android platform-tools，并解压到此目录下。</p>
               </div>
-              <input id="adb-install-dir" class="input path" type="text" placeholder="ADB 工具安装目录" />
+              <div class="input-row">
+                <input id="adb-install-dir" class="input path" type="text" placeholder="ADB 工具安装目录" style="flex:1; min-width:0;" />
+                <button class="btn btn-primary open-folder-btn" type="button" data-id="adb-install-dir">选择目录</button>
+              </div>
             </div>
             <div class="setting-item" style="display: block; border: none; padding: 0;">
               <div class="setting-label">

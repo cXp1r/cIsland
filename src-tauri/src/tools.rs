@@ -141,6 +141,22 @@ pub fn open_path(app: tauri::AppHandle, path: String) {
 }
 
 #[tauri::command]
+pub fn select_folder(default_dir: Option<String>) -> Result<Option<String>, String> {
+    let mut dialog = rfd::FileDialog::new();
+
+    if let Some(default_dir) = default_dir {
+        let default_path = PathBuf::from(default_dir);
+        if default_path.is_dir() {
+            dialog = dialog.set_directory(default_path);
+        }
+    }
+
+    Ok(dialog
+        .pick_folder()
+        .map(|path| path.to_string_lossy().to_string()))
+}
+
+#[tauri::command]
 pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
     let args = match tag {
         _ => vec!["--version"],
