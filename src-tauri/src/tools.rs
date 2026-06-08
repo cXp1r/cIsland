@@ -424,10 +424,6 @@ pub fn get_latest_release(url: &str, auth: Option<&str>) -> Result<GithubResult,
     })
 }
 
-pub fn download_from_github(idir: &str, link: &str, is_aria2c_rpc: bool) -> Result<String, String> {
-    download_from_github_matching(idir, link, is_aria2c_rpc, |_| true)
-}
-
 fn accept_aria2_asset(asset: &Asserts) -> bool {
     asset.content_type.ends_with("zip") && RE0.is_match(&asset.name)
 }
