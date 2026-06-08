@@ -734,6 +734,7 @@ impl Aria2cRpc {
 
 
 
+
 #[tauri::command]
 pub async fn aria2c_rpc_download(
     dir: &str,
@@ -746,6 +747,23 @@ pub async fn aria2c_rpc_download(
 
     match ar {
         Some(ar) => ar.new_task(dir, url, uuid, Some(window.clone())).await,
+        None => {
+            logger::warn("Aria2cRpc", "Aria2c Rpc Server Not Found");
+            Err("Aria2c Rpc Server Not Found".into())
+        }
+    }
+}
+
+
+#[tauri::command]
+pub async fn aria2c_rpc_remove(state: tauri::State<'_, IslandState>, gid: &str) -> Result<(), String> {
+    let ar = state.aria2c_rpc.lock().unwrap().clone();
+
+    match ar {
+        Some(ar) => {
+            logger::debug("Aria2cRpc", &format!("{:?}", ar.force_remove(gid).await?));
+            Ok(())
+        },
         None => {
             logger::warn("Aria2cRpc", "Aria2c Rpc Server Not Found");
             Err("Aria2c Rpc Server Not Found".into())
