@@ -269,11 +269,6 @@ impl FrameHeader {
         // Packet size is big-endian u32
         let size = u32::from_be_bytes(data[8..12].try_into().unwrap());
 
-        logger::debug(TAG, &format!(
-            "Frame header: config={}, key={}, pts={}, size={}",
-            config_packet, key_frame, pts, size
-        ));
-
         Ok(Self {
             config_packet,
             key_frame,

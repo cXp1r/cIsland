@@ -43,7 +43,6 @@ where
                     return Ok(None);
                 }
                 Ok(n) => {
-                    logger::debug(TAG, &format!("Read {} bytes from socket", n));
                     self.buffer.extend_from_slice(&temp_buf[..n]);
                 }
                 Err(e) => return Err(e.into()),
@@ -112,7 +111,6 @@ where
                     return Err(Error::ConnectionClosed);
                 }
                 Ok(n) => {
-                    logger::debug(TAG, &format!("Read {} bytes from socket", n));
                     self.protocol_reader.extend(&temp_buf[..n]);
                     // loop: try to parse again
                 }
