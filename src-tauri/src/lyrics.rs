@@ -71,6 +71,7 @@ fn fetch_lyrics_by_rust_api(
         crate::logger::info("Lyrics", &format!(
             "rust-api: trying '{}'", player.display_name()
         ));
+        lyrix::logger::set_level("debug");
         match smtc_lyrics::get_lyrics_with_player(&player, title, artist_opt, album_opt, album_artist_opt, duration_ms_u32, &session).await {
             Ok(data) => {
                 let ddata = if let Some(meta) = &data.track_metadata {
