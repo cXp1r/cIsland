@@ -1446,36 +1446,6 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-#[allow(dead_code)]
-fn trigger_notification(
-    window: &tauri::WebviewWindow,
-    is_notifying: &Arc<AtomicBool>,
-    is_expanded: &Arc<AtomicBool>,
-    message: &str,
-) {
-    // 防重入：如果已有通知正在显示，跳过
-    if is_notifying.compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed).is_err() {
-        return;
-    }
-
-    if !is_expanded.load(Ordering::Relaxed) {
-        is_expanded.store(true, Ordering::Relaxed);
-        let _ = window.emit("set-expand", true);
-    }
-    let _ = window.emit("show-notice", message);
-
-    // 在独立线程中等待超时，不阻塞调用者
-    let noti = is_notifying.clone();
-    let exp = is_expanded.clone();
-    let win = window.clone();
-    thread::spawn(move || {
-        thread::sleep(Duration::from_millis(3500));
-        noti.store(false, Ordering::Relaxed);
-        exp.store(false, Ordering::Relaxed);
-        let _ = win.emit("set-expand", false);
-        let _ = win.emit("notice-timeout", ());
-    });
-}
 
 fn create_tray_icon() -> Vec<u8> {
     let (size, center, radius) = (32u32, 16.0, 12.0);
