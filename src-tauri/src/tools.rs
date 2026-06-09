@@ -135,27 +135,18 @@ fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_path(app: tauri::AppHandle, path: String, select: Option<bool>) {
-    let path = Path::new(&path);
-    //打开目录并选中文件
-    if select.unwrap_or(false) && path.is_file() {
-        if let Some(abs) = path.canonicalize().ok() {
-            let _ = Command::new("explorer")
-                .arg(format!(r#"/select,{}"#, abs.display()))
-                .spawn();
+    let _ = Command::new("explorer")
+    .arg(match select.unwrap_or(false) && Path::new(&path).is_file() {
+        true => {
+            format!(r#"/select,{}"#, &path)
         }
-        return;
-    }
+        false => {
+            path.clone()
+        }
+    }).spawn();
 
-    //直接打开目录或者文件
-    if path.exists() {
-        let _ = Command::new("cmd")
-            .args(["/C", "start", "", &path.to_string_lossy()])
-            .spawn();
-        return;
-    }
-
-    //用这个开可能会挂在cisland进程树下面,关闭cisland的时候打开的文件也会关闭
-    let _ = app.opener().open_path(path.to_string_lossy(), None::<String>);
+    //回溯
+    let _ = app.opener().open_path(path, None::<String>);
 }
 
 #[tauri::command]
