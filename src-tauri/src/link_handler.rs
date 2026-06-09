@@ -175,7 +175,7 @@ pub fn open_url(url: String) {
     // 默认允许所有 http/https URL（无域名白名单）
     match validate_url(&url, &[]) {
         Ok(valid_url) => {
-            let _ = open::that(&valid_url);
+            open_url_in_browser(&valid_url);
         }
         Err(e) => {
             eprintln!("[open_url] URL 验证失败: {}", e);
@@ -252,7 +252,7 @@ pub fn open_url_with_whitelist(
 ) -> Result<(), String> {
     let allowed_domains = state.url_whitelist.lock().unwrap().clone();
     let valid_url = validate_url(&url, &allowed_domains)?;
-    let _ = open::that(&valid_url);
+    open_url_in_browser(&valid_url);
     Ok(())
 }
 
@@ -266,8 +266,8 @@ pub fn open_link_with_handler(
     if let Some(handler) = find_matching_handler(&url, &handlers) {
         launch_app_with_url(&handler.app_path, &url)
     } else {
-        // 没有匹配的处理器，使用系统默认方式打开
-        let _ = open::that(&url);
+        // 没有匹配的处理器，使用系统默认浏览器打开
+        open_url_in_browser(&url);
         Ok(())
     }
 }
@@ -276,4 +276,9 @@ pub fn open_link_with_handler(
 #[tauri::command]
 pub fn test_link_handler(app_path: String) -> Result<(), String> {
     launch_app_with_url(&app_path, "")
+}
+
+/// 用系统默认浏览器打开 URL
+pub(crate) fn open_url_in_browser(url: &str) {
+    let _ = Command::new("explorer").arg(url).spawn();
 }

@@ -557,7 +557,7 @@ pub fn run() {
                     if event.state == ShortcutState::Pressed {
                         let urls = pending_url_sc.lock().unwrap();
                         if let Some(url) = urls.first() {
-                            let _ = open::that(url);
+                            crate::link_handler::open_url_in_browser(url);
                         }
                     }
                 });

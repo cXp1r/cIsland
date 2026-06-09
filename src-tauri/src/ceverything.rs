@@ -238,7 +238,5 @@ pub async fn search_query(query: String, offset: Option<usize>, count: Option<us
 #[tauri::command]
 pub fn search_execute(id: String, _action: String) {
     println!("[Everything] opening: {}", id);
-    if let Err(e) = open::that(&id) {
-        eprintln!("[Everything] 打开 {} 失败: {}", id, e);
-    }
+    let _ = std::process::Command::new("explorer").arg(&id).spawn();
 }
