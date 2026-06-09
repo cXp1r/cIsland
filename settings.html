@@ -23,7 +23,6 @@
         <div class="nav-item" data-page="ai">AI Agent</div>
         <div class="nav-item" data-page="clipboard-links">剪贴板与链接</div>
         <div class="nav-item" data-page="email">邮件</div>
-        <div class="nav-item" data-page="sadb">ADB 镜像</div>
         <div class="nav-item" data-page="plugins">插件管理</div>
         <div class="nav-item" data-page="blacklist">黑名单</div>
         <div class="nav-item" data-page="log">日志</div>
@@ -232,6 +231,62 @@
             <div class="setting-group-title" id="agent-list">检测待安装Hooks的agent</div>
             <div id="aria2c-check-result" class="mono" style="white-space: pre-line;">待操作</div>
 
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-group-title">ADB 工具</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>安装目录</h3>
+                <p>初始化会下载 Android platform-tools，并解压到此目录下。</p>
+              </div>
+              <div class="input-row">
+                <input id="adb-install-dir" class="input path" type="text" placeholder="ADB 工具安装目录" style="flex:1; min-width:0;" />
+                <button class="btn btn-primary open-folder-btn" type="button" data-id="adb-install-dir">选择目录</button>
+              </div>
+            </div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>ADB 路径</h3>
+                <p>留空时使用系统 PATH 中的 adb；初始化成功后会自动填入 adb.exe 路径。</p>
+              </div>
+              <input id="adb-path" class="input path" type="text" placeholder="adb 或 C:\...\platform-tools\adb.exe" />
+              <div class="actions">
+                <button id="adb-path-from-path-btn" class="btn" type="button">从 PATH 获取</button>
+                <button id="adb-init-btn" class="btn btn-primary" type="button">初始化 ADB</button>
+                <button id="adb-check-btn" class="btn" type="button">命令检验</button>
+                <button id="adb-devices-btn" class="btn" type="button">设备检验</button>
+                <button id="adb-connect-device-btn" class="btn" type="button">连接设备</button>
+                <button id="adb-kill-server-btn" class="btn" type="button">结束adb进程</button>
+              </div>
+              <div id="adb-check-result" class="mono" style="white-space: pre-line;">待操作</div>
+            </div>
+
+            <div class="setting-group-title">连接设置</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>默认端口</h3>
+                <p>ADB WiFi 连接端口，默认 5555。</p>
+              </div>
+              <input id="sadb-port" class="input path" type="number" placeholder="5555" min="1" max="65535" />
+            </div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <h3>默认 IP 地址</h3>
+                <p>WiFi 连接时的目标设备 IP，留空则仅使用 USB。</p>
+              </div>
+              <input id="sadb-ip" class="input path" placeholder="192.168.1.100" />
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-group-title">说明</div>
+            <div class="setting-item" style="display: block; border: none; padding: 0;">
+              <div class="setting-label">
+                <p>连接优先级：USB → WiFi。有 USB 设备时优先使用 USB，无 USB 设备时自动使用 IP:Port 进行 WiFi 连接。</p>
+                <p style="margin-top: 8px;">需要 adb 和 scrcpy-server (v4.0) 支持。首次使用请确保已安装 adb 工具。</p>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -567,67 +622,6 @@
                 <p>后台定时获取最新邮件 UID，UID 变化时弹出通知。默认 1 秒。</p>
               </div>
               <input id="email-poll-interval" class="input path" type="number" min="1" step="1" value="1" />
-            </div>
-          </div>
-        </div>
-
-        <!-- ADB 镜像页面 -->
-        <div class="page" id="page-sadb">
-          <div class="setting-group">
-            <div class="setting-group-title">连接设置</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>默认 IP 地址</h3>
-                <p>WiFi 连接时的目标设备 IP，留空则仅使用 USB。</p>
-              </div>
-              <input id="sadb-ip" class="input path" placeholder="192.168.1.100" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>默认端口</h3>
-                <p>ADB WiFi 连接端口，默认 5555。</p>
-              </div>
-              <input id="sadb-port" class="input path" type="number" placeholder="5555" min="1" max="65535" />
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-group-title">ADB 工具</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>安装目录</h3>
-                <p>初始化会下载 Android platform-tools，并解压到此目录下。</p>
-              </div>
-              <div class="input-row">
-                <input id="adb-install-dir" class="input path" type="text" placeholder="ADB 工具安装目录" style="flex:1; min-width:0;" />
-                <button class="btn btn-primary open-folder-btn" type="button" data-id="adb-install-dir">选择目录</button>
-              </div>
-            </div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <h3>ADB 路径</h3>
-                <p>留空时使用系统 PATH 中的 adb；初始化成功后会自动填入 adb.exe 路径。</p>
-              </div>
-              <input id="adb-path" class="input path" type="text" placeholder="adb 或 C:\...\platform-tools\adb.exe" />
-              <div class="actions">
-                <button id="adb-path-from-path-btn" class="btn" type="button">从 PATH 获取</button>
-                <button id="adb-init-btn" class="btn btn-primary" type="button">初始化 ADB</button>
-                <button id="adb-check-btn" class="btn" type="button">命令检验</button>
-                <button id="adb-devices-btn" class="btn" type="button">设备检验</button>
-                <button id="adb-connect-device-btn" class="btn" type="button">连接设备</button>
-                <button id="adb-kill-server-btn" class="btn" type="button">结束adb进程</button>
-              </div>
-              <div id="adb-check-result" class="mono" style="white-space: pre-line;">待操作</div>
-            </div>
-          </div>
-          <div class="setting-group">
-            <div class="setting-group-title">说明</div>
-            <div class="setting-item" style="display: block; border: none; padding: 0;">
-              <div class="setting-label">
-                <p>连接优先级：USB → WiFi。有 USB 设备时优先使用 USB，无 USB 设备时自动使用 IP:Port 进行 WiFi 连接。</p>
-                <p style="margin-top: 8px;">需要 adb 和 scrcpy-server (v4.0) 支持。首次使用请确保已安装 adb 工具。</p>
-              </div>
             </div>
           </div>
         </div>
