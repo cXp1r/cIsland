@@ -77,9 +77,9 @@ export async function initSettingsLog(): Promise<void> {
     };
 
     const lyrixLogPath = $<HTMLParagraphElement>("lyrix-log-path-text");
-
+    const logPath = $<HTMLParagraphElement>("log-path-text");
     [
-      $<HTMLParagraphElement>("log-path-text"),
+      logPath,
       lyrixLogPath      
     ].forEach(async (e, i) => {
       try {
@@ -93,7 +93,7 @@ export async function initSettingsLog(): Promise<void> {
       $<HTMLButtonElement>("open-log-dir-btn"),
       $<HTMLButtonElement>("open-lyrix-log-dir-btn")
     ].forEach(async (e, i) => {
-      i == 0 ? e.addEventListener("click", () => void invoke('open_log_dir')) : e.addEventListener("click", () => void invoke("open_dir", { dir: lyrixLogPath.innerText }));
+      e.addEventListener("click", () => void invoke("open_path", { path: (i == 0 ? logPath : lyrixLogPath).innerText, select: false }));
     });
 
     bindEvents();

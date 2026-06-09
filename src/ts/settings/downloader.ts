@@ -166,6 +166,6 @@ export function initSettingsDownloader(): void {
   });
 
   openDivBtn.addEventListener("click", () => {
-    void invoke("open_dir", { dir: saveDir.value });
+    invoke('open_path', { path: saveDir.value })
   });
 }

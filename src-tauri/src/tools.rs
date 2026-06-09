@@ -134,10 +134,19 @@ fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
 
 
 #[tauri::command]
-pub fn open_path(app: tauri::AppHandle, path: String) {
-    app.opener()
-        .open_path(path, None::<String>)
-        .expect("failed to open");
+pub fn open_path(app: tauri::AppHandle, path: String, select: Option<bool>) {
+    let path_obj = Path::new(&path);
+
+    if select.unwrap_or_else(|| false) && path_obj.is_file() {
+        Command::new("explorer")
+            .arg(format!(r#"/select,{}"#, path))
+            .spawn()
+            .expect("failed to open explorer");
+    } else {
+        app.opener()
+            .open_path(path, None::<String>)
+            .expect("failed to open");
+    }
 }
 
 #[tauri::command]

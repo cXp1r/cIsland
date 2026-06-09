@@ -91,7 +91,7 @@ export function initDownloader() {
                 result.innerText = "请填写下载链接"
             }
         });
-    openDivBtn.addEventListener("click", async () => {
-        await invoke('open_path', { path: saveDir.value })
+    openDivBtn.addEventListener("click", () => {
+        void invoke('open_path', { path: saveDir.value, select: false })
     })
 }
