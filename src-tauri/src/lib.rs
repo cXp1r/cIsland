@@ -58,18 +58,22 @@ pub(crate) fn get_exe_path() -> PathBuf {
         .unwrap()
         .to_path_buf()
 }
-pub(crate) fn get_config_path() -> PathBuf {
-    dirs::config_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join("cisland")
+fn config_dir() -> PathBuf {
+    std::env::var("APPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("."))
 }
+
+pub(crate) fn get_config_path() -> PathBuf {
+    config_dir().join("cisland")
+}
+
 #[tauri::command]
 fn get_config_dir() -> String {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
+    config_dir()
         .join("cisland")
         .to_string_lossy()
-        .to_string()   
+        .to_string()
 }
 #[tauri::command]
 fn get_user_dir() -> String {
