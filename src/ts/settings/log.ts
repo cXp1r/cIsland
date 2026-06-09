@@ -75,17 +75,27 @@ export async function initSettingsLog(): Promise<void> {
       log_filter_tags: Array.isArray(settings.log_filter_tags) ? settings.log_filter_tags : [],
       log_filter_invert: settings.log_filter_invert,
     };
-    const logPathText = $<HTMLParagraphElement>("log-path-text");
-    const openLogDirBtn = $<HTMLButtonElement>("open-log-dir-btn");
-    void invoke<string>("get_log_path").then((p) => {
-      logPathText.textContent = p;
-    }).catch(() => {
-      logPathText.textContent = "获取失败";
+
+    const lyrixLogPath = $<HTMLParagraphElement>("lyrix-log-path-text");
+
+    [
+      $<HTMLParagraphElement>("log-path-text"),
+      lyrixLogPath      
+    ].forEach(async (e, i) => {
+      try {
+        e.textContent = i == 0 ? await invoke<string>("get_log_path") : (await invoke<string>("get_config_dir")).slice(0, -7) + "Lyrix";
+      } catch {
+        e.textContent = "获取失败";
+      }
+    });
+    
+    [
+      $<HTMLButtonElement>("open-log-dir-btn"),
+      $<HTMLButtonElement>("open-lyrix-log-dir-btn")
+    ].forEach(async (e, i) => {
+      i == 0 ? e.addEventListener("click", () => void invoke('open_log_dir')) : e.addEventListener("click", () => void invoke("open_dir", { dir: lyrixLogPath.innerText }));
     });
 
-    openLogDirBtn.addEventListener("click", () => {
-      void invoke("open_log_dir");
-    });
     bindEvents();
   }
   render();
