@@ -9,7 +9,6 @@ use regex::Regex;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tauri_plugin_opener::OpenerExt;
 use zip::ZipArchive;
 use crate::IslandState;
 use crate::{CREATE_NO_WINDOW, logger};
@@ -134,7 +133,7 @@ fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
 
 
 #[tauri::command]
-pub fn open_path(app: tauri::AppHandle, path: String, select: Option<bool>) {
+pub fn open_path(path: String, select: Option<bool>) {
     let _ = Command::new("explorer")
     .arg(match select.unwrap_or(false) && Path::new(&path).is_file() {
         true => {
@@ -144,9 +143,6 @@ pub fn open_path(app: tauri::AppHandle, path: String, select: Option<bool>) {
             path.clone()
         }
     }).spawn();
-
-    //回溯
-    let _ = app.opener().open_path(path, None::<String>);
 }
 
 #[tauri::command]

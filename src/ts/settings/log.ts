@@ -93,7 +93,7 @@ export async function initSettingsLog(): Promise<void> {
       $<HTMLButtonElement>("open-log-dir-btn"),
       $<HTMLButtonElement>("open-lyrix-log-dir-btn")
     ].forEach(async (e, i) => {
-      e.addEventListener("click", () => void invoke("open_path", { path: (i == 0 ? logPath : lyrixLogPath).innerText, select: false }));
+      e.addEventListener("click", () => void invoke("open_path", { path: (i == 0 ? logPath : lyrixLogPath).innerText, select: true }));
     });
 
     bindEvents();
