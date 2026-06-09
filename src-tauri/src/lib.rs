@@ -514,7 +514,17 @@ pub fn run() {
                 .menu(&menu).tooltip("灵动岛")
                 .on_menu_event(move |app, event| {
                     match event.id().as_ref() {
-                        "quit" => app_handle.exit(0),
+                        "quit" => {
+                            // 杀掉 aria2c 子进程避免残留
+                            if let Some(state) = app.try_state::<IslandState>() {
+                                if let Ok(mut proc) = state.aria2c_process.lock() {
+                                    if let Some(ref mut child) = *proc {
+                                        let _ = child.kill();
+                                    }
+                                }
+                            }
+                            app_handle.exit(0);
+                        },
                         "settings" => {
                             if let Some(win) = app.get_webview_window("settings") {
                                 let _ = win.show();
