@@ -75,6 +75,17 @@ export async function initSettingsLog(): Promise<void> {
       log_filter_tags: Array.isArray(settings.log_filter_tags) ? settings.log_filter_tags : [],
       log_filter_invert: settings.log_filter_invert,
     };
+    const logPathText = $<HTMLParagraphElement>("log-path-text");
+    const openLogDirBtn = $<HTMLButtonElement>("open-log-dir-btn");
+    void invoke<string>("get_log_path").then((p) => {
+      logPathText.textContent = p;
+    }).catch(() => {
+      logPathText.textContent = "获取失败";
+    });
+
+    openLogDirBtn.addEventListener("click", () => {
+      void invoke("open_log_dir");
+    });
     bindEvents();
   }
   render();

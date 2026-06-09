@@ -21,8 +21,7 @@ const checkPreviewUpdateBtn = $<HTMLButtonElement>("check-preview-update-btn");
 const downloadUpdateBtn = $<HTMLButtonElement>("download-update-btn");
 const openReleaseBtn = $<HTMLButtonElement>("open-release-btn");
 const openGithubBtn = $<HTMLButtonElement>("open-github-btn");
-const logPathText = $<HTMLParagraphElement>("log-path-text");
-const openLogDirBtn = $<HTMLButtonElement>("open-log-dir-btn");
+
 
 const stableReleaseUrl = "https://github.com/Python-island/Python-island/releases/latest";
 const previewReleaseUrl = "https://github.com/cXp1r/tauri-island/releases/latest";
@@ -165,16 +164,6 @@ export function initSettingsAbout(): void {
 
   openGithubBtn.addEventListener("click", () => {
     void invoke("open_url", { url: "https://github.com/Python-island/Python-island/tree/tauri-island" });
-  });
-
-  void invoke<string>("get_log_path").then((p) => {
-    logPathText.textContent = p;
-  }).catch(() => {
-    logPathText.textContent = "获取失败";
-  });
-
-  openLogDirBtn.addEventListener("click", () => {
-    void invoke("open_log_dir");
   });
 
   bound = true;
