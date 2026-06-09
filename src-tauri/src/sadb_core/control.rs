@@ -3,7 +3,7 @@
 //! Wire format is big-endian throughout.
 //! Reference: scrcpy/app/src/control_msg.c — `sc_control_msg_serialize`.
 
-use crate::error::Result;
+use super::error::Result;
 
 /// SC_CONTROL_MSG_TYPE_INJECT_KEYCODE = 0
 const TYPE_INJECT_KEYCODE: u8 = 0;
@@ -302,7 +302,6 @@ impl DeviceMessage {
     /// Returns `Ok(None)` if more bytes are needed; `Ok(Some((msg, consumed)))`
     /// on success; `Err` on invalid data.
     pub fn deserialize(data: &[u8]) -> Result<Option<(Self, usize)>> {
-        use crate::error::Error;
         if data.is_empty() {
             return Ok(None);
         }
@@ -325,7 +324,7 @@ impl DeviceMessage {
                 let sequence = u64::from_be_bytes(data[1..9].try_into().unwrap());
                 Ok(Some((DeviceMessage::AckClipboard { sequence }, 9)))
             }
-            _ => Err(Error::Protocol(format!(
+            _ => Err(super::error::Error::Protocol(format!(
                 "Unknown device message type: {}",
                 data[0]
             ))),

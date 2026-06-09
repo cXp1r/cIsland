@@ -1,4 +1,5 @@
 pub mod logger;
+pub mod sadb_core;
 mod privacy;
 mod clipboard;
 mod betterncm;

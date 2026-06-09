@@ -10,13 +10,13 @@ use std::sync::Arc;
 
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
-use sadb_core::control::{
+use crate::sadb_core::control::{
     InjectKeycodeEvent, InjectScrollEvent, InjectTextEvent, InjectTouchEvent,
     KeyEventAction, MotionEventAction, MotionEventButtons, POINTER_ID_MOUSE,
     SetClipboard,
 };
-use sadb_core::protocol::VideoCodec;
-use sadb_core::{Config, DeviceMessage, ScrcpyClient};
+use crate::sadb_core::protocol::VideoCodec;
+use crate::sadb_core::{Config, DeviceMessage, ScrcpyClient};
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, State};
@@ -494,7 +494,7 @@ pub(crate) async fn sadb_connect_device(
         serial,
         adb_path_opt.as_deref().unwrap_or("adb")
     ));
-    sadb_core::adb::AdbClient::connect_with_adb_path(&serial, adb_path_opt.as_deref())
+    crate::sadb_core::adb::AdbClient::connect_with_adb_path(&serial, adb_path_opt.as_deref())
         .await
         .map_err(|e| {
             logger::error(TAG, &format!("ADB connect failed: serial={}, error={}", serial, e));
@@ -521,7 +521,7 @@ pub(crate) async fn sadb_disconnect_device(
         serial,
         adb_path_opt.as_deref().unwrap_or("adb")
     ));
-    sadb_core::adb::AdbClient::disconnect_with_adb_path(&serial, adb_path_opt.as_deref())
+    crate::sadb_core::adb::AdbClient::disconnect_with_adb_path(&serial, adb_path_opt.as_deref())
         .await
         .map_err(|e| {
             logger::warn(TAG, &format!("ADB disconnect failed: serial={}, error={}", serial, e));

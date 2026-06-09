@@ -15,9 +15,11 @@
 //!   bit 61 = KEY_FRAME (0x2000_0000 in the high u32)
 //!   bits 60..0 = PTS
 
-use crate::error::{Error, Result};
+use super::error::{Error, Result};
 use bytes::{Bytes, BytesMut};
-use tracing::{debug, trace};
+use crate::logger;
+
+const TAG: &str = "sadb_core::protocol";
 
 /// FourCC helper: pack ASCII bytes into a big-endian u32.
 const fn fourcc(s: &[u8; 4]) -> u32 {
@@ -161,7 +163,7 @@ impl DeviceMetadata {
     /// Parse device metadata from bytes
     pub fn parse(data: &[u8]) -> Result<Self> {
         let name = String::from_utf8(data.to_vec())?;
-        debug!("Device name: {}", name);
+        logger::debug(TAG, &format!("Device name: {}", name));
         Ok(Self { name })
     }
 
@@ -181,7 +183,7 @@ impl VideoCodecMetadata {
         }
         let codec_id = u32::from_be_bytes(data[0..4].try_into().unwrap());
         let codec = VideoCodec::try_from(codec_id)?;
-        debug!("Video codec: {:?}", codec);
+        logger::debug(TAG, &format!("Video codec: {:?}", codec));
         Ok(Self { codec, width: 0, height: 0 })
     }
 
@@ -208,7 +210,7 @@ impl SessionMeta {
         let width = u32::from_be_bytes(data[4..8].try_into().unwrap());
         let height = u32::from_be_bytes(data[8..12].try_into().unwrap());
         let client_resized = (flags & 1) != 0;
-        debug!("Session meta: {}x{} (client_resized={})", width, height, client_resized);
+        logger::debug(TAG, &format!("Session meta: {}x{} (client_resized={})", width, height, client_resized));
         Ok(Self { width, height, client_resized })
     }
 }
@@ -230,8 +232,8 @@ impl AudioCodecMetadata {
 
         let codec_id = u32::from_be_bytes(data[0..4].try_into().unwrap());
         let codec = AudioCodec::try_from(codec_id)?;
-        
-        debug!("Audio codec: {:?}", codec);
+
+        logger::debug(TAG, &format!("Audio codec: {:?}", codec));
 
         Ok(Self { codec })
     }
@@ -267,10 +269,10 @@ impl FrameHeader {
         // Packet size is big-endian u32
         let size = u32::from_be_bytes(data[8..12].try_into().unwrap());
 
-        trace!(
+        logger::debug(TAG, &format!(
             "Frame header: config={}, key={}, pts={}, size={}",
             config_packet, key_frame, pts, size
-        );
+        ));
 
         Ok(Self {
             config_packet,
@@ -476,7 +478,7 @@ mod tests {
 
         let data = header.serialize();
         let parsed = FrameHeader::parse(&data).unwrap();
-        
+
         assert_eq!(parsed.config_packet, false);
         assert_eq!(parsed.key_frame, true);
         assert_eq!(parsed.pts, 0x123456789ABCDEF0);

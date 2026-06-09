@@ -6,9 +6,11 @@
 //! - Start server process via app_process
 //! - Clean up connections
 
-use crate::error::{Error, Result};
+use super::error::{Error, Result};
 use tokio::process::Command as TokioCommand;
-use tracing::debug;
+use crate::logger;
+
+const TAG: &str = "sadb_core::adb";
 
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -62,8 +64,8 @@ impl AdbClient {
 
     /// Push file to device
     pub async fn push(&self, local: &str, remote: &str) -> Result<()> {
-        debug!("Pushing {} to {}", local, remote);
-        
+        logger::debug(TAG, &format!("Pushing {} to {}", local, remote));
+
         let output = self
             .build_async_command()
             .args(["push", local, remote])
@@ -80,8 +82,8 @@ impl AdbClient {
 
     /// Create reverse tunnel (device connects to PC)
     pub async fn reverse(&self, remote: &str, local: &str) -> Result<()> {
-        debug!("Creating reverse tunnel: {} -> {}", remote, local);
-        
+        logger::debug(TAG, &format!("Creating reverse tunnel: {} -> {}", remote, local));
+
         let output = self
             .build_async_command()
             .args(["reverse", remote, local])
@@ -98,8 +100,8 @@ impl AdbClient {
 
     /// Create forward tunnel (PC connects to device)
     pub async fn forward(&self, local: &str, remote: &str) -> Result<()> {
-        debug!("Creating forward tunnel: {} -> {}", local, remote);
-        
+        logger::debug(TAG, &format!("Creating forward tunnel: {} -> {}", local, remote));
+
         let output = self
             .build_async_command()
             .args(["forward", local, remote])
@@ -116,7 +118,7 @@ impl AdbClient {
 
     /// Remove reverse tunnel
     pub async fn reverse_remove(&self, remote: &str) -> Result<()> {
-        debug!("Removing reverse tunnel: {}", remote);
+        logger::debug(TAG, &format!("Removing reverse tunnel: {}", remote));
         let _ = self
             .build_async_command()
             .args(["reverse", "--remove", remote])
@@ -128,7 +130,7 @@ impl AdbClient {
 
     /// Remove forward tunnel
     pub async fn forward_remove(&self, local: &str) -> Result<()> {
-        debug!("Removing forward tunnel: {}", local);
+        logger::debug(TAG, &format!("Removing forward tunnel: {}", local));
         let _ = self
             .build_async_command()
             .args(["forward", "--remove", local])
@@ -141,7 +143,7 @@ impl AdbClient {
     /// Build a shell command (not yet spawned). Caller is responsible for
     /// configuring stdio and spawning.
     pub fn shell_command(&self, shell_cmd: &str) -> TokioCommand {
-        debug!("Building shell command: {}", shell_cmd);
+        logger::debug(TAG, &format!("Building shell command: {}", shell_cmd));
         let mut cmd = self.build_async_command();
         cmd.args(["shell", shell_cmd]);
         cmd
@@ -175,7 +177,7 @@ impl AdbClient {
     }
 
     pub async fn connect_with_adb_path(host: &str, adb_path: Option<&str>) -> Result<()> {
-        debug!("Connecting to {} via TCP/IP", host);
+        logger::debug(TAG, &format!("Connecting to {} via TCP/IP", host));
         let adb_path = adb_path.map(str::trim).filter(|path| !path.is_empty()).unwrap_or("adb");
         let mut cmd = TokioCommand::new(adb_path);
         #[cfg(windows)]
@@ -202,7 +204,8 @@ impl AdbClient {
     }
 
     pub async fn disconnect_with_adb_path(host: &str, adb_path: Option<&str>) -> Result<()> {
-        debug!("Disconnecting from {}", if host.is_empty() { "all" } else { host });
+        let label = if host.is_empty() { "all" } else { host };
+        logger::debug(TAG, &format!("Disconnecting from {}", label));
         let adb_path = adb_path.map(str::trim).filter(|path| !path.is_empty()).unwrap_or("adb");
         let mut cmd = TokioCommand::new(adb_path);
         #[cfg(windows)]

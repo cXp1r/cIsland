@@ -3,19 +3,21 @@
 //! High-level interface for connecting to an Android device and streaming
 //! video/audio using the scrcpy protocol.
 
-use crate::adb::AdbClient;
-use crate::config::Config;
-use crate::control::{CopyKey, GetClipboard};
-use crate::error::{Error, Result};
-use crate::protocol::{AudioCodecMetadata, DeviceMetadata, VideoCodecMetadata};
-use crate::stream::SyncPacketStream;
+use super::adb::AdbClient;
+use super::config::Config;
+use super::control::{CopyKey, GetClipboard};
+use super::error::{Error, Result};
+use super::protocol::{AudioCodecMetadata, DeviceMetadata, VideoCodecMetadata};
+use super::stream::SyncPacketStream;
 use std::io::{BufReader, Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::net::TcpListener;
 use tokio::process::{Child, Command as TokioCommand};
-use tracing::{debug, info, warn};
+use crate::logger;
+
+const TAG: &str = "sadb_core::client";
 
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -76,7 +78,7 @@ impl ScrcpyClient {
     /// Push the scrcpy-server jar, set up a reverse tunnel, spawn the server
     /// process, and accept the video socket.
     pub async fn start(&mut self) -> Result<()> {
-        info!("Starting scrcpy server (scid={:08x})...", self.scid);
+        logger::info(TAG, &format!("Starting scrcpy server (scid={:08x})...", self.scid));
 
         // 1. Push the jar to the device
         self.adb
@@ -93,7 +95,7 @@ impl ScrcpyClient {
             None
         } else {
             let l = TcpListener::bind(("127.0.0.1", DEFAULT_VIDEO_PORT)).await?;
-            debug!("Listening on 127.0.0.1:{}", DEFAULT_VIDEO_PORT);
+            logger::debug(TAG, &format!("Listening on 127.0.0.1:{}", DEFAULT_VIDEO_PORT));
             Some(l)
         };
 
@@ -111,7 +113,7 @@ impl ScrcpyClient {
 
         // 4. Spawn server process
         let server_args = self.build_server_args();
-        debug!("Server args: {}", server_args.join(" "));
+        logger::debug(TAG, &format!("Server args: {}", server_args.join(" ")));
 
         let adb_path = self
             .config
@@ -148,7 +150,7 @@ impl ScrcpyClient {
             .map_err(|_| Error::Adb("Timed out waiting for video socket".to_string()))??;
             let video = video_tok.into_std()?;
             video.set_nonblocking(false)?;
-            debug!("Accepted video socket");
+            logger::debug(TAG, "Accepted video socket");
             self.video_socket = Some(video);
 
             if self.config.audio {
@@ -160,7 +162,7 @@ impl ScrcpyClient {
                 .map_err(|_| Error::Adb("Timed out waiting for audio socket".to_string()))??;
                 let audio = audio_tok.into_std()?;
                 audio.set_nonblocking(false)?;
-                debug!("Accepted audio socket");
+                logger::debug(TAG, "Accepted audio socket");
                 self.audio_socket = Some(audio);
             }
 
@@ -173,7 +175,7 @@ impl ScrcpyClient {
                 .map_err(|_| Error::Adb("Timed out waiting for control socket".to_string()))??;
                 let ctrl = ctrl_tok.into_std()?;
                 ctrl.set_nonblocking(false)?;
-                debug!("Accepted control socket");
+                logger::debug(TAG, "Accepted control socket");
                 self.control_socket = Some(Arc::new(Mutex::new(ctrl)));
             }
         } else {
@@ -185,7 +187,7 @@ impl ScrcpyClient {
             // control socket not supported in forward mode yet
         }
 
-        info!("Scrcpy server connected");
+        logger::info(TAG, "Scrcpy server connected");
         Ok(())
     }
 
@@ -227,12 +229,12 @@ impl ScrcpyClient {
         // 2. first session-meta packet (12 bytes, no payload)
         let mut session_buf = [0u8; 12];
         socket.read_exact(&mut session_buf)?;
-        if !crate::protocol::is_session_header(&session_buf) {
+        if !super::protocol::is_session_header(&session_buf) {
             return Err(Error::Protocol(
                 "Expected session-meta packet after video codec id".to_string(),
             ));
         }
-        let session = crate::protocol::SessionMeta::parse(&session_buf)?;
+        let session = super::protocol::SessionMeta::parse(&session_buf)?;
         meta.width = session.width;
         meta.height = session.height;
         Ok(meta)
@@ -329,7 +331,7 @@ impl ScrcpyClient {
 
     /// Kill the server process and remove ADB tunnels.
     pub async fn cleanup(&mut self) -> Result<()> {
-        debug!("Cleaning up scrcpy client");
+        logger::debug(TAG, "Cleaning up scrcpy client");
 
         // Drop sockets first so the server sees EOF and exits naturally
         self.video_socket = None;
@@ -360,7 +362,7 @@ impl ScrcpyClient {
 impl Drop for ScrcpyClient {
     fn drop(&mut self) {
         if self.server_child.is_some() || self.video_socket.is_some() || self.audio_socket.is_some() || self.control_socket.is_some() {
-            warn!("ScrcpyClient dropped without cleanup(); leaking tunnels may occur");
+            logger::warn(TAG, "ScrcpyClient dropped without cleanup(); leaking tunnels may occur");
         }
     }
 }

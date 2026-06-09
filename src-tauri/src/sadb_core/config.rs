@@ -5,25 +5,25 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     /// Path to the scrcpy-server jar file
     pub server_jar_path: String,
-    
+
     /// Maximum video size (width or height)
     pub max_size: Option<u32>,
-    
+
     /// Video bitrate in bps
     pub video_bitrate: Option<u32>,
-    
+
     /// Enable audio stream
     pub audio: bool,
-    
+
     /// Enable control stream
     pub control: bool,
-    
+
     /// Server log level
     pub log_level: String,
-    
+
     /// Force ADB forward instead of reverse
     pub force_forward: bool,
-    
+
     /// Device serial (if multiple devices)
     pub serial: Option<String>,
 
