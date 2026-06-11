@@ -1,5 +1,7 @@
 use lyrix::models::{LyricsData, LineInfo};
-use lyrix::smtc_lyrics;
+use lyrix::smtc_lyrics::{self, Lyrix};
+use std::sync::Arc;
+
 #[derive(Clone, Debug, serde::Serialize)]
 pub(crate) struct LyricToken {
     pub text: String,
@@ -17,8 +19,30 @@ pub(crate) struct LyricLine {
 
 
 
+pub(crate) fn fetch_lyrics_parallel(
+    title: &str,
+    artist: &str,
+    album_title: &str,
+    album_artist: &str,
+    app_id: &str,
+    duration_ms: i64,
+    genre: &str,
+    gen_ref: std::sync::Arc<std::sync::atomic::AtomicU64>,
+    gen: u64,
+    lyrix: Arc<Lyrix>,
+) -> Option<Vec<LyricLine>> {
+    crate::logger::info("Lyrics", &format!(
+        "\nlyric-fetch: song='{}' artist='{}' album='{}' album_artist='{}' duration_ms={} genre='{}'",
+        title, artist, album_title, album_artist, duration_ms, genre
+    ));
+    crate::logger::info("Lyrics", &format!("rust-api: enabled, title='{}' artist='{}'", title, artist));
+    if let Some(data) = fetch_lyrics_by_rust_api(title, artist, album_title, album_artist, app_id, duration_ms, &gen_ref, gen, lyrix) {
+        return Some(lyrics_data_to_lyric_lines(&data));
+    }
+    crate::logger::warn("Lyrics", "rust-api: failed, Nothing to return");
+    None
+}
 
-/// 通过 lyricify-lyrics-provider 统一接口获取歌词（自动检测播放器，多源 fallback）
 fn fetch_lyrics_by_rust_api(
     title: &str,
     artist: &str,
@@ -28,6 +52,7 @@ fn fetch_lyrics_by_rust_api(
     duration_ms: i64,
     gen_ref: &std::sync::Arc<std::sync::atomic::AtomicU64>,
     gen: u64,
+    lyrix: Arc<Lyrix>,
 ) -> Option<LyricsData> {
    
 
@@ -50,33 +75,17 @@ fn fetch_lyrics_by_rust_api(
         crate::logger::info("Lyrics", &format!(
             "\nrust-api: title='{}' artist='{}' album artist='{}' duration_ms={}", title, artist, album_artist, duration_ms
         ));
-
-        let player = match app_id {
-            "cloudmusic.exe" => smtc_lyrics::MusicPlayer::Netease,
-            "qqmusic.exe" => smtc_lyrics::MusicPlayer::QQMusic,
-            "kugou" => smtc_lyrics::MusicPlayer::Kugou,
-            "\u{6c7d}\u{6c34}\u{97f3}\u{4e50}" => smtc_lyrics::MusicPlayer::SodaMusic,
-            _ => {
-                smtc_lyrics::MusicPlayer::SodaMusic
-            }
-        };
-        let session = lyrix::smtc_lyrics::Session {
-            applemusic_token: None,
-            spotify_cookie: None,
-        };
         if gen_ref.load(std::sync::atomic::Ordering::Relaxed) != gen {
             crate::logger::warn("Lyrics", &format!("rust-api: abort gen={} (stale)", gen));
             return None;
         }
-        crate::logger::info("Lyrics", &format!(
-            "rust-api: trying '{}'", player.display_name()
-        ));
+        let player = lyrix::smtc_lyrics::id2player(app_id).unwrap_or(smtc_lyrics::MusicPlayer::Netease);
         lyrix::logger::set_level("debug");
-        match smtc_lyrics::get_lyrics_with_player(&player, title, artist_opt, album_opt, album_artist_opt, duration_ms_u32, &session).await {
+        match lyrix.get_lyrics_with_player(&player, title, artist_opt, album_opt, album_artist_opt, duration_ms_u32).await {
             Ok(data) => {
                 let ddata = if let Some(meta) = &data.track_metadata {
                     match meta.is_trial {
-                        true => match smtc_lyrics::get_trial_part(data.clone()) {
+                        true => match lyrix.get_trial_part(data.clone()) {
                             Ok(l) => l,
                             Err(_e) => {
                                 crate::logger::info("Lyrics", "rust-api: failed to get trial part, return raw_lyrics");
@@ -197,28 +206,7 @@ fn lyrics_data_to_lyric_lines(data: &LyricsData) -> Vec<LyricLine> {
 
 
 
-pub(crate) fn fetch_lyrics_parallel(
-    title: &str,
-    artist: &str,
-    album_title: &str,
-    album_artist: &str,
-    app_id: &str,
-    duration_ms: i64,
-    genre: &str,
-    gen_ref: std::sync::Arc<std::sync::atomic::AtomicU64>,
-    gen: u64,
-) -> Option<Vec<LyricLine>> {
-    crate::logger::info("Lyrics", &format!(
-        "\nlyric-fetch: song='{}' artist='{}' album='{}' album_artist='{}' duration_ms={} genre='{}'",
-        title, artist, album_title, album_artist, duration_ms, genre
-    ));
-    crate::logger::info("Lyrics", &format!("rust-api: enabled, title='{}' artist='{}'", title, artist));
-    if let Some(data) = fetch_lyrics_by_rust_api(title, artist, album_title, album_artist, app_id, duration_ms, &gen_ref, gen) {
-        return Some(lyrics_data_to_lyric_lines(&data));
-    }
-    crate::logger::warn("Lyrics", "rust-api: failed, Nothing to return");
-    None
-}
+
 
 
 /// 获取当前播放位置周围的歌词行（前2行、当前行、后2行）

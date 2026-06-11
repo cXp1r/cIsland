@@ -24,6 +24,7 @@ use std::time::{Duration, Instant};
 use std::os::windows::process::CommandExt;
 
 
+use lyrix::smtc_lyrics::Lyrix;
 use tauri::{Emitter, Manager};
 use std::path::PathBuf;
 
@@ -435,7 +436,7 @@ pub fn run() {
                 smtc_whitelist_enabled.load(Ordering::Relaxed),
                 smtc_app_whitelist.lock().unwrap().clone(),
             );
-
+            let lyrix = Arc::new(Lyrix::new(None));
             app.manage(IslandState {
                 link_client: link_client.clone(),
                 offset_x: offset_x.clone(), offset_y: offset_y.clone(),
@@ -506,6 +507,7 @@ pub fn run() {
                 aria2c_rpc_client,
                 aria2c_rpc_secret,
                 aria2c_rpc_port,
+                lyrix: lyrix.clone(),
             });
 
             // --- 系统托盘 ---
@@ -1060,7 +1062,7 @@ pub fn run() {
             let lyric_offsets_media = lyric_offsets_by_player.clone();
             let active_player_media = active_player_app_id.clone();
             let app_handle_media = app.handle().clone();
-
+            let lyrix_m = lyrix.clone();
             // 歌词异步获取：用 Arc<Mutex> 共享结果 + 代数计数器防止竞态
             let lyrics_result: Arc<Mutex<Option<(u64, Vec<lyrics::LyricLine>, bool)>>> = Arc::new(Mutex::new(None));
             // (generation, lyrics, not_found)
@@ -1316,6 +1318,7 @@ pub fn run() {
                                 "lyric fetch start gen={} title='{}' artist='{}' genre='{}' strategy=genre_ncmid",
                                 gen, title, artist, genre
                             ));
+                            let lyrix_l = lyrix_m.clone();
                             thread::Builder::new()
                                 .name("lyric-fetch".into())
                                 .stack_size(512 * 1024)
@@ -1332,6 +1335,7 @@ pub fn run() {
                                     &genre,
                                     gen_ref.clone(),
                                     gen,
+                                    lyrix_l,
                                 );
                                 // 只有当前代才写入结果；已有 found 结果时不允许被 not_found 覆盖
                                 if gen_ref.load(Ordering::Relaxed) == gen {
@@ -1573,6 +1577,7 @@ pub struct IslandState {
     pub aria2c_rpc_port: Arc<AtomicU16>,
     //上面的是负责持久化到设置的变量,下面这个是负责下载任务的,一旦服务器启动,没有变更的义务
     pub aria2c_rpc: Arc<Mutex<Option<Aria2cRpc>>>,
+    pub lyrix: Arc<Lyrix>,
 }
 
 unsafe impl Send for IslandState {}

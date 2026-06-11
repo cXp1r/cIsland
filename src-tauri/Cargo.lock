@@ -512,15 +512,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cbc"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26b52a9543ae338f279b96b0b9fed9c8093744685043739079ce85cd58f289a6"
-dependencies = [
- "cipher",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2457,23 +2448,18 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
 name = "lyrix"
-version = "26.7.1"
+version = "26.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d426347bb681e998a497dde9b07607bd100825729fd127db89a43aad1ce73336"
+checksum = "4d3bb958d412292492c66b27175b9542682578fbc2faaf915a3144f3ebffd79f"
 dependencies = [
  "aes",
  "async-trait",
  "base64 0.22.1",
- "cbc",
- "dirs",
  "ecb",
  "flate2",
  "hex",
  "md5",
  "memchr",
- "num-bigint",
- "once_cell",
- "rand 0.8.5",
  "reqwest 0.13.3",
  "serde",
  "serde_json",
@@ -2689,29 +2675,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "num-bigint"
-version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
-dependencies = [
- "num-integer",
- "num-traits",
-]
-
-[[package]]
 name = "num-conv"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf97ec579c3c42f953ef76dbf8d55ac91fb219dde70e49aa4a6b7d74e9919050"
-
-[[package]]
-name = "num-integer"
-version = "0.1.46"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
-dependencies = [
- "num-traits",
-]
 
 [[package]]
 name = "num-traits"
