@@ -1,4 +1,4 @@
-use lyrix::models::{LyricsData, LineInfo};
+use lyrix::models::{LyricsData, LineInfo, TextInfo};
 use lyrix::smtc_lyrics::{self, Lyrix};
 use std::sync::Arc;
 
@@ -98,91 +98,107 @@ pub(crate) fn fetch_lyrics_from_lyrix(
         None
     });
     if let Some(data) = data {
-        return Some(lyrics_data_to_lyric_lines(&data));
+        return Some(lyrics_data_to_lyric_lines(data));
     }
     crate::logger::warn("Lyrics", "rust-api: failed, Nothing to return");
     None
 }
 
-fn line_end_ms(data: &LyricsData, sorted_indices: &[usize], sorted_pos: usize, start_ms: i64) -> i64 {
-    let line = &data.lines[sorted_indices[sorted_pos]];
-    if line.duration > 0 {
-        return start_ms + i64::from(line.duration);
-    }
-    if sorted_pos + 1 < sorted_indices.len() {
-        return i64::from(data.lines[sorted_indices[sorted_pos + 1]].start_time);
-    }
-    start_ms + 4000
-}
 
-fn tokens_from_line(line: &lyrix::models::LineInfo, line_start_ms: i64, line_end_ms: i64) -> Vec<LyricToken> {
-    if !line.syllables.is_empty() {
-        let mut tokens = Vec::with_capacity(line.syllables.len());
-        for (i, s) in line.syllables.iter().enumerate() {
-            if s.text.is_empty() {
-                continue;
-            }
-            let start = line_start_ms + i64::from(s.start_time);
-            let mut end = if s.duration > 0 {
-                start + i64::from(s.duration)
-            } else if i + 1 < line.syllables.len() {
-                line_start_ms + i64::from(line.syllables[i + 1].start_time)
+fn tokens_from_syllables(
+    syllables: Vec<TextInfo>,
+    line_start_ms: i64,
+    line_end_ms: i64,
+) -> Vec<LyricToken> {
+    if syllables.is_empty() {
+        return Vec::new();
+    }
+
+    let next_starts: Vec<Option<i64>> = syllables
+        .iter()
+        .enumerate()
+        .map(|(i, _s)| {
+            if i + 1 < syllables.len() {
+                Some(line_start_ms + i64::from(syllables[i + 1].start_time))
             } else {
-                line_end_ms
-            };
-            if end < start {
-                end = start;
+                None
             }
-            if end > line_end_ms {
-                end = line_end_ms;
-            }
-            tokens.push(LyricToken {
-                text: s.text.clone(),
-                start_ms: start,
-                end_ms: end,
-            });
-        }
-        if !tokens.is_empty() {
-            return tokens;
-        }
-    }
+        })
+        .collect();
 
-    // For LRC lyrics (no syllables), return empty tokens
-    // to prevent character-by-character highlighting
+    let mut tokens = Vec::with_capacity(syllables.len());
+    for (i, s) in syllables.into_iter().enumerate() {
+        if s.text.is_empty() {
+            continue;
+        }
+        let start = line_start_ms + i64::from(s.start_time);
+        let mut end = if s.duration > 0 {
+            start + i64::from(s.duration)
+        } else if let Some(next_start) = next_starts[i] {
+            next_start
+        } else {
+            line_end_ms
+        };
+        if end < start {
+            end = start;
+        }
+        if end > line_end_ms {
+            end = line_end_ms;
+        }
+        tokens.push(LyricToken {
+            text: s.text,
+            start_ms: start,
+            end_ms: end,
+        });
+    }
+    if !tokens.is_empty() {
+        return tokens;
+    }
     Vec::new()
 }
 
-fn lyrics_data_to_lyric_lines(data: &LyricsData) -> Vec<LyricLine> {
-    let mut indices: Vec<usize> = data
+fn lyrics_data_to_lyric_lines(data: LyricsData) -> Vec<LyricLine> {
+    let mut items: Vec<LineInfo> = data
         .lines
-        .iter()
-        .enumerate()
-        .filter_map(|(i, l)| {
-            let effective_text = if l.text.trim().is_empty() {
-                l.syllables.iter().map(|s| s.text.as_str()).collect::<String>()
-            } else {
-                l.text.clone()
-            };
-            if effective_text.trim().is_empty() { None } else { Some(i) }
+        .into_iter()
+        .filter(|l| {
+            !l.text.trim().is_empty() || l.syllables.iter().any(|s| !s.text.trim().is_empty())
         })
         .collect();
-    indices.sort_by_key(|&i| data.lines[i].start_time);
+    items.sort_by_key(|l| l.start_time);
 
-    let mut out = Vec::with_capacity(indices.len());
-    for (pos, idx) in indices.iter().enumerate() {
-        let line: &LineInfo = &data.lines[*idx];
-        let start_ms = i64::from(line.start_time);
-        let end_ms = line_end_ms(data, &indices, pos, start_ms);
-        let text = if line.text.trim().is_empty() {
-            line.syllables.iter().map(|s| s.text.as_str()).collect::<String>()
+    let n = items.len();
+
+    let end_times: Vec<i64> = items
+        .iter()
+        .enumerate()
+        .map(|(pos, line)| {
+            let start = i64::from(line.start_time);
+            if line.duration > 0 {
+                start + i64::from(line.duration)
+            } else if pos + 1 < n {
+                i64::from(items[pos + 1].start_time)
+            } else {
+                start + 4000
+            }
+        })
+        .collect();
+
+    let mut out = Vec::with_capacity(n);
+    for (pos, line) in items.into_iter().enumerate() {
+        let lyrix::models::LineInfo { start_time, text, syllables, .. } = line;
+        let start_ms = i64::from(start_time);
+        let end_ms = end_times[pos];
+        let display_text = if text.trim().is_empty() {
+            syllables.iter().map(|s| s.text.as_str()).collect::<String>()
         } else {
-            line.text.clone()
+            text
         };
         out.push(LyricLine {
             time_ms: start_ms,
             end_time_ms: end_ms,
-            text,
-            tokens: tokens_from_line(line, start_ms, end_ms),
+            text: display_text,
+            tokens: tokens_from_syllables(syllables, start_ms, end_ms), // syllables moved
         });
     }
     out
