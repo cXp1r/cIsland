@@ -1325,7 +1325,7 @@ pub fn run() {
                                 .spawn(move || {
                                 // 提前检查代数
                                 if gen_ref.load(Ordering::Relaxed) != gen { return; }
-                                let fetched_lyrics = lyrics::fetch_lyrics_parallel(
+                                let fetched_lyrics = lyrics::fetch_lyrics_from_lyrix(
                                     &title,
                                     &artist,
                                     &album_title,

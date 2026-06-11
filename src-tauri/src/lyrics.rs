@@ -18,8 +18,7 @@ pub(crate) struct LyricLine {
 }
 
 
-
-pub(crate) fn fetch_lyrics_parallel(
+pub(crate) fn fetch_lyrics_from_lyrix(
     title: &str,
     artist: &str,
     album_title: &str,
@@ -36,26 +35,6 @@ pub(crate) fn fetch_lyrics_parallel(
         title, artist, album_title, album_artist, duration_ms, genre
     ));
     crate::logger::info("Lyrics", &format!("rust-api: enabled, title='{}' artist='{}'", title, artist));
-    if let Some(data) = fetch_lyrics_by_rust_api(title, artist, album_title, album_artist, app_id, duration_ms, &gen_ref, gen, lyrix) {
-        return Some(lyrics_data_to_lyric_lines(&data));
-    }
-    crate::logger::warn("Lyrics", "rust-api: failed, Nothing to return");
-    None
-}
-
-fn fetch_lyrics_by_rust_api(
-    title: &str,
-    artist: &str,
-    album_title: &str,
-    album_artist: &str,
-    app_id: &str,
-    duration_ms: i64,
-    gen_ref: &std::sync::Arc<std::sync::atomic::AtomicU64>,
-    gen: u64,
-    lyrix: Arc<Lyrix>,
-) -> Option<LyricsData> {
-   
-
     let rt = match tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -71,7 +50,7 @@ fn fetch_lyrics_by_rust_api(
     let album_opt: Option<&str> = if album_title.trim().is_empty() { None } else { Some(album_title) };
     let album_artist_opt: Option<&str> = if album_artist.trim().is_empty() { None } else { Some(album_artist) };
     let duration_ms_u32: u32 = duration_ms.clamp(0, i64::from(u32::MAX)) as u32;
-    rt.block_on(async {
+    let data = rt.block_on(async {
         crate::logger::info("Lyrics", &format!(
             "\nrust-api: title='{}' artist='{}' album artist='{}' duration_ms={}", title, artist, album_artist, duration_ms
         ));
@@ -117,7 +96,12 @@ fn fetch_lyrics_by_rust_api(
 
         crate::logger::warn("Lyrics", "rust-api: all sources exhausted");
         None
-    })
+    });
+    if let Some(data) = data {
+        return Some(lyrics_data_to_lyric_lines(&data));
+    }
+    crate::logger::warn("Lyrics", "rust-api: failed, Nothing to return");
+    None
 }
 
 fn line_end_ms(data: &LyricsData, sorted_indices: &[usize], sorted_pos: usize, start_ms: i64) -> i64 {
