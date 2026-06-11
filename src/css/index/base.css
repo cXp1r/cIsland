@@ -3458,18 +3458,20 @@ body.minimized #collapsed-indicator { display: block; }
 
 }
 
-
-.cscrollbar::-webkit-scrollbar {
+.cscrollbar::-webkit-scrollbar,
+.cscrollbar *::-webkit-scrollbar {
     width: 5px;
 }
 
 
-.cscrollbar::-webkit-scrollbar-track {
+.cscrollbar::-webkit-scrollbar-track,
+.cscrollbar *::-webkit-scrollbar-track {
     background: transparent;
 }
 
 
-.cscrollbar::-webkit-scrollbar-button {
+.cscrollbar::-webkit-scrollbar-button, 
+.cscrollbar *::-webkit-scrollbar-button {
     width: 0 !important;
     height: 0 !important;
     display: none !important;
@@ -3481,12 +3483,18 @@ body.minimized #collapsed-indicator { display: block; }
 }
 
 
-.cscrollbar::-webkit-scrollbar-thumb {
+.cscrollbar::-webkit-scrollbar-thumb, 
+.cscrollbar *::-webkit-scrollbar-thumb {
     background: rgba(255,255,255,0.15);
     border-radius: 3px;
 }
 
 
-.cscrollbar::-webkit-scrollbar-thumb:hover {
+.cscrollbar::-webkit-scrollbar-thumb:hover,
+.cscrollbar *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.25);
+}
+.cscrollbar::-webkit-scrollbar-thumb:hover,
+.cscrollbar *::-webkit-scrollbar-thumb:hover {
     background: rgba(255,255,255,0.25);
 }
