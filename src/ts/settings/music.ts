@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { $, showStatus } from "./shared";
+import { showStatus } from "./shared";
+import { $ } from "../shared";
 import type { MusicSettingsConfig } from "./types";
 
 const els = {

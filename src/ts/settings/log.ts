@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getLogFilterTags, initLogFilter, setLogFilterTags } from "./log-filter";
-import { $, showStatus } from "./shared";
+import { showStatus } from "./shared";
+import { $ } from "../shared";
 import type { LogSettingsConfig } from "./types";
 
 const els = {

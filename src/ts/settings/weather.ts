@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { loge } from "../index/logger";
-import { $, showStatus } from "./shared";
+import { showStatus } from "./shared";
+import { $ } from "../shared";
 import type { CityResult } from "./types";
 
 const TAG = "Settings/Weather";

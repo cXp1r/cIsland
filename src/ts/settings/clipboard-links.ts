@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getLinkHandlers, initLinkHandlers } from "./link-handler";
-import { $, showStatus } from "./shared";
+import { showStatus } from "./shared";
+import { $ } from "../shared";
 import type { ClipboardLinksSettingsConfig } from "./types";
 
 const els = {

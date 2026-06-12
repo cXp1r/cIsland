@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { configDir } from "./main";
-import { $ } from "./shared";
+import { $ } from "../shared";
 import type { UpdateInfo } from "./types";
 
 const openCfgBtn = $<HTMLButtonElement>("open-cfg-btn");
