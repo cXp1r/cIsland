@@ -3197,10 +3197,7 @@ body.minimized #collapsed-indicator { display: block; }
 }
 
 
-
-#sadb-btn-start,
-
-#sadb-btn-stop {
+.sadb-btn {
 
     padding: 2px 10px;
 
@@ -3224,9 +3221,7 @@ body.minimized #collapsed-indicator { display: block; }
 
 
 
-#sadb-btn-start:hover:not(:disabled),
-
-#sadb-btn-stop:hover:not(:disabled) {
+.sadb-btn:hover:not(:disabled) {
 
     background: rgba(255,255,255,0.14);
 
@@ -3234,9 +3229,7 @@ body.minimized #collapsed-indicator { display: block; }
 
 
 
-#sadb-btn-start:disabled,
-
-#sadb-btn-stop:disabled {
+.sadb-btn:disabled {
 
     opacity: 0.45;
 
