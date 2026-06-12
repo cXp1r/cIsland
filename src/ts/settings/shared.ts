@@ -1,15 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { loge } from "../logger";
 
 export const INFLINK_URL = "https://docs.pyisland.com/guide/qa/ncm-music.html";
-
-export const $ = <T extends HTMLElement>(id: string): T => {
-  let e = document.getElementById(id);
-  if (!e) {
-    loge("$", id)
-  }
-  return e as T
-};
 
 const statusEl = document.getElementById("status") as HTMLDivElement;
 let statusTimer: number | null = null;

@@ -1,13 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Channel } from "@tauri-apps/api/core";
-import {
-  capsule,
-  sadbArea,
-  sadbCanvas, sadbBtnStart, sadbBtnStop, sadbStatus,
-  sadbDeviceName, sadbResolution, sadbFps,
-} from "../dom";
+import { capsule } from "../dom";
 import { loge, logd, logi, logw } from "../logger";
 import { animateCapsule } from "./rAF";
+import { listen } from "@tauri-apps/api/event";
+import { $ } from "../../shared";
+
+const sadbArea = $<HTMLDivElement>("sadb-area");
+const sadbCanvas = $<HTMLCanvasElement>("sadb-canvas");
+const sadbBtnStart = $<HTMLButtonElement>("sadb-btn-start");
+const sadbBtnStop = $<HTMLButtonElement>("sadb-btn-stop");
+const sadbBtnScan = $<HTMLButtonElement>("sadb-btn-scan");
+const sadbStatus = $<HTMLSpanElement>("sadb-status");
+const sadbDeviceName = $<HTMLSpanElement>("sadb-device-name");
+const sadbResolution = $<HTMLSpanElement>("sadb-resolution");
+const sadbFps = $<HTMLSpanElement>("sadb-fps");
+const sadbDeviceWrapper = $<HTMLDivElement>("sadb-devices-wrapper");
 
 const TAG: string = "SADB";
 
@@ -34,6 +42,12 @@ type AudioDecoder = {
   decode(chunk: unknown): void;
   close(): void;
 };
+
+type AdbDevice = {
+    name: string,
+    ip: string,
+    port: number,
+}
 
 declare const AudioDecoder: {
   new(init: { output: (audioData: SadbAudioData) => void; error: (error: Error) => void }): AudioDecoder;
@@ -159,8 +173,8 @@ function cssPx(value: string) {
 
 function getSadbChromeSize() {
   const areaStyle = getComputedStyle(sadbArea);
-  const statusBar = document.getElementById("sadb-status-bar") as HTMLDivElement | null;
-  const controls = document.getElementById("sadb-controls") as HTMLDivElement | null;
+  const statusBar = $<HTMLDivElement>("sadb-status-bar");
+  const controls = $<HTMLDivElement>("sadb-controls");
   const gap = cssPx(areaStyle.rowGap || areaStyle.gap);
   const paddingX = cssPx(areaStyle.paddingLeft) + cssPx(areaStyle.paddingRight);
   const paddingY = cssPx(areaStyle.paddingTop) + cssPx(areaStyle.paddingBottom);
@@ -216,8 +230,9 @@ async function autoFitWindow() {
   invoke("sync_window_size", { width: capW, height: capH + bodyPad + 5, reposition: true }).catch(() => {});
 }
 
-function setStatus(s: string) {
+function setStatus(s: string, isError = false) {
   sadbStatus.textContent = s;
+  sadbStatus.style.color = isError ? "#ff6f7f" : "#39d98a";
 }
 
 function tickFps() {
@@ -407,8 +422,6 @@ function handleEvent(evt: PacketEvent) {
   }
 }
 
-// ── Start / Stop ──
-
 async function startStream() {
   // 杀掉后端已有 session（后端保证干净状态）
   try { await invoke("sadb_stop_mirroring"); } catch { /* ignore */ }
@@ -472,7 +485,7 @@ async function startStream() {
       sadbBtnStop.disabled = true;
     }
   } else {
-    setStatus("未发现USB设备，请在设置中配置WiFi IP");
+    setStatus("未发现USB设备，请先扫描或连接手机");
     sadbBtnStart.disabled = false;
     sadbBtnStop.disabled = true;
   }
@@ -676,17 +689,55 @@ imeInput.addEventListener("paste", (e) => {
 
 sadbBtnStart.addEventListener("click", startStream);
 sadbBtnStop.addEventListener("click", () => { setStatus("停止中..."); stopStream(); });
-
-// ── Initial blank canvas ──
+sadbBtnScan.addEventListener("click", () => {
+  setStatus("扫描中...");
+  animateCapsule(400, 640);
+  void invoke('scan_adb_devices');
+})
+// ── Initial placeholder canvas ──
 
 sadbCanvas.width = 320;
 sadbCanvas.height = 480;
 ctx.fillStyle = "#0a0a0a";
 ctx.fillRect(0, 0, sadbCanvas.width, sadbCanvas.height);
-ctx.fillStyle = "#555";
-ctx.font = "12px system-ui";
+
+// 手机轮廓
+const phoneX = 90, phoneY = 80, phoneW = 140, phoneH = 240, phoneR = 18;
+ctx.strokeStyle = "rgba(255,255,255,0.12)";
+ctx.lineWidth = 1.5;
+ctx.beginPath();
+ctx.moveTo(phoneX + phoneR, phoneY);
+ctx.lineTo(phoneX + phoneW - phoneR, phoneY);
+ctx.arcTo(phoneX + phoneW, phoneY, phoneX + phoneW, phoneY + phoneR, phoneR);
+ctx.lineTo(phoneX + phoneW, phoneY + phoneH - phoneR);
+ctx.arcTo(phoneX + phoneW, phoneY + phoneH, phoneX + phoneW - phoneR, phoneY + phoneH, phoneR);
+ctx.lineTo(phoneX + phoneR, phoneY + phoneH);
+ctx.arcTo(phoneX, phoneY + phoneH, phoneX, phoneY + phoneH - phoneR, phoneR);
+ctx.lineTo(phoneX, phoneY + phoneR);
+ctx.arcTo(phoneX, phoneY, phoneX + phoneR, phoneY, phoneR);
+ctx.closePath();
+ctx.stroke();
+
+// 底部横条
+const barW = 36, barY = phoneY + phoneH - 16;
+ctx.strokeStyle = "rgba(255,255,255,0.08)";
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.moveTo(phoneX + (phoneW - barW) / 2, barY);
+ctx.lineTo(phoneX + (phoneW + barW) / 2, barY);
+ctx.stroke();
+
+// 标题
+ctx.fillStyle = "rgba(255,255,255,0.5)";
+ctx.font = "600 13px system-ui";
 ctx.textAlign = "center";
-ctx.fillText("点击「开始」连接Android设备", sadbCanvas.width / 2, sadbCanvas.height / 2);
+ctx.textBaseline = "middle";
+ctx.fillText("未连接设备", sadbCanvas.width / 2, phoneY + phoneH + 36);
+
+// 副标题
+ctx.fillStyle = "rgba(255,255,255,0.28)";
+ctx.font = "11px system-ui";
+ctx.fillText("点击「开始」或「扫描」连接手机", sadbCanvas.width / 2, phoneY + phoneH + 58);
 
 
 let resizeTimer: number | null = null;
@@ -699,7 +750,7 @@ export function initSadb() {
   let resizeStartX = 0;
   let resizeStartScale = 1.0;
 
-  const resizeHandle = document.getElementById("sadb-resize-handle") as HTMLDivElement;
+  const resizeHandle = $<HTMLDivElement>("sadb-resize-handle");
   let syncPending = false;
 
   resizeHandle.addEventListener("mousedown", (e) => {
@@ -763,3 +814,34 @@ export function isSadbStreaming(): boolean {
   return streaming;
 }
 
+listen<AdbDevice>("mdns-found", (e)=>{
+  let d = e.payload;
+  
+  const item = document.createElement("div");
+    item.className = "item";
+
+    const title = document.createElement("span");
+    title.className = "item-title";
+    title.textContent = `${d.name}  ${d.ip}:${d.port}`;
+
+
+
+    const btn = document.createElement("button");
+    btn.className = "sadb-btn";
+    btn.type = "button";
+    btn.dataset.name = `${d.ip}:${d.port}`;
+    btn.textContent = "连接";
+    btn.addEventListener("click", () => console.log(btn.dataset.name));
+
+    item.appendChild(title);
+    item.appendChild(btn);
+    sadbDeviceWrapper.appendChild(item);
+})
+
+listen("mdns-done", () => {
+  if (sadbDeviceWrapper.children.length === 0) {
+    setStatus("无可连接设备", true);
+  } else {
+    setStatus("扫描完成");
+  }
+})

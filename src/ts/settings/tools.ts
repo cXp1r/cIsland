@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { $, showStatus } from "./shared";
+import { showStatus } from "./shared";
+import { $ } from "../shared";
 import { logi } from "../logger";
 import type { CheckResult, InstallResult, TestResult, ToolsSettingsResponse } from "./types";
 import { configDir } from "./main";
