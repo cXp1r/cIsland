@@ -118,7 +118,7 @@ export function initrAF() {
           } else if (capsule.classList.contains("agent-expanded")) {
             [toW, toH] = [640, 620];
           } else if (capsule.classList.contains("sadb-idle")) {
-            [toW, toH] = [380, 420];
+            [toW, toH] = [400, 440];
           } else if (capsule.classList.contains("email-expanded")) {
             const style = getComputedStyle(document.documentElement);
             [toW, toH] = [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h')),];
