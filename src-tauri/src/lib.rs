@@ -447,7 +447,6 @@ pub fn run() {
                 capsule_tw, capsule_th,
                 sadb_session: tokio::sync::Mutex::new(None),
                 sadb_ip: Arc::new(Mutex::new(settings.sadb_ip.clone())),
-                sadb_port: Arc::new(AtomicU16::new(settings.sadb_port)),
                 is_notifying: is_notifying.clone(),
                 is_expanded: is_expanded.clone(),
                 is_dragging: is_dragging.clone(),
@@ -1561,7 +1560,6 @@ pub struct IslandState {
     // ADB / 屏幕镜像 相关
     pub(crate) sadb_session: tokio::sync::Mutex<Option<sadb::SessionHandle>>,
     pub sadb_ip: Arc<Mutex<String>>,
-    pub sadb_port: Arc<AtomicU16>,
     pub adb_path: Arc<Mutex<String>>,
     pub sadb_expanded: Arc<AtomicBool>,
     /// 待机面板展开中（已点击展开但尚未开始镜像，或镜像结束后回退）

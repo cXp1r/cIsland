@@ -114,8 +114,6 @@ pub(crate) struct SettingsData {
     pub log_filter_invert: bool,
     #[serde(default)]
     pub sadb_ip: String,
-    #[serde(default = "default_sadb_port")]
-    pub sadb_port: u16,
     #[serde(default)]
     pub email_username: String,
     #[serde(default)]
@@ -158,10 +156,6 @@ fn default_email_poll_interval_secs() -> u64 {
 
 fn default_email_port() -> u16 {
     993
-}
-
-fn default_sadb_port() -> u16 {
-    5555
 }
 
 fn default_show_preview_toggle() -> bool {
@@ -275,7 +269,6 @@ fn default_settings() -> SettingsData {
         log_filter_tags: default_log_filter_tags(),
         log_filter_invert: default_log_filter_invert(),
         sadb_ip: String::new(),
-        sadb_port: default_sadb_port(),
         adb_path: String::new(),
         email_username: String::new(),
         email_auth: String::new(),
@@ -349,7 +342,6 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         log_filter_tags: crate::logger::get_filter_tags(),
         log_filter_invert: crate::logger::get_filter_invert(),
         sadb_ip: state.sadb_ip.lock().unwrap().clone(),
-        sadb_port: state.sadb_port.load(Ordering::Relaxed),
         adb_path: state.adb_path.lock().unwrap().clone(),
         email_username: ec_username,
         email_auth: ec_auth,
@@ -409,7 +401,6 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
         "log_filter_tags": crate::logger::get_filter_tags(),
         "log_filter_invert": crate::logger::get_filter_invert(),
         "sadb_ip": state.sadb_ip.lock().unwrap().clone(),
-        "sadb_port": state.sadb_port.load(Ordering::Relaxed),
         "email_poll_interval_secs": state.email_poll_interval_secs.load(Ordering::Relaxed),
         "email_username": email_username,
         "email_auth": email_auth,
@@ -752,10 +743,6 @@ pub fn save_settings(
         settings_data.sadb_ip = ip.clone();
         *state.sadb_ip.lock().unwrap() = ip;
     }
-    if let Some(port) = sadb_port {
-        settings_data.sadb_port = port;
-        state.sadb_port.store(port, Ordering::Relaxed);
-    }
     let _ = save_settings_to_file(&settings_data);
 }
 
@@ -807,10 +794,6 @@ pub fn save_tools_settings(
     if let Some(ip) = sadb_ip {
         settings_data.sadb_ip = ip.clone();
         *state.sadb_ip.lock().unwrap() = ip;
-    }
-    if let Some(port) = sadb_port {
-        settings_data.sadb_port = port;
-        state.sadb_port.store(port, Ordering::Relaxed);
     }
     let mut aria2c_process_guard = state.aria2c_process.lock().unwrap();
     if aria2c_process_guard.is_none() && !settings_data.aria2c_path.trim().is_empty() {

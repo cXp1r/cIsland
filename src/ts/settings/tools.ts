@@ -61,13 +61,12 @@ export const moduleUI = {
   } satisfies ModuleUI,
 } as const;
 
-export const aria2cPath = moduleUI.aria2c.path;
-export const aria2cThread = moduleUI.aria2c.thread;
-export const aria2cRpcPort = $<HTMLInputElement>("aria2c-rpc-port");
-export const aria2cRpcSecret = $<HTMLInputElement>("aria2c-rpc-secret");
-export const adbPath = moduleUI.adb.path;
-export const sadbIpInput = $<HTMLInputElement>("sadb-ip");
-export const sadbPortInput = $<HTMLInputElement>("sadb-port");
+const aria2cPath = moduleUI.aria2c.path;
+const aria2cThread = moduleUI.aria2c.thread;
+const aria2cRpcPort = $<HTMLInputElement>("aria2c-rpc-port");
+const aria2cRpcSecret = $<HTMLInputElement>("aria2c-rpc-secret");
+const adbPath = moduleUI.adb.path;
+const sadbIpInput = $<HTMLInputElement>("sadb-ip");
 
 const pageTools = $<HTMLElement>("page-tools");
 const saveBtn = $<HTMLButtonElement>("save-btn");
@@ -257,7 +256,8 @@ function bindToolsModules(): void {
 function bindAdbActions(): void {
   adbConnBtn.addEventListener("click", async () => {
     const ip = sadbIpInput.value.trim();
-    const port = clampPort(sadbPortInput.value, 5555);
+    //TODO 搭配mDNS使用
+    let port = 55555;
     const serial = `${ip}:${port}`;
     const originalText = adbConnBtn.textContent || "连接";
 
@@ -389,7 +389,6 @@ export function loadTools(r: ToolsSettingsResponse): void {
 export function getToolsPayload() {
   return {
     sadbIp: sadbIpInput.value.trim(),
-    sadbPort: clampPort(sadbPortInput.value, 5555),
     adbPath: adbPath.value,
     aria2cPath: aria2cPath.value,
     aria2cThread: clampThread(aria2cThread.value),
