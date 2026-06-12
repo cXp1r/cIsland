@@ -288,7 +288,7 @@ pub fn run() {
             sadb::sadb_start_mirroring, sadb::sadb_stop_mirroring,
             sadb::sadb_send_touch_event, sadb::sadb_send_scroll_event,
             sadb::sadb_send_keycode, sadb::sadb_inject_text,
-            sadb::sadb_set_clipboard,
+            sadb::sadb_set_clipboard, sadb::scan_adb_devices,
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
             get_config_dir, get_user_dir, get_exe_dir,
             tools::tools_downloader, tools::find_path_by_where, tools::aria2c_rpc_download, tools::aria2c_rpc_remove, //两个通用函数

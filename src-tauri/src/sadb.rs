@@ -1,13 +1,10 @@
-//! ADB screen mirroring module.
-//!
-//! Provides Tauri commands for Android screen mirroring via scrcpy protocol,
-//! reusing the `sadb-core` library.
-
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
+use mdns_sd::{ServiceDaemon, ServiceEvent};
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
 use crate::sadb_core::control::{
@@ -19,8 +16,7 @@ use crate::sadb_core::protocol::VideoCodec;
 use crate::sadb_core::{Config, DeviceMessage, ScrcpyClient};
 use serde::Serialize;
 use tauri::ipc::Channel;
-use tauri::{AppHandle, Manager, State};
-
+use tauri::{AppHandle, Manager, Emitter, State};
 use crate::logger;
 use crate::IslandState;
 
@@ -51,7 +47,14 @@ pub(crate) enum PacketEvent {
     Clipboard { text: String },
 }
 
-/// Per-session handle kept in app state.
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AdbDevice {
+    pub name: String,
+    pub ip: String,
+    pub port: u16,
+}
+
 pub(crate) struct SessionHandle {
     pub stop: Arc<AtomicBool>,
     pub join_video: Option<std::thread::JoinHandle<()>>,
@@ -623,4 +626,63 @@ pub(crate) async fn sadb_stop_mirroring(state: State<'_, IslandState>) -> Result
         logger::debug(TAG, "stop_mirroring called but no active session");
     }
     Ok(())
+}
+
+
+
+#[tauri::command]
+pub async fn scan_adb_devices(app: AppHandle) {
+    tokio::spawn(async move {
+        let Ok(mdns) = ServiceDaemon::new() else { return };
+        let Ok(receiver) = mdns.browse("_adb-tls-connect._tcp.local.") else { return };
+
+        let max_timeout = Duration::from_secs(5);
+        let idle_timeout = Duration::from_secs(2);
+
+        let start = Instant::now();
+        let mut last_found = Instant::now();
+
+        loop {
+            // 两个超时条件
+            if start.elapsed() >= max_timeout {
+                break;
+            }
+            if last_found.elapsed() >= idle_timeout {
+                break;
+            }
+
+            match receiver.try_recv() {
+                Ok(ServiceEvent::ServiceResolved(info)) => {
+                    let ip = info
+                        .get_addresses()
+                        .iter()
+                        .find(|a| a.is_ipv4())  // 我自己测试ipv6有bug,以后会提供设置参数判断选取v6还是v4
+                        .map(|a| a.to_string())
+                        .unwrap_or_default();
+
+                    let name = info
+                        .get_properties()
+                        .get("name")
+                        .map(|p| p.val_str().to_string())
+                        .unwrap_or_else(|| info.get_hostname().to_string());
+                        
+                    let device = AdbDevice {
+                        name,
+                        ip,
+                        port: info.get_port(),
+                    };
+
+                    let _ = app.emit("mdns-found", &device);
+                    last_found = Instant::now();
+                }
+                Ok(_) => {}
+                Err(_) => {
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+            }
+        }
+
+        let _ = mdns.stop_browse("_adb-tls-connect._tcp.local.");
+        let _ = app.emit("mdns-done", ());
+    });
 }
