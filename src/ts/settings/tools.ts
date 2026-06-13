@@ -404,6 +404,7 @@ function readCurrent(): ToolsSettingsResponse {
     aria2c_thread: clampThread(aria2cThread.value),
     aria2c_rpc_port: clampPort(aria2cRpcPort.value, 6800),
     aria2c_rpc_secret: aria2cRpcSecret.value.trim() || DEFAULT_SECRET,
+    sadb_ip: sadbIpInput.value,
   };
 }
 
@@ -412,7 +413,8 @@ function isEqual(a: ToolsSettingsResponse, b: ToolsSettingsResponse): boolean {
     && a.aria2c_path === b.aria2c_path
     && a.aria2c_thread === b.aria2c_thread
     && a.aria2c_rpc_port === b.aria2c_rpc_port
-    && a.aria2c_rpc_secret === b.aria2c_rpc_secret;
+    && a.aria2c_rpc_secret === b.aria2c_rpc_secret
+    && a.sadb_ip === b.sadb_ip;
 }
 
 async function save(): Promise<void> {
@@ -426,6 +428,7 @@ async function save(): Promise<void> {
       aria2cThread: current.aria2c_thread,
       aria2cRpcPort: current.aria2c_rpc_port,
       aria2cRpcSecret: current.aria2c_rpc_secret,
+      sadbIp: current.sadb_ip
     });
     cache = current;
     showStatus("保存成功");
