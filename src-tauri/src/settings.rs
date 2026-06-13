@@ -755,6 +755,7 @@ pub fn get_tools_settings(state: tauri::State<'_, IslandState>) -> serde_json::V
         "aria2c_thread": state.aria2c_thread.load(Ordering::Relaxed),
         "aria2c_rpc_port": state.aria2c_rpc_port.load(Ordering::Relaxed),
         "aria2c_rpc_secret": state.aria2c_rpc_secret.lock().unwrap().clone(),
+        "sadb_ip": state.sadb_ip.lock().unwrap().clone(),
     })
 }
 
@@ -766,9 +767,7 @@ pub fn save_tools_settings(
     aria2c_path: Option<String>,
     aria2c_rpc_secret: Option<String>,
     aria2c_rpc_port: Option<u16>,
-    sadb_ip: Option<String>,
-    sadb_port: Option<u16>,
-    
+    sadb_ip: Option<String>,    
 ) {
     let mut settings_data = build_settings_data(&state);
     if let Some(aria2c_thread) = aria2c_thread {
