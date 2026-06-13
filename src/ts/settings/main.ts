@@ -10,7 +10,6 @@ import { initSettingsLog } from "./log";
 import { initSettingsLyricOffset } from "./lyric-offset";
 import { initSettingsMusic } from "./music";
 import { initSettingsBetterncm } from "./betterncm";
-import { initSettingsSadb } from "./sadb";
 import { initSettingsScreens } from "./screens";
 import { initSettingsSmtcWhitelist } from "./smtc-whitelist";
 import { initSettingsTools } from "./tools";
@@ -38,7 +37,6 @@ type PageId =
   | "clipboard-links"
   | "email"
   | "plugins"
-  | "sadb"
   | "blacklist"
   | "log"
   | "about";
@@ -55,7 +53,6 @@ const pageInfo: Record<PageId, PageInfo> = {
   "clipboard-links": { title: "剪贴板与链接", desc: "配置剪贴板监听和链接处理器。" },
   email: { title: "邮件", desc: "配置邮件轮询和通知快捷键。" },
   plugins: { title: "插件管理", desc: "管理 InfLink 和 PluginMarket 相关设置。" },
-  sadb: { title: "ADB 镜像", desc: "配置 Android 设备屏幕镜像连接参数。" },
   blacklist: { title: "黑名单", desc: "配置自动隐藏灵动岛的进程列表。" },
   log: { title: "日志", desc: "配置日志等级和 Tag 过滤。" },
   about: { title: "关于与更新", desc: "查看版本信息和检查软件更新。" },
@@ -79,7 +76,6 @@ const pageInit: Record<PageId, () => void | Promise<void>> = {
   "clipboard-links": initSettingsClipboardLinks,
   email: initSettingsEmail,
   plugins: initSettingsBetterncm,
-  sadb: initSettingsSadb,
   blacklist: initSettingsBlacklist,
   log: initSettingsLog,
   about: initSettingsAbout,
