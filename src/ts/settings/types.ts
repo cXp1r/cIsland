@@ -20,7 +20,6 @@ export type SettingsResponse = {
   log_filter_tags: string[];
   log_filter_invert: boolean;
   sadb_ip: string;
-  sadb_port: number;
   email_poll_interval_secs: number;
   email_username: string;
   email_auth: string;
@@ -67,12 +66,6 @@ export type EmailSettingsConfig = {
   email_shortcut: string;
 };
 
-export type SadbSettingsConfig = {
-  sadb_ip: string;
-  sadb_port: number;
-  adb_path: string;
-};
-
 export type LogSettingsConfig = {
   log_level: string;
   log_filter_tags: string[];
@@ -89,6 +82,7 @@ export type ToolsSettingsResponse = {
   aria2c_thread: number;
   aria2c_rpc_port: number;
   aria2c_rpc_secret: string;
+  sadb_ip: string;
 }
 
 export type AISettingsResponse = {
