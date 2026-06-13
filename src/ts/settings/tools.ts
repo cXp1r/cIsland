@@ -386,17 +386,6 @@ export function loadTools(r: ToolsSettingsResponse): void {
   moduleUI.hook.installDir.readOnly = true;
 }
 
-export function getToolsPayload() {
-  return {
-    sadbIp: sadbIpInput.value.trim(),
-    adbPath: adbPath.value,
-    aria2cPath: aria2cPath.value,
-    aria2cThread: clampThread(aria2cThread.value),
-    aria2cRpcPort: clampPort(aria2cRpcPort.value, 6800),
-    aria2cRpcSecret: aria2cRpcSecret.value.trim() || DEFAULT_SECRET,
-  };
-}
-
 function readCurrent(): ToolsSettingsResponse {
   return {
     adb_path: adbPath.value,
