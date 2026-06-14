@@ -1,10 +1,18 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { capsule, searchInput, searchNextBtn, searchPageLabel, searchPrevBtn, searchResults } from "../dom";
+import { capsule } from "../dom";
 import { currentView } from "../state";
 import { setView } from "./view-switcher";
 import { loge } from "../logger";
 import type { ViewMode } from "../types";
+import { $ } from "../../shared";
+
+
+export const searchInput = $<HTMLInputElement>("search-input");
+export const searchResults = $<HTMLDivElement>("search-results");
+export const searchPrevBtn = $<HTMLButtonElement>("search-prev-btn");
+export const searchNextBtn = $<HTMLButtonElement>("search-next-btn");
+export const searchPageLabel = $<HTMLSpanElement>("search-page-label");
 
 const TAG = "Search";
 
@@ -340,10 +348,11 @@ export function initSearch() {
     if (currentView === "search") {
       
       dismissSearch();
-      capsule.classList.add("search");
-    } else {
       capsule.classList.remove("search");
+    } else {
       activateSearch();
+      capsule.classList.add("search");
+      
     }
   });
 

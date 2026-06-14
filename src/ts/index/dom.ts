@@ -53,14 +53,6 @@ export const agentConfirmDialog = $<HTMLDivElement>("agent-confirm-dialog");
 export const agentConfirmCancel = $<HTMLButtonElement>("agent-confirm-cancel");
 export const agentConfirmOk = $<HTMLButtonElement>("agent-confirm-ok");
 
-
-export const searchArea = $<HTMLDivElement>("search-area");
-export const searchInput = $<HTMLInputElement>("search-input");
-export const searchResults = $<HTMLDivElement>("search-results");
-export const searchPrevBtn = $<HTMLButtonElement>("search-prev-btn");
-export const searchNextBtn = $<HTMLButtonElement>("search-next-btn");
-export const searchPageLabel = $<HTMLSpanElement>("search-page-label");
-
 export const emailArea = $<HTMLDivElement>("email-area");
 export const emailPanel = $<HTMLDivElement>("email-panel");
 export const emailListItems = $<HTMLDivElement>("email-list-items");
@@ -88,9 +80,8 @@ export const viewElements: Record<ViewMode, HTMLElement> = {
   time: timeWrapper,
   lyric: lyricArea,
   agent: agentArea,
-  search: searchArea,
+  search: $<HTMLDivElement>("search-area"),
   sadb: sadbArea,
   email: emailArea,
   downloader: downloader,
 };
-
