@@ -131,6 +131,8 @@ export function initrAF() {
             }
           } else if (capsule.classList.contains("lyric-collapsed")) {
             [toW, toH] = [380, 50];
+          } else if (capsule.classList.contains("search")) {
+            [toW, toH] = [420, 50];
           }
           animateCapsule(toW, toH);
         }
