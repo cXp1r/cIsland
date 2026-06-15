@@ -1,7 +1,7 @@
 ﻿import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, noticeArea } from "../dom";
-import { isAria2c, setPendingUrls } from "../state";
+import { isAria2c, setPendingUrls, overlayPriority, setOverlayPriority } from "../state";
 import { truncateUrl } from "../utils";
 import { logi } from "../logger";
 import { ClipboardUrlsPayload } from "../types";
@@ -15,6 +15,7 @@ const TAG: string = "NoticeQueue";
 export type NoticeType = "clipboard" | "email" | "generic";
 
 const MAX_DURATION = 30000;
+const NOTICE_PRIORITY = 2;
 
 // ===== 通知队列项 =====
 
@@ -254,6 +255,8 @@ function showNext(): void {
 
   activeItem = queue.shift()!;
   logi(TAG, `showNext: ${describeNotice(activeItem)} remaining=${queue.length}`);
+  // notice 优先级最高，直接抢占
+  setOverlayPriority(NOTICE_PRIORITY);
   renderMessage(activeItem);
   capsule.classList.add("notice-active");
   noticeArea.classList.add("active");
@@ -314,6 +317,7 @@ function finishAll(): void {
   noticeArea.classList.remove("active", "notice-urllist");
   noticeArea.innerHTML = "";
   void invoke("dismiss_island");
+  setOverlayPriority(-1);
 }
 
 // ===== 公开 API =====
