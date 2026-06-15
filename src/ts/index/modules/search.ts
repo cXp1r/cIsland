@@ -1,11 +1,12 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule } from "../dom";
-import { currentView } from "../state";
+import { currentView, overlayPriority, setOverlayPriority } from "../state";
 import { setView } from "./view-switcher";
 import { loge } from "../logger";
 import type { ViewMode } from "../types";
 import { $ } from "../../shared";
+import { animateHeight } from "./rAF";
 
 
 export const searchInput = $<HTMLInputElement>("search-input");
@@ -44,6 +45,7 @@ let currentQuery = "";
 let currentOffset = 0;
 let hasNextPage = false;
 let searchRequestId = 0;
+const SEARCH_PRIORITY = 1;
 
 // ===== Window height sync =====
 
@@ -223,6 +225,7 @@ export function activateSearch() {
   if (currentView !== "search") {
     previousView = currentView;
   }
+  setOverlayPriority(SEARCH_PRIORITY);
   // Clean other expand classes
   capsule.classList.remove("expanded", "lyric-collapsed", "agent-expanded", "music-expanded", "search-expanded", "email-expanded");
   capsule.classList.add("search-active");
@@ -243,6 +246,10 @@ export function activateSearch() {
 }
 
 export function dismissSearch() {
+  // 只有当前弹层是搜索时才重置优先级
+  if (overlayPriority === SEARCH_PRIORITY) {
+    setOverlayPriority(-1);
+  }
   searchRequestId += 1;
   if (debounceTimer !== null) {
     clearTimeout(debounceTimer);
@@ -337,15 +344,25 @@ export function initSearch() {
 
 
   listen("activate-search", () => {
+    // 优先级不够，不显示（notice 优先级 2 > search 优先级 1）
+    if (overlayPriority >= SEARCH_PRIORITY) return;
+
     if (currentView === "search") {
       dismissSearch();
       capsule.classList.remove("search");
     } else {
       activateSearch();
       capsule.classList.add("search");
-      
     }
   });
+
+  // 更高优先级弹层抢占时，搜索自动让位
+  document.addEventListener("overlay-changed", ((e: CustomEvent) => {
+    if (currentView === "search" && e.detail.priority > SEARCH_PRIORITY) {
+      dismissSearch();
+      capsule.classList.remove("search");
+    }
+  }) as EventListener);
 
   // Async search results from backend
   listen<SearchResult[]>("search-results", (event) => {
