@@ -61,7 +61,7 @@ function syncSearchWindowHeight() {
     } else {
       h = capsule.offsetHeight;
     }
-    void invoke("sync_window_height", { height: h + BODY_PAD + 2 });
+    animateHeight(h + BODY_PAD + 2);
   });
 }
 
