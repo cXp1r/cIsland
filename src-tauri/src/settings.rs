@@ -455,7 +455,6 @@ pub fn save_settings(
     aria2c_rpc_secret: Option<String>,
     aria2c_rpc_port: Option<u16>,
     sadb_ip: Option<String>,
-    sadb_port: Option<u16>,
     monitor_id: Option<String>,
     offset_x: Option<i32>,
     offset_y: Option<i32>,
