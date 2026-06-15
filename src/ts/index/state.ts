@@ -1,5 +1,16 @@
 import type { ViewMode, PrivacyUsagePayload } from "./types";
 
+// --- 弹层优先级：-1 无弹层，数值越大优先级越高 ---
+// 后续改成设置可调
+// search = 1, notice = 2
+export let overlayPriority: number = -1;
+export function setOverlayPriority(v: number) {
+  const old = overlayPriority;
+  if (old === v) return;
+  overlayPriority = v;
+  document.dispatchEvent(new CustomEvent("overlay-changed", { detail: { priority: v } }));
+}
+
 // 大面板panel
 export let panelClickTimer: number | null = null; // 面板单击延时
 export function setPanelClickTimer(v: number | null) { panelClickTimer = v; }
