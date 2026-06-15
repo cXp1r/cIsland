@@ -85,7 +85,40 @@ export function animateCapsule(toW: number, toH: number): void {
   raf = requestAnimationFrame(frame)
 }
 
+export function animateHeight(toH: number): void {
+  let toW = parseFloat(capsule.style.width) || fromW;
+  if (toH === targetH) return
+  void invoke('set_capsule_target_rect', { height: toH, width: toW });
+  let gen = 0;
+  invoke<number>('start_raf').then((u: number) => {
+    gen = u;
+  });
+  
+  targetW = toW
+  targetH = toH
+  
+  cancelAnimationFrame(raf)
 
+  const startW = parseFloat(capsule.style.width) || fromW
+  const startH = parseFloat(capsule.style.height) || fromH
+  let smaller = startH > toH;
+  const start = performance.now()
+  function frame(now: number): void {
+    
+    const t = Math.min((now - start) / 300, 1)
+    const e = easing(t)
+    const h = (Math.round(startH + (toH - startH) * e) + 1) & ~1
+
+    capsule.style.height = h + 'px'
+    port2.postMessage({ w: startW, h, lw: startW, t, e, gen, smaller })
+
+    if (t < 1) {
+      raf = requestAnimationFrame(frame)
+    }
+  }
+
+  raf = requestAnimationFrame(frame)
+}
 
 
 export function initrAF() { 
