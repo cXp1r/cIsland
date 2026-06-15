@@ -37,7 +37,6 @@ let activeIndex = -1;
 let results: SearchResult[] = [];
 let debounceTimer: number | null = null;
 let dismissSyncTimer: number | null = null;
-let isDismissingSearch = false;
 const DEBOUNCE_MS = 400;
 const PAGE_SIZE = 10;
 let previousView: Exclude<ViewMode, "search"> = "time";
@@ -220,9 +219,6 @@ function doSearch(query: string) {
 // ===== Activate / Dismiss =====
 
 export function activateSearch() {
-  if (isDismissingSearch) return;
-
-
   // Remember where we came from so we can go back
   if (currentView !== "search") {
     previousView = currentView;
@@ -230,7 +226,7 @@ export function activateSearch() {
   // Clean other expand classes
   capsule.classList.remove("expanded", "lyric-collapsed", "agent-expanded", "music-expanded", "search-expanded", "email-expanded");
   capsule.classList.add("search-active");
-  setView("search", false);
+  setView("search");
   searchRequestId += 1;
   if (debounceTimer !== null) {
     clearTimeout(debounceTimer);
@@ -247,8 +243,6 @@ export function activateSearch() {
 }
 
 export function dismissSearch() {
-  if (currentView !== "search" || isDismissingSearch) return;
-  isDismissingSearch = true;
   searchRequestId += 1;
   if (debounceTimer !== null) {
     clearTimeout(debounceTimer);
@@ -266,7 +260,6 @@ export function dismissSearch() {
   if (dismissSyncTimer !== null) clearTimeout(dismissSyncTimer);
   dismissSyncTimer = window.setTimeout(() => {
     dismissSyncTimer = null;
-    isDismissingSearch = false;
     syncSearchWindowHeight();
   }, 360);
 }
@@ -343,10 +336,8 @@ export function initSearch() {
   // 失去前台焦点时自动复原搜索
 
 
-  // Backend shortcut toggle
   listen("activate-search", () => {
     if (currentView === "search") {
-      
       dismissSearch();
       capsule.classList.remove("search");
     } else {
