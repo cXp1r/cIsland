@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from "@tauri-apps/api/event";
 import { capsule } from "../dom";
 
-//import { getAvailableViews, setView, updateSwitcherUI, updateCapsuleSize } from "./view-switcher";
+
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
   const calcX = (t: number) => 3 * p1x * t * (1-t)**2 + 3 * p2x * t**2 * (1-t) + t**3
   const calcY = (t: number) => 3 * p1y * t * (1-t)**2 + 3 * p2y * t**2 * (1-t) + t**3
@@ -125,7 +125,7 @@ export function initrAF() {
           } else if (capsule.classList.contains("downloader-expanded")) {
             [toW, toH] = [400, 300];
           } else if (capsule.classList.contains("expanded")) {
-            [toW, toH] = [330, 74];
+            [toW, toH] = [Math.max(parseFloat(capsule.style.width) || fromW, 330), Math.max(parseFloat(capsule.style.height) || fromH, 74)];
             if (capsule.classList.contains("lyric-collapsed")) {
               toW = 380;
             }
