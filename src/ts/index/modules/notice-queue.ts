@@ -1,7 +1,7 @@
 ﻿import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule, noticeArea } from "../dom";
-import { isAria2c, setPendingUrls, overlayPriority, setOverlayPriority } from "../state";
+import { isAria2c, overlayPriority, setPendingUrls, setOverlayPriority } from "../state";
 import { truncateUrl } from "../utils";
 import { logi } from "../logger";
 import { ClipboardUrlsPayload } from "../types";
@@ -253,9 +253,14 @@ function showNext(): void {
     return;
   }
 
+  // 有更高优先级弹层活跃时不抢占，等它结束再推进
+  if (overlayPriority > NOTICE_PRIORITY) {
+    logi(TAG, `showNext-blocked: overlayPriority=${overlayPriority} > NOTICE_PRIORITY=${NOTICE_PRIORITY} queued=${queue.length + 1}`);
+    return;
+  }
+
   activeItem = queue.shift()!;
   logi(TAG, `showNext: ${describeNotice(activeItem)} remaining=${queue.length}`);
-  // notice 优先级最高，直接抢占
   setOverlayPriority(NOTICE_PRIORITY);
   renderMessage(activeItem);
   capsule.classList.add("notice-active");
@@ -357,6 +362,30 @@ export function clearQueue(): void {
 // ===== 初始化 =====
 
 export function initNoticeQueue(): void {
+  // 更高优先级弹层抢占时，通知自动让位；更高优先级结束后恢复
+  document.addEventListener("overlay-changed", ((e: CustomEvent) => {
+    const newPriority = e.detail.priority as number;
+    // 更高优先级抢占 → 通知让位
+    if (activeItem && newPriority > NOTICE_PRIORITY) {
+      logi(TAG, `overlay-changed-yield: newPriority=${newPriority} > NOTICE_PRIORITY active=${describeNotice(activeItem)} queued=${queue.length}`);
+      clearTimer();
+      // 把当前 item 放回队首
+      queue.unshift(activeItem);
+      activeItem = null;
+      urlListMode = false;
+      void invoke("set_interacting", { active: false });
+      capsule.classList.remove("notice-active");
+      noticeArea.classList.remove("active", "notice-urllist");
+      noticeArea.innerHTML = "";
+      return;
+    }
+    // 更高优先级消失 → 如果有排队通知则恢复
+    if (newPriority < NOTICE_PRIORITY && queue.length > 0 && !activeItem && !urlListMode) {
+      logi(TAG, `overlay-changed-resume: newPriority=${newPriority} queued=${queue.length}`);
+      showNext();
+    }
+  }) as EventListener);
+
   // 点击 notice-area 空白处
   noticeArea.addEventListener("click", (e: MouseEvent) => {
     e.stopPropagation();
