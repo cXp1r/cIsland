@@ -6,7 +6,7 @@ import { setView } from "./view-switcher";
 import { loge } from "../logger";
 import type { ViewMode } from "../types";
 import { $ } from "../../shared";
-import { animateHeight } from "./rAF";
+import { animateHeight } from "./raf";
 
 
 export const searchInput = $<HTMLInputElement>("search-input");
@@ -17,7 +17,7 @@ export const searchPageLabel = $<HTMLSpanElement>("search-page-label");
 
 const TAG = "Search";
 
-// ===== Types =====
+
 
 interface SearchResult {
   id: string;
@@ -32,7 +32,6 @@ interface SearchQueryResponse {
   has_next: boolean;
 }
 
-// ===== State =====
 
 let activeIndex = -1;
 let results: SearchResult[] = [];

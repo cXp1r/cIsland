@@ -15,7 +15,7 @@ import { initSadb } from "./modules/sadb";
 import { initEmailResize } from "./modules/email-resize";
 import { initEmailView } from "./modules/email-view";
 import { initNoticeQueue } from "./modules/notice-queue";
-import { initrAF } from "./modules/rAF";
+import { initrAF } from "./modules/raf";
 import { initTodo, initCalendar, initClock } from "./modules/panel";
 import { initDownloader } from "./modules/downloader";
 import { initAgentHandler } from "./modules/agent_handler/handler";
