@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Channel } from "@tauri-apps/api/core";
 import { capsule } from "../dom";
 import { loge, logd, logi, logw } from "../logger";
-import { animateCapsule } from "./rAF";
+import { animateCapsule } from "./raf";
 import { listen } from "@tauri-apps/api/event";
 import { $ } from "../../shared";
 
