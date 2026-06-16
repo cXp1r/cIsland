@@ -139,6 +139,8 @@ export function initrAF() {
         if (!capsule.classList.contains("sadb-expanded")){
           let [toW, toH] = [140, 50];
           if (capsule.classList.value == "") {
+          } else if (capsule.classList.contains("privacy-active")) {
+            [toW, toH] = [400, 70];
           } else if (capsule.classList.contains("notice-active")) {
             [toW, toH] = [400, 70];
           } else if (capsule.classList.contains("agent-handler-active")) {

@@ -223,40 +223,6 @@ body {
 
 
 
-#island-capsule.privacy-active {
-
-    transform: scale(1.024);
-
-}
-
-
-
-#island-capsule.privacy-active::after {
-
-    opacity: 1;
-
-    transform: scale(1);
-
-}
-
-
-
-#island-capsule.privacy-pulse {
-
-    animation: privacy-capsule-pop 0.42s cubic-bezier(0.22, 0.85, 0.24, 1);
-
-}
-
-
-
-#island-capsule.privacy-pulse::after {
-
-    animation: privacy-ring-pop 0.52s cubic-bezier(0.2, 0.8, 0.2, 1);
-
-}
-
-
-
 @keyframes switch-pulse {
 
     0%   { transform: scale(1); }
@@ -264,30 +230,6 @@ body {
     35%  { transform: scale(1.02); }
 
     100% { transform: scale(1); }
-
-}
-
-
-
-@keyframes privacy-capsule-pop {
-
-    0%   { transform: scale(1); }
-
-    46%  { transform: scale(1.034); }
-
-    100% { transform: scale(1.024); }
-
-}
-
-
-
-@keyframes privacy-ring-pop {
-
-    0%   { opacity: 0; transform: scale(0.97); }
-
-    50%  { opacity: 1; transform: scale(1.02); }
-
-    100% { opacity: 1; transform: scale(1); }
 
 }
 
