@@ -11,19 +11,6 @@
     color: white;
 }
 
-/* 隐私检测绿环 */
-#island-capsule::after {
-    border: 1.5px solid rgba(46, 219, 103, 0.8);
-    box-shadow: inset 0 0 14px rgba(46, 219, 103, 0.14),
-                0 0 16px rgba(46, 219, 103, 0.16);
-}
-
-#island-capsule.privacy-active {
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.56),
-                0 0 0 1px rgba(46, 219, 103, 0.28),
-                0 0 22px rgba(46, 219, 103, 0.18);
-}
-
 @keyframes switch-pulse {
     0%   { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); }
     35%  { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); }
@@ -44,7 +31,6 @@
 .url-item                  { color: #8ab4f8; }
 .url-item:hover            { background: rgba(255, 255, 255, 0.08); color: #aecbfa; }
 
-/* ── Agent Handler (Open Island 风格) ── */
 #agent-handler             { background: #0d0d0f; }
 #agent-handler:hover       { background: #0d0d0f; }
 
@@ -101,13 +87,12 @@
     filter: drop-shadow(0 0 10px rgba(46, 219, 103, 0.5));
 }
 
-/* ── 收起绿条 ── */
+/* ── 收起指示条 ── */
 #collapsed-indicator {
-    background: linear-gradient(90deg, #22c55e, #2edb67, #22c55e);
-    box-shadow: 0 0 8px rgba(46, 219, 103, 0.5);
+    background: rgba(255, 255, 255, 0.3);
 }
 #collapsed-indicator:hover {
-    box-shadow: 0 0 14px rgba(46, 219, 103, 0.7);
+    background: rgba(255, 255, 255, 0.45);
 }
 
 /* ── 音乐展开面板 ── */
