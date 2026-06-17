@@ -828,7 +828,10 @@ listen<AdbDevice>("mdns-found", (e)=>{
   btn.type = "button";
   btn.dataset.name = `${d.ip}:${d.port}`;
   btn.textContent = "连接";
-  btn.addEventListener("click", () => selectIp = btn.dataset.name ? btn.dataset.name : null);
+  btn.addEventListener("click", () => {
+    selectIp = btn.dataset.name ? btn.dataset.name : null;
+    setStatus(`选中设备${title.textContent}`)
+  });
 
   item.appendChild(title);
   item.appendChild(btn);
