@@ -19,6 +19,8 @@ const sadbDeviceWrapper = $<HTMLDivElement>("sadb-devices-wrapper");
 
 const TAG: string = "SADB";
 
+let selectIp: string | null = null;
+
 type PacketEvent =
   | { type: "meta"; device_name: string; codec: string; width: number; height: number }
   | { type: "packet"; pts: number; key_frame: boolean; config: boolean; data: string }
@@ -430,10 +432,6 @@ async function startStream() {
   sadbBtnStop.disabled = false;
   setStatus("连接中...");
 
-  const settings = await invoke<any>("get_settings");
-  const savedIp = settings.sadb_ip || "";
-  const savedPort = settings.sadb_port || 5555;
-  let serial: string | null = null;
 
   // Step 1: Try USB (no serial)
   try {
@@ -454,11 +452,11 @@ async function startStream() {
   }
 
   // Step 2: Try WiFi with saved IP
-  if (savedIp) {
-    serial = `${savedIp}:${savedPort}`;
-    setStatus(`连接WiFi设备 ${serial}...`);
+  if (selectIp) {
+    console.log(selectIp)
+    setStatus(`连接WiFi设备 ${selectIp}...`);
     try {
-      await invoke("sadb_connect_device", { serial });
+      await invoke("sadb_connect_device", { serial: selectIp });
     } catch (e) {
       loge(TAG, "WiFi connect failed:", e);
       setStatus(`WiFi连接失败: ${e}`);
@@ -472,10 +470,10 @@ async function startStream() {
       await invoke("sadb_start_mirroring", {
         channel,
         bitrate: 4_000_000,
-        serial,
+        serial: selectIp,
       });
       clipboardPollInterval = setInterval(pollPCClipboard, 1000);
-      currentSerial = serial;
+      currentSerial = selectIp;
       streaming = true;
       return;
     } catch (e) {
@@ -692,6 +690,8 @@ sadbBtnStop.addEventListener("click", () => { setStatus("停止中..."); stopStr
 sadbBtnScan.addEventListener("click", () => {
   setStatus("扫描中...");
   animateCapsule(400, 640);
+  sadbDeviceWrapper.style.display = "flex"
+  sadbDeviceWrapper.replaceChildren();
   void invoke('scan_adb_devices');
 })
 // ── Initial placeholder canvas ──
@@ -816,31 +816,30 @@ export function isSadbStreaming(): boolean {
 
 listen<AdbDevice>("mdns-found", (e)=>{
   let d = e.payload;
-  
+  console.log(d)
   const item = document.createElement("div");
-    item.className = "item";
+  item.className = "item";
 
-    const title = document.createElement("span");
-    title.className = "item-title";
-    title.textContent = `${d.name}  ${d.ip}:${d.port}`;
+  const title = document.createElement("span");
+  title.className = "item-title";
+  title.textContent = `${d.name}  ${d.ip}:${d.port}`;
+  const btn = document.createElement("button");
+  btn.className = "sadb-btn";
+  btn.type = "button";
+  btn.dataset.name = `${d.ip}:${d.port}`;
+  btn.textContent = "连接";
+  btn.addEventListener("click", () => selectIp = btn.dataset.name ? btn.dataset.name : null);
 
+  item.appendChild(title);
+  item.appendChild(btn);
+  sadbDeviceWrapper.appendChild(item);
 
-
-    const btn = document.createElement("button");
-    btn.className = "sadb-btn";
-    btn.type = "button";
-    btn.dataset.name = `${d.ip}:${d.port}`;
-    btn.textContent = "连接";
-    btn.addEventListener("click", () => console.log(btn.dataset.name));
-
-    item.appendChild(title);
-    item.appendChild(btn);
-    sadbDeviceWrapper.appendChild(item);
 })
 
 listen("mdns-done", () => {
   if (sadbDeviceWrapper.children.length === 0) {
     setStatus("无可连接设备", true);
+    sadbDeviceWrapper.style.display = "none";
   } else {
     setStatus("扫描完成");
   }
