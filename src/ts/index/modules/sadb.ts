@@ -826,10 +826,9 @@ listen<AdbDevice>("mdns-found", (e)=>{
   const btn = document.createElement("button");
   btn.className = "sadb-btn";
   btn.type = "button";
-  btn.dataset.name = `${d.ip}:${d.port}`;
   btn.textContent = "连接";
   btn.addEventListener("click", () => {
-    selectIp = btn.dataset.name ? btn.dataset.name : null;
+    selectIp = `${d.ip}:${d.port}` ? `${d.ip}:${d.port}` : null;
     setStatus(`选中设备${title.textContent}`)
   });
 
