@@ -2546,6 +2546,38 @@ body.minimized #collapsed-indicator { display: block; }
 
 .message-content a:hover { text-decoration: underline; }
 
+.message-content .md-path-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 2px;
+  padding: 2px 8px;
+  border: 1px solid rgba(167,139,250,0.28);
+  border-radius: 999px;
+  background: rgba(124,58,237,0.12);
+  color: #C4B5FD;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  vertical-align: baseline;
+  max-width: 100%;
+}
+
+.message-content .md-path-btn:hover {
+  background: rgba(124,58,237,0.18);
+  border-color: rgba(196,181,253,0.45);
+}
+
+.message-content .md-path-btn:active {
+  transform: translateY(1px);
+}
+
+.message-content .md-path-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .message-content p { margin: 0 0 6px 0; }
 
 .message-content p:last-child { margin-bottom: 0; }

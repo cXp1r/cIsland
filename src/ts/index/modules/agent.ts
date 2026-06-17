@@ -22,6 +22,7 @@ import {
 import {
   renderMarkdown as renderMarkdownFromMd,
   highlightAndAddCopyButtons as highlightAndAddCopyButtonsFromMd,
+  bindMarkdownButtons as bindMarkdownButtonsFromMd,
 } from "../md";
 import { updateSwitcherUI } from "./view-switcher";
 import { logd, loge, logi } from "../logger";
@@ -494,6 +495,7 @@ export function initAgent() {
     setCurrentAssistantRawText(currentAssistantRawText + event.payload.text);
 
     currentAssistantMessage!.innerHTML = renderMarkdownFromMd(currentAssistantRawText);
+    bindMarkdownButtonsFromMd(currentAssistantMessage!);
 
     highlightAndAddCopyButtonsFromMd(currentAssistantMessage!);
 
