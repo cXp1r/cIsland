@@ -1,10 +1,11 @@
 import type { ViewMode, PrivacyUsagePayload } from "./types";
+import type { OverlayPriority } from "./state-machines/overlay";
 
 // --- 弹层优先级：-1 无弹层，数值越大优先级越高 ---
 // 后续改成设置可调
 // search = 1, notice = 2
-export let overlayPriority: number = -1;
-export function setOverlayPriority(v: number) {
+export let overlayPriority: OverlayPriority = -1 as OverlayPriority;
+export function setOverlayPriority(v: OverlayPriority) {
   const old = overlayPriority;
   if (old === v) return;
   overlayPriority = v;

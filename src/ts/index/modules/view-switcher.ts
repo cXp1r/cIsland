@@ -21,6 +21,7 @@ import {
   isAria2c,
 } from "../state";
 import { logi, logw } from "../logger";
+import { getAvailableManualPages, resolveNextAvailablePage } from "../state-machines/page";
 // ---------------------------------------------------------------------------
 // 可用视图列表（search 不参与循环切换和底部 dots）
 // ---------------------------------------------------------------------------
@@ -91,14 +92,14 @@ function playSwitchPulse() {
 export function switchToNextView(direction: number = 1) {
   const views = getAvailableViews();
   logi("ViewSwitcher", "switchToNextView views:", views, "isMusicPlaying:", isMusicPlaying, "lyricMode:", lyricMode, "aiEnabled:", aiEnabled);
-  if (views.length < 2) return;
+  const manualViews = getAvailableManualPages(views);
+  if (manualViews.length < 2) return;
 
-  const currentIndex = views.indexOf(currentView);
-  const offset = direction >= 0 ? 1 : -1;
-  const nextIndex = currentIndex >= 0
-    ? (((currentIndex + offset) % views.length) + views.length) % views.length
-    : 0;
-  const nextView = views[nextIndex];
+  const nextView = resolveNextAvailablePage(
+    manualViews,
+    currentView as typeof manualViews[number],
+    direction >= 0 ? 1 : -1,
+  );
 
   playSwitchPulse();
   setUserChosenView(nextView);

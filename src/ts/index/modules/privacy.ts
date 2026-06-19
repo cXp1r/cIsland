@@ -1,13 +1,14 @@
 import { listen } from "@tauri-apps/api/event";
 import type { PrivacyUsagePayload } from "../types";
 import { capsule, privacyIndicators, privacyMic, privacyCamera } from "../dom";
+import { OverlayPriority, canPreempt } from "../state-machines/overlay";
 import {
   privacyPopupTimer, setPrivacyPopupTimer,
   lastPrivacyUsage, setLastPrivacyUsage,
   overlayPriority, setOverlayPriority,
 } from "../state";
 
-const PRIVACY_PRIORITY = 3;
+const PRIVACY_PRIORITY = OverlayPriority.Privacy;
 
 export function hidePrivacyPopup() {
   if (privacyPopupTimer) {
@@ -21,7 +22,7 @@ export function hidePrivacyPopup() {
   privacyCamera.classList.remove("active");
 
   if (overlayPriority === PRIVACY_PRIORITY) {
-    setOverlayPriority(-1);
+    setOverlayPriority(OverlayPriority.None);
   }
 }
 
@@ -33,7 +34,7 @@ function showPrivacyPopup(payload: PrivacyUsagePayload) {
   if (capsule.classList.contains("agent-expanded")) return;
 
   // 优先级不够，不显示（当前有更高优先级弹层）
-  if (overlayPriority > PRIVACY_PRIORITY) return;
+  if (canPreempt(overlayPriority, PRIVACY_PRIORITY)) return;
 
   setOverlayPriority(PRIVACY_PRIORITY);
 
@@ -69,7 +70,7 @@ export function initPrivacy() {
 
   // 更高优先级弹层抢占时，隐私自动让位
   document.addEventListener("overlay-changed", ((e: CustomEvent) => {
-    if (capsule.classList.contains("privacy-active") && e.detail.priority > PRIVACY_PRIORITY) {
+    if (capsule.classList.contains("privacy-active") && canPreempt(e.detail.priority as typeof PRIVACY_PRIORITY, PRIVACY_PRIORITY)) {
       hidePrivacyPopup();
     }
   }) as EventListener);

@@ -2,6 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { capsule } from "../dom";
 import { currentView, overlayPriority, setOverlayPriority } from "../state";
+import { OverlayPriority, canPreempt } from "../state-machines/overlay";
 import { setView } from "./view-switcher";
 import { loge } from "../logger";
 import type { ViewMode } from "../types";
@@ -44,7 +45,7 @@ let currentQuery = "";
 let currentOffset = 0;
 let hasNextPage = false;
 let searchRequestId = 0;
-const SEARCH_PRIORITY = 1;
+const SEARCH_PRIORITY = OverlayPriority.Search;
 
 // ===== Window height sync =====
 
@@ -224,7 +225,7 @@ export function activateSearch() {
   if (currentView !== "search") {
     previousView = currentView;
   }
-  setOverlayPriority(SEARCH_PRIORITY);
+  setOverlayPriority(OverlayPriority.Search);
   // Clean other expand classes
   capsule.classList.remove("expanded", "lyric-collapsed", "agent-expanded", "music-expanded", "search-expanded", "email-expanded");
   capsule.classList.add("search-active");
@@ -247,7 +248,7 @@ export function activateSearch() {
 export function dismissSearch() {
   // 只有当前弹层是搜索时才重置优先级
   if (overlayPriority === SEARCH_PRIORITY) {
-    setOverlayPriority(-1);
+    setOverlayPriority(OverlayPriority.None);
   }
   searchRequestId += 1;
   if (debounceTimer !== null) {
@@ -357,7 +358,7 @@ export function initSearch() {
 
   // 更高优先级弹层抢占时，搜索自动让位
   document.addEventListener("overlay-changed", ((e: CustomEvent) => {
-    if (currentView === "search" && e.detail.priority > SEARCH_PRIORITY) {
+    if (currentView === "search" && canPreempt(e.detail.priority as typeof SEARCH_PRIORITY, SEARCH_PRIORITY)) {
       dismissSearch();
       capsule.classList.remove("search");
     }
