@@ -5,7 +5,7 @@ import { currentView } from "../state";
 import { ManualPageState, isManualPageState } from "../state-machines/page";
 import {
   createPageSubmachineKey,
-  getCurrentPageSubmachineState,
+  getPageState,
 } from "../state-machines/page-submachines";
 
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
@@ -29,12 +29,11 @@ const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
 const easing = ease(0.25, 1, 0.5, 1);
 const { port1, port2 } = new MessageChannel();
 
-type CapsuleSize = readonly [number, number];
+type CapsuleSize = [number, number];
 type SizeKey = `${ManualPageState}:${string}`;
 
 const DEFAULT_SIZE: CapsuleSize = [140, 50];
-const HOVER_SIZE: CapsuleSize = [330, 74];
-const LYRIC_HOVER_SIZE: CapsuleSize = [380, 74];
+
 const SADB_IDLE_SIZE: CapsuleSize = [400, 440];
 const DOWNLOADER_SIZE: CapsuleSize = [400, 300];
 const PANEL_EXPANDED_SIZE: CapsuleSize = [700, 220];
@@ -72,42 +71,44 @@ let fromW = Math.round(rect.width);
 let fromH = Math.round(rect.height);
 
 function resolveTargetSize(): CapsuleSize {
-  if (capsule.classList.contains("expanded")) {
-    return currentView === ManualPageState.Lyric ? LYRIC_HOVER_SIZE : HOVER_SIZE;
-  }
-
+  let res = [0, 0] as CapsuleSize;
   if (isManualPageState(currentView)) {
-    const state = getCurrentPageSubmachineState(currentView);
+    const state = getPageState(currentView);
     if (state) {
       const key = createPageSubmachineKey(currentView, state) as keyof typeof sizeTable;
       const nextSize = sizeTable[key];
-      if (nextSize) return nextSize;
+      if (nextSize) res = nextSize;
     }
   }
 
   if (capsule.classList.contains("search-active")) {
-    return SEARCH_SIZE;
+    res = SEARCH_SIZE;
   }
 
   if (capsule.classList.contains("search-expanded")) {
-    return SEARCH_EXPANDED_SIZE;
+    res = SEARCH_EXPANDED_SIZE;
   }
 
   if (capsule.classList.contains("notice-active")) {
-    return NOTICE_SIZE;
+    res = NOTICE_SIZE;
   }
 
   if (capsule.classList.contains("agent-handler-active")) {
     const style = getComputedStyle(document.documentElement);
     const w = parseInt(style.getPropertyValue("--agent-handler-w"), 10);
     const h = parseInt(style.getPropertyValue("--agent-handler-h"), 10);
-    return [
+    res = [
       Number.isFinite(w) ? w : DEFAULT_SIZE[0],
       Number.isFinite(h) ? h : DEFAULT_SIZE[1],
     ];
   }
-
-  return DEFAULT_SIZE;
+  if (capsule.classList.contains("expanded")) {
+    res = [
+      Math.max(res[0], 330),
+      Math.max(res[1], 74),
+    ];
+  }
+  return res;
 }
 
 port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number; gen: number; smaller: boolean }>) => {
