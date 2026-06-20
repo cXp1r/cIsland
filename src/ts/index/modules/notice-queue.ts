@@ -8,6 +8,11 @@ import { logi } from "../logger";
 import { ClipboardUrlsPayload } from "../types";
 import { url } from "./downloader";
 import { setView } from "./view-switcher";
+import { ManualPageState } from "../state-machines/page";
+import {
+  setPageState,
+  savePageClasses,
+} from "../state-machines/page-submachines";
 
 const TAG: string = "NoticeQueue";
 
@@ -149,6 +154,8 @@ function renderMessage(item: NoticeItem): void {
       url.value = p.urls[0];
       setView("downloader");
       capsule.classList.add("downloader-expanded");
+      setPageState(ManualPageState.Downloader, "expanded");
+      savePageClasses(ManualPageState.Downloader, capsule.classList);
       void invoke("set_expanded", { expanded: true });
       console.log("[NoticeQueue] download clicked, urls:", p.urls);
       completeActiveNotice(true, "download");

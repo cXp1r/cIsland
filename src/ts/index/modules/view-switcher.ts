@@ -22,6 +22,12 @@ import {
 } from "../state";
 import { logi, logw } from "../logger";
 import { getAvailableManualPages, resolveNextAvailablePage } from "../state-machines/page";
+import { isManualPageState } from "../state-machines/page";
+import {
+  applyPageClasses,
+  savePageClasses,
+  syncPageState,
+} from "../state-machines/page-submachines";
 // ---------------------------------------------------------------------------
 // 可用视图列表（search 不参与循环切换和底部 dots）
 // ---------------------------------------------------------------------------
@@ -206,17 +212,9 @@ function animateViewSwitch(from: ViewMode, to: ViewMode) {
     }
   };
 }
-
-
-let cl: string[] = ["lyric", "email"];
-let cll: string[] = ["lyric-collapsed", "email"]
 export function updateCapsuleSize() {
-  //只有expanded是全局走的
-  capsule.classList.value = capsule.classList.contains("expanded") ? "expanded" : "";
-  const cls = cll[cl.indexOf(currentView)];
-  if (cls) {
-    capsule.classList.add(cls);
-  }
+  if (!isManualPageState(currentView)) return;
+  applyPageClasses(currentView, capsule.classList);
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +223,9 @@ export function updateCapsuleSize() {
 
 export function setView(mode: ViewMode, animated = true) {
   const previous = currentView;//快照
+  if (isManualPageState(previous)) {
+    savePageClasses(previous, capsule.classList);
+  }
   setCurrentView(mode);
   // 如果从 agent 展开态切走，收起并恢复窗口大小
   if (previous === "agent" && mode !== "agent" && capsule.classList.contains("agent-expanded")) {
@@ -277,6 +278,10 @@ export function setView(mode: ViewMode, animated = true) {
     animateViewSwitch(previous, mode);
   } else {
     showOnlyView(mode);
+  }
+  if (isManualPageState(mode)) {
+    applyPageClasses(mode, capsule.classList);
+    syncPageState(mode, capsule.classList);
   }
   syncCurrentView(mode);
   updateCapsuleSize();

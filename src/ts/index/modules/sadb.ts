@@ -5,6 +5,12 @@ import { loge, logd, logi, logw } from "../logger";
 import { animateCapsule } from "./raf";
 import { listen } from "@tauri-apps/api/event";
 import { $ } from "../../shared";
+import { ManualPageState } from "../state-machines/page";
+import {
+  setPageState,
+  savePageClasses,
+} from "../state-machines/page-submachines";
+import { SadbPageSubstate } from "../state-machines/page-substates/sadb";
 
 const sadbArea = $<HTMLDivElement>("sadb-area");
 const sadbCanvas = $<HTMLCanvasElement>("sadb-canvas");
@@ -153,6 +159,11 @@ const SADB_MAX_SCALE = 3.0;  // 最大缩放（约 840px 宽）
 let initCapW = SADB_INIT_CAP_W;
 let initCapH = SADB_INIT_CAP_W;
 let sadbScale = 1.0;
+
+function syncSadbState(state: string) {
+  setPageState(ManualPageState.Sadb, state);
+  savePageClasses(ManualPageState.Sadb, capsule.classList);
+}
 
 // Audio decoder state
 let audioCtx: AudioContext | null = null;
@@ -375,6 +386,7 @@ function handleEvent(evt: PacketEvent) {
       // 待机面板 → 镜像展开（CSS + 后端 flag；尺寸由 autoFitWindow 设置）
       capsule.classList.remove("sadb-idle");
       capsule.classList.add("sadb-expanded");
+      syncSadbState(SadbPageSubstate.Mirroring);
       invoke("set_expanded", { expanded: true }).catch(() => {});
       updateDrawRect();
       autoFitWindow();
@@ -512,6 +524,7 @@ function stopStream() {
   if (inSadbView) {
     capsule.classList.remove("sadb-expanded");
     capsule.classList.add("sadb-idle");
+    syncSadbState(SadbPageSubstate.IdlePanel);
     invoke("set_expanded", { expanded: false }).catch(() => {});
   }
   invoke("sadb_stop_mirroring").catch((e) => loge(TAG, "sadb_stop_mirroring failed:", e)).finally(() => {

@@ -23,8 +23,8 @@ import { showContextMenu } from "./drag";
 import { logd } from "../logger";
 import { ManualPageState } from "../state-machines/page";
 import {
-  setCurrentPageSubmachineState,
-  syncCurrentPageCapsuleClassSnapshotFromClassList,
+  setPageState,
+  savePageClasses,
 } from "../state-machines/page-submachines";
 import { TimePageSubstate } from "../state-machines/page-substates/time";
 import { LyricPageSubstate } from "../state-machines/page-substates/lyric";
@@ -34,8 +34,8 @@ import { EmailPageSubstate } from "../state-machines/page-substates/email";
 import { DownloaderPageSubstate } from "../state-machines/page-substates/downloader";
 
 function syncManualPageState(page: ManualPageState, state: string) {
-  setCurrentPageSubmachineState(page, state);
-  syncCurrentPageCapsuleClassSnapshotFromClassList(page, capsule.classList);
+  setPageState(page, state);
+  savePageClasses(page, capsule.classList);
 }
 
 export function initCapsuleInteraction() {

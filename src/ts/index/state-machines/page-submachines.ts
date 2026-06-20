@@ -15,6 +15,16 @@ export interface PageSubmachine<S extends string = string> {
 }
 
 export type PageSubmachineMap = Partial<Record<ManualPageState, PageSubmachine>>;
+export type PageCapsuleClassSnapshotMap = Partial<Record<ManualPageState, string>>;
+
+const pageCapsuleClassDefaultSnapshotMap: Record<ManualPageState, string> = {
+  [ManualPageState.Time]: "",
+  [ManualPageState.Lyric]: "lyric-collapsed",
+  [ManualPageState.Agent]: "",
+  [ManualPageState.Sadb]: "",
+  [ManualPageState.Email]: "",
+  [ManualPageState.Downloader]: "",
+};
 
 function createPageSubmachine<S extends string>(
   page: ManualPageState,
@@ -40,6 +50,14 @@ export function createPageSubmachineMap(): PageSubmachineMap {
 }
 
 export const pageSubmachineMap = createPageSubmachineMap();
+export const pageCapsuleClassSnapshotMap: PageCapsuleClassSnapshotMap = {
+  [ManualPageState.Time]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Time],
+  [ManualPageState.Lyric]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Lyric],
+  [ManualPageState.Agent]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Agent],
+  [ManualPageState.Sadb]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Sadb],
+  [ManualPageState.Email]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Email],
+  [ManualPageState.Downloader]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Downloader],
+};
 
 export function getPageSubmachine(
   map: PageSubmachineMap,
@@ -63,14 +81,47 @@ export function getCurrentPageSubmachine(page: ManualPageState): PageSubmachine 
   return pageSubmachineMap[page];
 }
 
-export function getCurrentPageSubmachineState(page: ManualPageState): string | undefined {
+export function getPageState(page: ManualPageState): string | undefined {
   return pageSubmachineMap[page]?.currentState;
 }
 
-export function setCurrentPageSubmachineState(page: ManualPageState, state: string): void {
+export function setPageState(page: ManualPageState, state: string): void {
   const machine = pageSubmachineMap[page];
   if (!machine || machine.currentState === state) return;
   machine.currentState = state;
+}
+
+export function getPageClasses(page: ManualPageState): string {
+  return pageCapsuleClassSnapshotMap[page] ?? pageCapsuleClassDefaultSnapshotMap[page];
+}
+
+export function setPageClasses(
+  page: ManualPageState,
+  classValue: string,
+): string {
+  pageCapsuleClassSnapshotMap[page] = classValue;
+  return classValue;
+}
+
+// 保存当前分页的 class 外观
+export function savePageClasses(
+  page: ManualPageState,
+  classList: DOMTokenList,
+): string | undefined {
+  if (!isManualPageState(page)) return undefined;
+  return setPageClasses(page, classList.value);
+}
+
+// 恢复当前分页的 class 外观
+export function applyPageClasses(
+  page: ManualPageState,
+  classList: DOMTokenList,
+): string | undefined {
+  if (!isManualPageState(page)) return undefined;
+
+  const snapshot = getPageClasses(page);
+  classList.value = snapshot;
+  return snapshot;
 }
 
 function inferCurrentPageSubmachineState(page: ManualPageState, classList: DOMTokenList): string {
@@ -112,15 +163,17 @@ function inferCurrentPageSubmachineState(page: ManualPageState, classList: DOMTo
   }
 }
 
-export function syncCurrentPageSubmachineStateFromClassList(
+export function syncPageState(
   page: ManualPageState,
   classList: DOMTokenList,
 ): string | undefined {
   if (!isManualPageState(page)) return undefined;
 
+  savePageClasses(page, classList);
+
   const nextState = inferCurrentPageSubmachineState(page, classList);
   if (nextState) {
-    setCurrentPageSubmachineState(page, nextState);
+    setPageState(page, nextState);
   }
   return nextState || undefined;
 }
