@@ -21,6 +21,22 @@ import { switchToNextView } from "./view-switcher";
 import { fetchAndUpdateVolume } from "./music-controls";
 import { showContextMenu } from "./drag";
 import { logd } from "../logger";
+import { ManualPageState } from "../state-machines/page";
+import {
+  setCurrentPageSubmachineState,
+  syncCurrentPageCapsuleClassSnapshotFromClassList,
+} from "../state-machines/page-submachines";
+import { TimePageSubstate } from "../state-machines/page-substates/time";
+import { LyricPageSubstate } from "../state-machines/page-substates/lyric";
+import { AgentPageSubstate } from "../state-machines/page-substates/agent";
+import { SadbPageSubstate } from "../state-machines/page-substates/sadb";
+import { EmailPageSubstate } from "../state-machines/page-substates/email";
+import { DownloaderPageSubstate } from "../state-machines/page-substates/downloader";
+
+function syncManualPageState(page: ManualPageState, state: string) {
+  setCurrentPageSubmachineState(page, state);
+  syncCurrentPageCapsuleClassSnapshotFromClassList(page, capsule.classList);
+}
 
 export function initCapsuleInteraction() {
   capsule.addEventListener("click", (e: MouseEvent) => {
@@ -44,8 +60,10 @@ export function initCapsuleInteraction() {
         setPanelClickTimer(null);
         if (capsule.classList.contains("panel-expanded") && target instanceof HTMLDivElement) {
           capsule.classList.remove("panel-expanded");
+          syncManualPageState(ManualPageState.Time, TimePageSubstate.Collapsed);
         } else {
           capsule.classList.add("panel-expanded");
+          syncManualPageState(ManualPageState.Time, TimePageSubstate.Expanded);
         }
       }, 250));
     }
@@ -75,6 +93,7 @@ export function initCapsuleInteraction() {
         const willExpand = !capsule.classList.contains("music-expanded");
         if (willExpand) {
           capsule.classList.add("music-expanded");
+          syncManualPageState(ManualPageState.Lyric, LyricPageSubstate.Expanded);
           musicPanelSong.textContent = currentSongTitle || "";
           musicPanelArtist.textContent = currentArtistName || "";
           if (currentThumbnailUrl) {
@@ -86,6 +105,7 @@ export function initCapsuleInteraction() {
           window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         } else {
           capsule.classList.remove("music-expanded");
+          syncManualPageState(ManualPageState.Lyric, LyricPageSubstate.Collapsed);
           void invoke("set_expanded", { expanded: false });
           window.setTimeout(() => { setIsExpandAnimating(false); }, 500);
         }
@@ -118,6 +138,7 @@ export function initCapsuleInteraction() {
         setIsExpandAnimating(true);
         if (!capsule.classList.contains("agent-expanded")) {
           capsule.classList.add("agent-expanded");
+          syncManualPageState(ManualPageState.Agent, AgentPageSubstate.Expanded);
           void invoke("set_expanded", { expanded: true });
           window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         } else {
@@ -126,6 +147,7 @@ export function initCapsuleInteraction() {
           if (agentArea) agentArea.classList.add("collapsing");
           window.setTimeout(() => {
             capsule.classList.remove("agent-expanded");
+            syncManualPageState(ManualPageState.Agent, AgentPageSubstate.Collapsed);
             void invoke("set_expanded", { expanded: false });
             window.setTimeout(() => {
               if (agentArea) agentArea.classList.remove("collapsing");
@@ -152,6 +174,7 @@ export function initCapsuleInteraction() {
           setIsExpandAnimating(true);
           ;
           capsule.classList.remove("sadb-idle");
+          syncManualPageState(ManualPageState.Sadb, SadbPageSubstate.Collapsed);
           void invoke("set_expanded", { expanded: false });
           window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         }, 250));
@@ -161,13 +184,14 @@ export function initCapsuleInteraction() {
       if (target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop") || target.closest("#sadb-canvas")) return;
       e.stopPropagation();
       if (sadbClickTimer) { clearTimeout(sadbClickTimer); setSadbClickTimer(null); return; }
-      setSadbClickTimer(window.setTimeout(() => {
-        setSadbClickTimer(null);
-        if (isExpandAnimating) return;
-        setIsExpandAnimating(true);
-        ;
-        capsule.classList.add("sadb-idle");
-        void invoke("set_expanded", { expanded: true });
+        setSadbClickTimer(window.setTimeout(() => {
+          setSadbClickTimer(null);
+          if (isExpandAnimating) return;
+          setIsExpandAnimating(true);
+          ;
+          capsule.classList.add("sadb-idle");
+          syncManualPageState(ManualPageState.Sadb, SadbPageSubstate.IdlePanel);
+          void invoke("set_expanded", { expanded: true });
         window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
       }, 250));
       return;
@@ -182,11 +206,13 @@ export function initCapsuleInteraction() {
       setEmailClickTimer(window.setTimeout(() => {
         if (capsule.classList.contains("email-expanded")){
           capsule.classList.remove("email-expanded");
+          syncManualPageState(ManualPageState.Email, EmailPageSubstate.Collapsed);
           void invoke('set_expanded', { expanded: false });
           return;
         }
         void invoke('set_expanded', { expanded: true });
         capsule.classList.add("email-expanded");
+        syncManualPageState(ManualPageState.Email, EmailPageSubstate.Expanded);
       }, 250));
     }
 
@@ -208,11 +234,13 @@ export function initCapsuleInteraction() {
         setIsExpandAnimating(true);
         if (!capsule.classList.contains("downloader-expanded")) {
           capsule.classList.add("downloader-expanded");
+          syncManualPageState(ManualPageState.Downloader, DownloaderPageSubstate.Expanded);
           void invoke("set_expanded", { expanded: true });
           window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
         } else {
           window.setTimeout(() => {
             capsule.classList.remove("downloader-expanded");
+            syncManualPageState(ManualPageState.Downloader, DownloaderPageSubstate.Collapsed);
             void invoke("set_expanded", { expanded: false });
             window.setTimeout(() => {
               setIsExpandAnimating(false);
