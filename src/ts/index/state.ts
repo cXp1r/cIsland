@@ -1,7 +1,7 @@
 import type { ViewMode, PrivacyUsagePayload } from "./types";
 import type { OverlayPriority } from "./state-machines/overlay";
 import { isPageState } from "./state-machines/page";
-import { stateMachine } from "./state-machines/state-machine";
+import { pageStateMachine } from "./state-machines/page-machine";
 
 // --- 弹层优先级：-1 无弹层，数值越大优先级越高 ---
 // 后续改成设置可调
@@ -126,7 +126,7 @@ export function setCurrentView(v: ViewMode) {
   currentView = v;
   // 同步到状态机的顶层分页状态（search 不属于手动页面，跳过）
   if (isPageState(v)) {
-    stateMachine.setCurrentPage(v);
+    pageStateMachine.state = v;
   }
 }
 

@@ -108,7 +108,7 @@ export function switchToNextView(direction: number = 1) {
 
   const nextView = resolveNextAvailablePage(
     pageViews,
-    pageStateMachine.getCurrentPage(),
+    pageStateMachine.state,
     direction >= 0 ? 1 : -1,
   );
 
@@ -218,7 +218,7 @@ function animateViewSwitch(from: ViewMode, to: ViewMode) {
   };
 }
 export function updateCapsuleSize() {
-  const page = pageStateMachine.getCurrentPage();
+  const page = pageStateMachine.state;
   pageStateMachine.substates[page]?.applyPageClasses(capsule.classList);
 }
 

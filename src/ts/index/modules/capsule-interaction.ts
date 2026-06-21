@@ -58,7 +58,7 @@ export function initCapsuleInteraction() {
     // 鏈夊脊灞傦紙search / notice / privacy锛夋椂锛屼笉瑙﹀彂鍒嗛〉鐐瑰嚮閫昏�?
     if (overlayStateMachine.isOccupied()) return;
 
-    const page = pageStateMachine.getCurrentPage();
+    const page = pageStateMachine.state;
     switch (page) {
       case PageState.Time: {
         e.stopPropagation();

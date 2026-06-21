@@ -36,8 +36,7 @@ export interface PageStateMachineContract {
     [PageState.Downloader]: DownloaderSubstateBridge;
   }>;
 
-  getCurrentPage(): PageState;
-  setCurrentPage(page: PageState): void;
+
   currentPageAsViewMode(): ViewMode;
   getSubmachine(page: PageState): PageSubmachine | undefined;
   createKey(page: PageState, state: string): string;
@@ -71,15 +70,7 @@ export class PageStateMachine implements PageStateMachineContract {
   set state(page: PageState) {
     this._currentPage = page;
   }
-
-  getCurrentPage(): PageState {
-    return this._currentPage;
-  }
-
-  setCurrentPage(page: PageState): void {
-    this._currentPage = page;
-  }
-
+  
   currentPageAsViewMode(): ViewMode {
     return this._currentPage as ViewMode;
   }

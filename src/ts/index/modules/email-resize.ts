@@ -41,7 +41,7 @@ export function applyEmailViewSize() {
 }
 
 export async function onEmailViewEntered() {
-  if (pageStateMachine.getCurrentPage() !== PageState.Email) return;
+  if (pageStateMachine.state !== PageState.Email) return;
   applyEmailViewSize();
 }
 
@@ -63,7 +63,7 @@ export function initEmailResize() {
   let syncPending = false;
 
   emailResizeHandle.addEventListener("mousedown", (e) => {
-    if (pageStateMachine.getCurrentPage() !== PageState.Email) return;
+    if (pageStateMachine.state !== PageState.Email) return;
     e.preventDefault();
     e.stopPropagation();
     resizing = true;

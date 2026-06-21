@@ -70,7 +70,7 @@ let fromH = Math.round(rect.height);
 
 function resolveTargetSize(): CapsuleSize {
   let res = [0, 0] as CapsuleSize;
-  const page = pageStateMachine.getCurrentPage();
+  const page = pageStateMachine.state;
   const state = pageStateMachine.substates[page]?.getState();
   if (state) {
     const key = pageStateMachine.createKey(page, state) as keyof typeof sizeTable;
