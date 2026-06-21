@@ -21,7 +21,6 @@ import {
   isAria2c,
 } from "../state";
 import { logi, logw } from "../logger";
-import { getAvailablePages, resolveNextAvailablePage } from "../state-machines/page";
 import { pageStateMachine } from "../state-machines/page-machine";
 // ---------------------------------------------------------------------------
 // 闂傚倷绀侀幉锟犳偡椤栫偛鍨傞柟鎯版閺嬩線鏌曢崼婵囧闁哥姴妫濋弻娑㈠焺閸愮偓鐣风紓浣稿€搁悧鎾诲蓟濞戙垹绠抽柟鍨暞閻ｄ粙姊洪棃娑欘棞闁哥喐鎸冲顐㈩吋婢跺﹪鏁滈梺璋庡懐澧ch 婵犵數鍋為崹鍫曞箰閸濄儳鐭撻柡澶嬪焾閸ゆ洘銇勯幒宥堝厡闁崇粯妫冮獮鏍垝閻熸澘鈷夐梺绋垮濞茬喖寮婚敐鍜佺叆閹艰揪绱曟禒鈺呮⒑閹肩偛濡肩紒缁橈耿閻涱噣骞嬮敃鈧～鍛存煟濡搫鏆辨い蹇ｅ灦閺岀喖鎮℃惔锝嗘喖濠电偠灏欓崰鏍х�?dots�?
@@ -87,7 +86,7 @@ export function updateSwitcherUI() {
 // 闂傚倷绀侀幉锛勬暜閹烘嚚娲晝閳ь剟鎮鹃悜钘夎摕闁靛绠戝▓妤佺節閵忥絾纭鹃柨鏇樺€濆鎶芥焼瀹ュ棛鍘遍梺鍝勫€介褎淇婇崸妤佺厸?
 // ---------------------------------------------------------------------------
 
-function playSwitchPulse() {
+export function playSwitchPulse() {
   capsule.classList.remove("switch-pulse");
   void capsule.offsetWidth;
   capsule.classList.add("switch-pulse");
@@ -103,14 +102,8 @@ function playSwitchPulse() {
 export function switchToNextView(direction: number = 1) {
   const views = getAvailableViews();
   logi("ViewSwitcher", "switchToNextView views:", views, "isMusicPlaying:", isMusicPlaying, "lyricMode:", lyricMode, "aiEnabled:", aiEnabled);
-  const pageViews = getAvailablePages(views);
-  if (pageViews.length < 2) return;
-
-  const nextView = resolveNextAvailablePage(
-    pageViews,
-    pageStateMachine.state,
-    direction >= 0 ? 1 : -1,
-  );
+  const nextView = pageStateMachine.switchToNextView(direction >= 0 ? 1 : -1);
+  if (!nextView) return;
 
   playSwitchPulse();
   setUserChosenView(nextView);

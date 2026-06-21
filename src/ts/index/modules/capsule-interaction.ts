@@ -1,6 +1,5 @@
 import { capsule } from "../dom";
 import { currentView, dragStarted, setDragStarted, panelClickTimer, setPanelClickTimer, musicClickTimer, setMusicClickTimer, agentClickTimer, setAgentClickTimer, sadbClickTimer, setSadbClickTimer, downloaderClickTimer, setDownloaderClickTimer, emailClickTimer, setEmailClickTimer } from "../state";
-import { switchToNextView } from "./view-switcher";
 import { showContextMenu } from "./drag";
 import { logd } from "../logger";
 import { PageState } from "../state-machines/page";
@@ -19,16 +18,6 @@ function clearClickTimers(): void {
   setDownloaderClickTimer(null);
 }
 
-function dispatchPageAction(event: MouseEvent): void {
-  const page = pageStateMachine.state;
-  const submachine = pageStateMachine.getSubmachine(page);
-  if (!submachine) return;
-  submachine.dispatch({
-    type: "click",
-    target: event.target instanceof HTMLElement ? event.target : capsule,
-    event,
-  } satisfies PageSubstateAction);
-}
 
 export function initCapsuleInteraction() {
   capsule.addEventListener("click", (event: MouseEvent) => {
@@ -39,7 +28,14 @@ export function initCapsuleInteraction() {
     }
 
     if (overlayStateMachine.isOccupied()) return;
-    dispatchPageAction(event);
+    const page = pageStateMachine.state;
+    const submachine = pageStateMachine.getSubmachine(page);
+    if (!submachine) return;
+    submachine.dispatch({
+      type: "click",
+      target: event.target instanceof HTMLElement ? event.target : capsule,
+      event,
+    } satisfies PageSubstateAction);
   });
 
   capsule.addEventListener("dblclick", (event: MouseEvent) => {
@@ -63,7 +59,8 @@ export function initCapsuleInteraction() {
     }
     clearClickTimers();
     event.stopPropagation();
-    switchToNextView();
+    const nextView = pageStateMachine.switchToNextView();
+    if (!nextView) return;
   });
 
   capsule.addEventListener("contextmenu", (event: MouseEvent) => {
