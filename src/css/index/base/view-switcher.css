@@ -1,0 +1,70 @@
+﻿/* --- 视图切换器 --- */
+
+#view-switcher {
+
+    position: absolute;
+
+    bottom: 5px;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 10;
+
+    pointer-events: none;
+
+    opacity: 1;
+
+    transition: opacity 0.22s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+
+}
+
+#island-capsule.expanded #view-switcher.has-views,
+#island-capsule.email-expanded #view-switcher.has-views { display: flex; }
+
+
+
+#view-dots {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    pointer-events: auto;
+
+}
+
+.view-dot {
+
+    width: 6px; height: 6px;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    transition: background 0.2s, width 0.2s, border-radius 0.2s;
+
+}
+
+.view-dot.active {
+
+    width: 14px;
+
+    border-radius: 4px;
+
+}
+
+
+
+/* --- 隐私指示 --- */

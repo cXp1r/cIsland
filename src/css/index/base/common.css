@@ -1,0 +1,319 @@
+﻿:root {
+
+    --font-main: "Segoe UI Variable Display", "SF Pro Display", -apple-system, sans-serif;
+
+
+
+    /* ── 胶囊基础收起态（时间视图等默认状态） ──
+
+       后端: CAPSULE_COLLAPSED_W = 140.0, CAPSULE_COLLAPSED_H = 50.0 (lib.rs) */
+
+    --collapsed-w: 140px;
+
+    --collapsed-h: 50px;
+
+
+
+    /* ── 歌词收起态宽度（正在播放音乐时的歌词滚动条） ──
+
+       后端: CAPSULE_LYRIC_W = 340.0 (lib.rs) */
+
+    --lyric-collapsed-w: 340px;
+
+
+
+    /* ── 悬浮展开态（鼠标靠近时的展开尺寸，适用于 time / lyric 等视图） ──
+
+       后端: CAPSULE_EXPANDED_W = 330.0, CAPSULE_EXPANDED_H = 74.0 (lib.rs) */
+
+    --expanded-w: 330px;
+
+    --expanded-h: 74px;
+
+
+
+    /* ── 音乐面板展开态（歌词视图单击展开的大面板） ──
+
+       后端: set_music_expanded 命令中硬编码 380×420 (window.rs) */
+
+    --music-expanded-w: 380px;
+
+    --music-expanded-h: 420px;
+
+
+
+    /* ── 搜索视图（Alt+1 激活的搜索栏） ──
+
+       后端: WIN_W = 420.0 (lib.rs)，搜索宽度 = 固定窗口宽度 */
+
+    --search-w: 420px;
+
+    --search-h: 50px;
+
+    --search-result-item-h: 38px;
+
+    --search-expanded-h: 430px;
+
+    --email-view-w: 620px;
+
+    --email-view-h: 620px;
+
+
+
+    /* 注: Agent 展开态尺寸由后端 get_agent_window_size() 按档位返回
+
+       small=380×400 / medium=520×540 / large=620×640 (window.rs)
+
+       前端通过 CSS 变量 --agent-w, --agent-h 动态设置 */
+
+    
+
+    --notice-expanded-w: 330px;
+
+    --notice-expanded-h: 60px;
+
+}
+
+
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+
+
+html {
+
+    width: 100vw;
+
+    height: fit-content;
+
+    background: transparent;
+
+    display: flex;
+
+    align-items: flex-start;
+
+    padding-top: 5px;
+
+    font-family: var(--font-main);
+
+    overflow: hidden;
+
+    -webkit-user-select: none;
+
+    user-select: none;
+
+    cursor: default;
+
+    pointer-events: none;
+
+}
+
+body {
+    width: fit-content;
+}
+
+#island-capsule {
+
+    width: var(--collapsed-w);
+
+    height: var(--collapsed-h);
+
+    border-radius: 50px;
+
+    display: flex;
+
+    justify-content: center;
+
+    position: relative;
+
+    pointer-events: auto;
+
+    cursor: grab;
+
+    transition: 
+                border-radius 0.35s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1),
+
+                box-shadow 0.24s ease;
+
+    overflow: hidden;
+
+    will-change: transform;
+
+    isolation: isolate;
+
+}
+
+
+
+#island-capsule::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 1px;
+
+    border-radius: inherit;
+
+    opacity: 0;
+
+    transform: scale(0.985);
+
+    transition: opacity 0.24s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
+
+    pointer-events: none;
+
+}
+
+
+
+#island-capsule:active { cursor: grabbing; }
+
+
+
+#island-capsule.lyric-collapsed {
+
+    width: var(--lyric-collapsed-w);
+
+}
+
+
+
+#island-capsule.expanded {
+
+    width: var(--expanded-w);
+
+    height: var(--expanded-h);
+
+    border-radius: 28px;
+
+}
+
+
+
+#island-capsule.expanded.notice-active {
+
+    height: var(--notice-expanded-h);
+
+    width: var(--notice-expanded-w);
+
+}
+
+#island-capsule.email-expanded {
+
+    width: var(--email-view-w);
+
+    height: var(--email-view-h);
+
+    border-radius: 24px;
+
+}
+
+
+
+#island-capsule.switch-pulse {
+
+    animation: switch-pulse 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+}
+
+
+
+@keyframes switch-pulse {
+
+    0%   { transform: scale(1); }
+
+    35%  { transform: scale(1.02); }
+
+    100% { transform: scale(1); }
+
+}
+
+
+
+#current-view {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    z-index: 2;
+
+}
+
+
+
+#view-holder {
+
+    position: fixed;
+
+    left: -10000px;
+
+    top: -10000px;
+
+    width: var(--email-view-w);
+
+    height: var(--email-view-h);
+
+    overflow: hidden;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+}
+
+
+
+.content-wrapper {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    height: 100%;
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 1;
+
+    opacity: 1;
+
+    transform: translateY(0) scale(1);
+
+    transition: opacity 0.24s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
+
+}
+
+
+
+#island-capsule.privacy-active #view-switcher {
+
+    padding: 0 18px;
+
+}
+
+
+

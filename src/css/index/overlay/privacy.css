@@ -1,0 +1,71 @@
+﻿#privacy-indicators {
+
+    position: absolute;
+
+    top: 0; left: 0;
+
+    width: 100%; height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    opacity: 0;
+
+    transform: scale(0.84);
+
+    transition: opacity 0.22s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+
+    pointer-events: none;
+
+    z-index: 20;
+
+    padding: 0;
+
+    border-radius: inherit;
+
+}
+
+#privacy-indicators.active { opacity: 1; transform: scale(1); }
+
+#privacy-indicators.pulse {
+
+    animation: privacy-popup-pulse 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+}
+
+
+
+@keyframes privacy-popup-pulse {
+
+    0%   { transform: scale(0.86); }
+
+    48%  { transform: scale(1.08); }
+
+    100% { transform: scale(1); }
+
+}
+
+
+
+.privacy-icon {
+
+    display: none;
+
+    width: 24px; height: 24px;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+.privacy-icon svg { width: 17px; height: 17px; }
+
+.privacy-icon.active { display: flex; }

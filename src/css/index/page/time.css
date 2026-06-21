@@ -1,0 +1,87 @@
+﻿/* --- 时间 --- */
+
+#island-capsule #time-wrapper {
+
+    justify-content: center;
+
+}
+
+#island-capsule.panel-expanded #default {
+    display: none;
+}
+
+
+
+.time-side {
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    position: absolute;
+
+    top: 50%;
+
+    opacity: 0;
+
+    transform: translateY(-50%) scale(0.8);
+
+    transition: opacity 0.32s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.32s cubic-bezier(0.25, 1, 0.5, 1);
+
+    pointer-events: none;
+
+}
+
+
+
+.time-side-left {
+
+    letter-spacing: 0.4px;
+
+    right: calc(50% + 52px);
+
+}
+
+
+
+.time-side-right {
+
+    letter-spacing: 0.2px;
+
+    left: calc(50% + 52px);
+
+}
+
+
+
+#island-capsule.expanded .time-side {
+
+    opacity: 1;
+
+    transform: translateY(-50%) scale(1);
+
+}
+
+
+
+#time-text {
+
+    font-size: 17px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.6px;
+
+    white-space: nowrap;
+
+    flex-shrink: 0;
+
+    transition: opacity 0.24s cubic-bezier(0.25, 1, 0.5, 1),
+
+                transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
+
+}

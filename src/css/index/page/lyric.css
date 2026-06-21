@@ -1,0 +1,375 @@
+﻿/* --- 歌词区域 --- */
+
+#lyric-area {
+
+    display: none;
+
+    align-items: center;
+
+    width: 100%; height: 100%;
+
+    padding: 0 12px 0 14px;
+
+    gap: 8px;
+
+    overflow: hidden;
+
+}
+
+
+
+/* --- 唱片封面 --- */
+
+.vinyl-disc {
+
+    width: 36px; height: 36px;
+
+    border-radius: 50%;
+
+    flex-shrink: 0;
+
+    position: relative;
+
+    animation: vinyl-spin 8s linear infinite;
+
+}
+
+.vinyl-disc.paused { animation-play-state: paused; }
+
+
+
+.vinyl-grooves {
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+}
+
+
+
+.vinyl-cover {
+
+    position: absolute;
+
+    top: 50%; left: 50%;
+
+    width: 18px; height: 18px;
+
+    border-radius: 50%;
+
+    transform: translate(-50%, -50%);
+
+    background-size: cover;
+
+    background-position: center;
+
+    z-index: 1;
+
+}
+
+
+
+.vinyl-center {
+
+    position: absolute;
+
+    top: 50%; left: 50%;
+
+    width: 4px; height: 4px;
+
+    border-radius: 50%;
+
+    transform: translate(-50%, -50%);
+
+    z-index: 2;
+
+}
+
+
+
+@keyframes vinyl-spin {
+
+    from { transform: rotate(0deg); }
+
+    to   { transform: rotate(360deg); }
+
+}
+
+
+
+#lyric-text-wrap {
+
+    flex: 1;
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    min-width: 0;
+
+}
+
+
+
+#lyric-text {
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    overflow: hidden;
+
+    transition: opacity 0.18s ease;
+
+}
+
+
+
+#lyric-text-inner {
+
+    display: inline-block;
+
+    white-space: nowrap;
+
+    vertical-align: top;
+
+    will-change: transform;
+
+}
+
+#lyric-text.fade { opacity: 0; }
+
+
+
+#lyric-meta {
+
+    font-size: 10px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    margin-top: 1px;
+
+}
+
+
+
+.lyric-token,
+
+.mp-lyric-token {
+
+    position: relative;
+
+    display: inline-block;
+
+    white-space: pre;
+
+    color: rgba(255, 255, 255, 0.36) !important;
+
+    --sweep: 0;
+
+}
+
+
+
+.lyric-token::after,
+
+.mp-lyric-token::after {
+
+    content: attr(data-text);
+
+    position: absolute;
+
+    inset: 0;
+
+    width: calc(var(--sweep, 0) * 100%);
+
+    overflow: hidden;
+
+    white-space: pre;
+
+    color: rgba(255, 255, 255, 0.98) !important;
+
+    pointer-events: none;
+
+}
+
+
+
+/* --- 进度条 --- */
+
+.progress-bar {
+
+    width: 100%; height: 4px;
+
+    display: flex;
+
+    align-items: center;
+
+    position: relative;
+
+    margin-top: 2px;
+
+    cursor: pointer;
+
+    overflow: hidden;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+}
+
+#island-capsule.expanded .progress-bar {
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+    transition: opacity 0.2s ease 0.15s;
+
+}
+
+.progress-bar::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0; right: 0;
+
+    height: 2px;
+
+    border-radius: 1px;
+
+}
+
+.progress-fill {
+
+    position: absolute;
+
+    left: 0;
+
+    height: 2px;
+
+    border-radius: 1px;
+
+    width: 0%;
+
+    transition: width 0.15s linear;
+
+}
+
+.progress-thumb {
+
+    position: absolute;
+
+    width: 6px; height: 6px;
+
+    border-radius: 50%;
+
+    left: 0%;
+
+    transform: translateX(-50%);
+
+    opacity: 0;
+
+    transition: opacity 0.15s ease, transform 0.1s ease;
+
+    z-index: 1;
+
+    pointer-events: none;
+
+}
+
+.progress-bar:hover .progress-thumb { opacity: 1; }
+
+.progress-bar.seeking .progress-thumb {
+
+    opacity: 1;
+
+    transform: translateX(-50%) scale(1.3);
+
+}
+
+.progress-bar.seeking .progress-fill { transition: none; }
+
+
+
+/* --- 媒体控制按钮 --- */
+
+.media-controls {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    flex-shrink: 0;
+
+    max-width: 0;
+
+    overflow: hidden;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: max-width 0.01s ease, opacity 0.01s ease;
+
+}
+
+#island-capsule.expanded .media-controls {
+
+    max-width: 200px;
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+    transition: max-width 0.25s cubic-bezier(0.25, 1, 0.5, 1) 0.1s,
+
+                opacity 0.2s ease 0.15s;
+
+}
+
+
+
+.media-btn {
+
+    width: 30px; height: 30px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    transition: background 0.15s;
+
+    padding: 0;
+
+}
+
+.media-btn.play-btn { width: 34px; height: 34px; }
+
+
