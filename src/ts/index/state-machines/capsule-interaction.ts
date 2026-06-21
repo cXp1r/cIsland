@@ -1,11 +1,11 @@
 import { capsule } from "../dom";
 import { currentView, dragStarted, setDragStarted, panelClickTimer, setPanelClickTimer, musicClickTimer, setMusicClickTimer, agentClickTimer, setAgentClickTimer, sadbClickTimer, setSadbClickTimer, downloaderClickTimer, setDownloaderClickTimer, emailClickTimer, setEmailClickTimer } from "../state";
-import { showContextMenu } from "./drag";
+import { showContextMenu } from "../modules/drag";
 import { logd } from "../logger";
-import { PageState } from "../state-machines/page";
-import { overlayStateMachine } from "../state-machines/overlay-machine";
-import { pageStateMachine } from "../state-machines/page-machine";
-import { type PageSubstateAction } from "../state-machines/page-substates/common";
+import { PageState } from "./page";
+import { overlayStateMachine } from "./overlay-machine";
+import { pageStateMachine } from "./page-machine";
+import { type PageSubstateAction } from "./page-substates/common";
 
 function clearClickTimers(): void {
   [panelClickTimer, agentClickTimer, musicClickTimer, sadbClickTimer, emailClickTimer, downloaderClickTimer]
@@ -17,7 +17,6 @@ function clearClickTimers(): void {
   setEmailClickTimer(null);
   setDownloaderClickTimer(null);
 }
-
 
 export function initCapsuleInteraction() {
   capsule.addEventListener("click", (event: MouseEvent) => {
