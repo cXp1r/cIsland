@@ -1,7 +1,7 @@
 import type { ViewMode } from "../types";
 import { PageState } from "./page";
 import type {
-  PageStateMachine,
+  PageStateMachineContract,
   PageSubmachine,
 } from "./page-machine";
 import { pageStateMachine as pageStateMachineImpl } from "./page-machine";
@@ -9,9 +9,9 @@ import type { OverlayStateMachine } from "./overlay-machine";
 import { overlayStateMachine } from "./overlay-machine";
 
 export interface StateMachine {
-  readonly pageStateMachine: PageStateMachine;
+  readonly pageStateMachine: PageStateMachineContract;
   readonly overlay: OverlayStateMachine;
-  readonly substates: PageStateMachine["substates"];
+  readonly substates: PageStateMachineContract["substates"];
 
   currentPage: PageState;
   overlayPriority: OverlayStateMachine["priority"];
@@ -29,7 +29,7 @@ class StateMachineImpl implements StateMachine {
   readonly pageStateMachine = pageStateMachineImpl;
   readonly overlay = overlayStateMachine;
 
-  get substates(): PageStateMachine["substates"] {
+  get substates(): PageStateMachineContract["substates"] {
     return this.pageStateMachine.substates;
   }
 

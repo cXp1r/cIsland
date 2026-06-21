@@ -24,7 +24,7 @@ export interface PageSubmachine<S extends string = string> {
 
 export type PageSubmachineMap = Partial<Record<PageState, PageSubmachine>>;
 
-export interface PageStateMachine {
+export interface PageStateMachineContract {
   state: PageState;
   readonly submachines: PageSubmachineMap;
   readonly substates: Readonly<{
@@ -43,7 +43,7 @@ export interface PageStateMachine {
   createKey(page: PageState, state: string): string;
 }
 
-class PageStateMachineImpl implements PageStateMachine {
+export class PageStateMachine implements PageStateMachineContract {
   private _currentPage: PageState = PageState.Time;
 
   readonly submachines: PageSubmachineMap = {};
@@ -93,4 +93,4 @@ class PageStateMachineImpl implements PageStateMachine {
   }
 }
 
-export const pageStateMachine: PageStateMachine = new PageStateMachineImpl();
+export const pageStateMachine: PageStateMachineContract = new PageStateMachine();
