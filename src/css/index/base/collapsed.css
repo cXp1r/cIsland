@@ -37,37 +37,6 @@
 #collapsed-indicator:active { transform: translateX(-50%) scaleX(1.05); }
 
 
-
-/* --- 最小化动画 --- */
-
-#island-capsule.minimizing {
-
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-
-                opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-
-    transform: scale(0);
-
-    opacity: 0;
-
-    will-change: transform, opacity;
-
-    pointer-events: none;
-
-}
-
-#island-capsule.minimized {
-
-    width: 0 !important; height: 0 !important;
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transform: scale(0);
-
-}
-
 #island-capsule.expanding {
 
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -81,12 +50,4 @@
     will-change: transform, opacity;
 
 }
-
-
-
-body.minimized { padding-top: 0; }
-
-body.minimized #collapsed-indicator { display: block; }
-
-
 
