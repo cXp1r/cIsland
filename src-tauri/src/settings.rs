@@ -80,8 +80,6 @@ pub(crate) struct SettingsData {
     pub ai_model: String,
     #[serde(default)]
     pub is_reasoning_model: bool,
-    #[serde(default = "default_indicator_color")]
-    pub indicator_color: String,
     #[serde(default = "default_agent_window_size")]
     pub agent_window_size: String,
     #[serde(default = "crate::link_handler::get_default_link_handlers")]
@@ -199,10 +197,6 @@ fn default_lyric_offset_enabled() -> bool {
     true
 }
 
-pub(crate) fn default_indicator_color() -> String {
-    "#2edb67".to_string()
-}
-
 pub(crate) fn default_agent_window_size() -> String {
     "medium".to_string()
 }
@@ -252,7 +246,6 @@ fn default_settings() -> SettingsData {
         ai_api_key: String::new(),
         ai_model: String::new(),
         is_reasoning_model: false,
-        indicator_color: default_indicator_color(),
         agent_window_size: default_agent_window_size(),
         link_handlers: crate::link_handler::get_default_link_handlers(),
         weather_city: String::new(),
@@ -325,7 +318,6 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         ai_api_key: state.ai_api_key.lock().unwrap().clone(),
         ai_model: state.ai_model.lock().unwrap().clone(),
         is_reasoning_model: state.is_reasoning_model.load(Ordering::Relaxed),
-        indicator_color: state.indicator_color.lock().unwrap().clone(),
         agent_window_size: state.agent_window_size.lock().unwrap().clone(),
         link_handlers: state.link_handlers.lock().unwrap().clone(),
         weather_city: state.weather_city.lock().unwrap().clone(),
@@ -389,7 +381,6 @@ pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
         "hide_and_see_key": state.hide_and_see_key.lock().unwrap().clone(),
         "lyric_mode": state.lyric_mode.lock().unwrap().clone(),
         "lyric_offset_enabled": state.lyric_offset_enabled.load(Ordering::Relaxed),
-        "indicator_color": state.indicator_color.lock().unwrap().clone(),
         "agent_window_size": state.agent_window_size.lock().unwrap().clone(),
         "weather_city": state.weather_city.lock().unwrap().clone(),
         "weather_lat": *state.weather_lat.lock().unwrap(),
@@ -472,7 +463,6 @@ pub fn save_settings(
     let hide_and_see_key = hide_and_see_key.unwrap_or_else(|| state.hide_and_see_key.lock().unwrap().clone());
     let search_shortcut = search_shortcut.unwrap_or_else(|| state.search_shortcut.lock().unwrap().clone());
     let lyric_mode = lyric_mode.unwrap_or_else(|| state.lyric_mode.lock().unwrap().clone());
-    let indicator_color = indicator_color.unwrap_or_else(|| state.indicator_color.lock().unwrap().clone());
     let agent_window_size = agent_window_size.unwrap_or_else(|| state.agent_window_size.lock().unwrap().clone());
 
     if let (Some(offset_x),Some(offset_y)) = (offset_x, offset_y) {
@@ -520,7 +510,6 @@ pub fn save_settings(
     if let Some(enabled) = lyric_offset_enabled {
         state.lyric_offset_enabled.store(enabled, Ordering::Relaxed);
     }
-    *state.indicator_color.lock().unwrap() = indicator_color.clone();
     *state.agent_window_size.lock().unwrap() = agent_window_size.clone();
     if let Some(ref city) = weather_city {
         *state.weather_city.lock().unwrap() = city.clone();
@@ -658,7 +647,6 @@ pub fn save_settings(
     if let Some(enabled) = lyric_offset_enabled {
         settings_data.lyric_offset_enabled = enabled;
     }
-    settings_data.indicator_color = indicator_color;
     settings_data.agent_window_size = agent_window_size;
     if let Some(city) = weather_city {
         settings_data.weather_city = city;

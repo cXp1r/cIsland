@@ -377,7 +377,6 @@ pub fn run() {
             let is_music = Arc::new(AtomicBool::new(false));
             let expand_anim_id = Arc::new(AtomicU64::new(0));
             let move_anim_id = Arc::new(AtomicU64::new(0));
-            let indicator_color = Arc::new(Mutex::new(settings.indicator_color.clone()));
             let agent_window_size = Arc::new(Mutex::new(settings.agent_window_size.clone()));
             let link_handlers = Arc::new(Mutex::new(settings.link_handlers.clone()));
             let url_whitelist: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
@@ -477,7 +476,6 @@ pub fn run() {
                 ai_enabled: ai_enabled.clone(),
                 ai_generating: ai_generating.clone(),
                 ai_history: ai_history.clone(),
-                indicator_color: indicator_color.clone(),
                 agent_window_size: agent_window_size.clone(),
                 link_handlers: link_handlers.clone(),
                 url_whitelist: url_whitelist.clone(),
@@ -1523,8 +1521,6 @@ pub struct IslandState {
     pub ai_enabled: Arc<AtomicBool>,
     pub ai_generating: Arc<AtomicBool>,
     pub ai_history: Arc<Mutex<Vec<ChatMessage>>>,
-    // 收起状态小横条颜色
-    pub indicator_color: Arc<Mutex<String>>,
     // AI 窗口大小档位
     pub agent_window_size: Arc<Mutex<String>>,
     // 自定义链接处理器
