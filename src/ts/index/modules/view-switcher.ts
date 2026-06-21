@@ -102,12 +102,7 @@ export function playSwitchPulse() {
 export function switchToNextView(direction: number = 1) {
   const views = getAvailableViews();
   logi("ViewSwitcher", "switchToNextView views:", views, "isMusicPlaying:", isMusicPlaying, "lyricMode:", lyricMode, "aiEnabled:", aiEnabled);
-  const nextView = pageStateMachine.switchToNextView(direction >= 0 ? 1 : -1);
-  if (!nextView) return;
-
-  playSwitchPulse();
-  setUserChosenView(nextView);
-  setView(nextView, true);
+  void pageStateMachine.switchToNextView(direction >= 0 ? 1 : -1);
 }
 
 // ---------------------------------------------------------------------------

@@ -59,8 +59,7 @@ export function initCapsuleInteraction() {
     }
     clearClickTimers();
     event.stopPropagation();
-    const nextView = pageStateMachine.switchToNextView();
-    if (!nextView) return;
+    void pageStateMachine.switchToNextView();
   });
 
   capsule.addEventListener("contextmenu", (event: MouseEvent) => {

@@ -1,5 +1,5 @@
 import type { ViewMode } from "../types";
-import { isMusicPlaying, lyricMode, aiEnabled, emailConfigure, isAria2c } from "../state";
+import { isMusicPlaying, lyricMode, aiEnabled, emailConfigure, isAria2c, setUserChosenView } from "../state";
 import { PageState } from "./page";
 import { pageSubstateRegistry, type PageSubstateMachine } from "./page-substates";
 import { getAvailablePages, resolveNextAvailablePage } from "./page";
@@ -49,16 +49,21 @@ export class PageStateMachine {
     return `${page}:${state}`;
   }
 
-  switchToNextView(direction: 1 | -1 = 1): ViewMode | undefined {
+  async switchToNextView(direction: 1 | -1 = 1): Promise<ViewMode | undefined> {
     const views = this.getAvailableViews();
     const pageViews = getAvailablePages(views);
     if (pageViews.length < 2) return undefined;
 
-    return resolveNextAvailablePage(
+    const nextView = resolveNextAvailablePage(
       pageViews,
       this._currentPage,
       direction >= 0 ? 1 : -1,
     );
+    const { playSwitchPulse, setView } = await import("../modules/view-switcher");
+    playSwitchPulse();
+    setUserChosenView(nextView);
+    setView(nextView, true);
+    return nextView;
   }
 }
 
