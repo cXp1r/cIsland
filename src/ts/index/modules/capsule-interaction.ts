@@ -22,20 +22,26 @@ import { fetchAndUpdateVolume } from "./music-controls";
 import { showContextMenu } from "./drag";
 import { logd } from "../logger";
 import { ManualPageState } from "../state-machines/page";
-import {
-  setPageState,
-  savePageClasses,
-} from "../state-machines/page-submachines";
-import { TimePageSubstate } from "../state-machines/page-substates/time";
-import { LyricPageSubstate } from "../state-machines/page-substates/lyric";
+import { overlayStateMachine } from "../state-machines/overlay-machine";
+import { pageStateMachine } from "../state-machines/page-machine";
 import { AgentPageSubstate } from "../state-machines/page-substates/agent";
 import { SadbPageSubstate } from "../state-machines/page-substates/sadb";
-import { EmailPageSubstate } from "../state-machines/page-substates/email";
-import { DownloaderPageSubstate } from "../state-machines/page-substates/downloader";
 
-function syncManualPageState(page: ManualPageState, state: string) {
-  setPageState(page, state);
-  savePageClasses(page, capsule.classList);
+function debouncedClick(
+  timer: number | null,
+  setTimer: (v: number | null) => void,
+  action: () => void,
+  delayMs: number = 250,
+): void {
+  if (timer) {
+    clearTimeout(timer);
+    setTimer(null);
+    return;
+  }
+  setTimer(window.setTimeout(() => {
+    setTimer(null);
+    action();
+  }, delayMs));
 }
 
 export function initCapsuleInteraction() {
@@ -43,212 +49,161 @@ export function initCapsuleInteraction() {
     logd("Capsule",`click on view '${currentView}'`);
     const target = e.target as HTMLElement;
     console.log(target);
-    // 如果刚刚发生了拖动，不触发点击
+    // 濡傛灉鍒氬垰鍙戠敓浜嗘嫋鍔紝涓嶈Е鍙戠偣鍑?
     if (dragStarted) {
       setDragStarted(false);
       return;
     }
-    if (currentView === "time" ) {
-      e.stopPropagation();
-      if (panelClickTimer) {
-        clearTimeout(panelClickTimer);
-        setPanelClickTimer(null);
-        return;
-      }
-      
-      setPanelClickTimer(window.setTimeout(() => {
-        setPanelClickTimer(null);
-        if (capsule.classList.contains("panel-expanded") && target instanceof HTMLDivElement) {
-          capsule.classList.remove("panel-expanded");
-          syncManualPageState(ManualPageState.Time, TimePageSubstate.Collapsed);
-        } else {
-          capsule.classList.add("panel-expanded");
-          syncManualPageState(ManualPageState.Time, TimePageSubstate.Expanded);
-        }
-      }, 250));
-    }
-    // 音乐视图：单击展开/收起
-    if (currentView === "lyric") {
-      // 展开态：点击头部收起，排除交互元素
-      if (capsule.classList.contains("music-expanded")) {
-        if (!target.closest("#music-panel-header")) {
-          return;
-        }
-      } else {
-        // 收起态：排除播放控制
-        if (target.closest(".media-btn") || target.closest(".progress-bar") || target.closest(".vol-btn")) {
-          return;
-        }
-      }
-      e.stopPropagation();
-      if (musicClickTimer) {
-        clearTimeout(musicClickTimer);
-        setMusicClickTimer(null);
-        return;
-      }
-      setMusicClickTimer(window.setTimeout(() => {
-        setMusicClickTimer(null);
-        if (isExpandAnimating) return;
-        setIsExpandAnimating(true);
-        const willExpand = !capsule.classList.contains("music-expanded");
-        if (willExpand) {
-          capsule.classList.add("music-expanded");
-          syncManualPageState(ManualPageState.Lyric, LyricPageSubstate.Expanded);
-          musicPanelSong.textContent = currentSongTitle || "";
-          musicPanelArtist.textContent = currentArtistName || "";
-          if (currentThumbnailUrl) {
-            vinylCover.style.backgroundImage = `url(${currentThumbnailUrl})`;
-            musicPanelCoverImg.style.backgroundImage = `url(${currentThumbnailUrl})`;
-          }
-          fetchAndUpdateVolume();
-          void invoke("set_expanded", { expanded: true });
-          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
-        } else {
-          capsule.classList.remove("music-expanded");
-          syncManualPageState(ManualPageState.Lyric, LyricPageSubstate.Collapsed);
-          void invoke("set_expanded", { expanded: false });
-          window.setTimeout(() => { setIsExpandAnimating(false); }, 500);
-        }
-      }, 250));
-      return;
-    }
-    // Agent 视图特殊处理：单击展开/收起，但需要等待排除双击
-    if (currentView === "agent") {
-      // 展开态：只有点击状态栏才收起，但排除清空按钮
-      if (capsule.classList.contains("agent-expanded")) {
-        if (!target.closest("#agent-status-bar") || target.closest("#agent-clear-btn")) {
-          return;
-        }
-      } else {
-        // 收起态：排除交互元素，其他区域点击展开
-        if (target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn") || target.closest(".thinking-section") || target.closest("#agent-messages") || target.closest("#agent-confirm-dialog")) {
-          return;
-        }
-      }
-      e.stopPropagation();
-      // 延迟执行，等待可能的双击
-      if (agentClickTimer) {
-        clearTimeout(agentClickTimer);
-        setAgentClickTimer(null);
-        return; // 双击的第二次 click，忽略
-      }
-      setAgentClickTimer(window.setTimeout(() => {
-        setAgentClickTimer(null);
-        if (isExpandAnimating) return;
-        setIsExpandAnimating(true);
-        if (!capsule.classList.contains("agent-expanded")) {
-          capsule.classList.add("agent-expanded");
-          syncManualPageState(ManualPageState.Agent, AgentPageSubstate.Expanded);
-          void invoke("set_expanded", { expanded: true });
-          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
-        } else {
-          ;
-          const agentArea = document.getElementById("agent-area");
-          if (agentArea) agentArea.classList.add("collapsing");
-          window.setTimeout(() => {
-            capsule.classList.remove("agent-expanded");
-            syncManualPageState(ManualPageState.Agent, AgentPageSubstate.Collapsed);
-            void invoke("set_expanded", { expanded: false });
-            window.setTimeout(() => {
-              if (agentArea) agentArea.classList.remove("collapsing");
-              
-              setIsExpandAnimating(false);
-            }, 50);
-          }, 100);
-        }
-      }, 250));
-      return;
-    }
-    // sadb 视图三态：胶囊 → 待机面板(idle) → 镜像(expanded)
-    if (currentView === "sadb") {
-      // 镜像中：所有操作由面板内按钮（Stop）处理，胶囊层不响应点击
-      if (capsule.classList.contains("sadb-expanded")) return;
-      // 待机面板：点击状态栏才收起回胶囊
-      if (capsule.classList.contains("sadb-idle")) {
-        if (!target.closest("#sadb-status-bar")) return;
+
+    // 鏈夊脊灞傦紙search / notice / privacy锛夋椂锛屼笉瑙﹀彂鍒嗛〉鐐瑰嚮閫昏緫
+    if (overlayStateMachine.isOccupied()) return;
+
+    const page = pageStateMachine.getCurrentPage();
+    switch (page) {
+      case ManualPageState.Time: {
         e.stopPropagation();
-        if (sadbClickTimer) { clearTimeout(sadbClickTimer); setSadbClickTimer(null); return; }
-        setSadbClickTimer(window.setTimeout(() => {
-          setSadbClickTimer(null);
-          if (isExpandAnimating) return;
-          setIsExpandAnimating(true);
-          ;
-          capsule.classList.remove("sadb-idle");
-          syncManualPageState(ManualPageState.Sadb, SadbPageSubstate.Collapsed);
+        debouncedClick(panelClickTimer, setPanelClickTimer, () => {
+        if (pageStateMachine.getPageState(ManualPageState.Time) === "expanded"
+              && target instanceof HTMLDivElement) {
+          pageStateMachine.substates[ManualPageState.Time].collapse();
           void invoke("set_expanded", { expanded: false });
-          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
-        }, 250));
-        return;
+        } else {
+          pageStateMachine.substates[ManualPageState.Time].expand();
+          void invoke("set_expanded", { expanded: true });
+        }
+        });
+        break;
       }
-      // 胶囊态：点击任意区域（排除按钮/canvas）→ 展开待机面板
-      if (target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop") || target.closest("#sadb-canvas")) return;
-      e.stopPropagation();
-      if (sadbClickTimer) { clearTimeout(sadbClickTimer); setSadbClickTimer(null); return; }
-        setSadbClickTimer(window.setTimeout(() => {
-          setSadbClickTimer(null);
+      case ManualPageState.Lyric: {
+        if (pageStateMachine.getPageState(ManualPageState.Lyric) === "expanded") {
+          if (!target.closest("#music-panel-header")) return;
+        } else {
+          if (target.closest(".media-btn") || target.closest(".progress-bar")
+              || target.closest(".vol-btn")) return;
+        }
+        e.stopPropagation();
+        debouncedClick(musicClickTimer, setMusicClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          ;
-          capsule.classList.add("sadb-idle");
-          syncManualPageState(ManualPageState.Sadb, SadbPageSubstate.IdlePanel);
-          void invoke("set_expanded", { expanded: true });
-        window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
-      }, 250));
-      return;
-    }
-    // email 视图
-    if (currentView === "email") {
-      if (emailClickTimer) {
-        clearTimeout(emailClickTimer);
-        setEmailClickTimer(null);
-        return;
-      }
-      setEmailClickTimer(window.setTimeout(() => {
-        if (capsule.classList.contains("email-expanded")){
-          capsule.classList.remove("email-expanded");
-          syncManualPageState(ManualPageState.Email, EmailPageSubstate.Collapsed);
-          void invoke('set_expanded', { expanded: false });
-          return;
-        }
-        void invoke('set_expanded', { expanded: true });
-        capsule.classList.add("email-expanded");
-        syncManualPageState(ManualPageState.Email, EmailPageSubstate.Expanded);
-      }, 250));
-    }
-
-    if (currentView === "downloader") {
-
-      if (!(target instanceof HTMLDivElement)) {
-        return;
-      }
-      e.stopPropagation();
-      // 延迟执行，等待可能的双击
-      if (downloaderClickTimer) {
-        clearTimeout(downloaderClickTimer);
-        setDownloaderClickTimer(null);
-        return; // 双击的第二次 click，忽略
-      }
-      setDownloaderClickTimer(window.setTimeout(() => {
-        setDownloaderClickTimer(null);
-        if (isExpandAnimating) return;
-        setIsExpandAnimating(true);
-        if (!capsule.classList.contains("downloader-expanded")) {
-          capsule.classList.add("downloader-expanded");
-          syncManualPageState(ManualPageState.Downloader, DownloaderPageSubstate.Expanded);
-          void invoke("set_expanded", { expanded: true });
-          window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
-        } else {
-          window.setTimeout(() => {
-            capsule.classList.remove("downloader-expanded");
-            syncManualPageState(ManualPageState.Downloader, DownloaderPageSubstate.Collapsed);
+          if (pageStateMachine.getPageState(ManualPageState.Lyric) !== "expanded") {
+            musicPanelSong.textContent = currentSongTitle || "";
+            musicPanelArtist.textContent = currentArtistName || "";
+            if (currentThumbnailUrl) {
+              vinylCover.style.backgroundImage = `url(${currentThumbnailUrl})`;
+              musicPanelCoverImg.style.backgroundImage = `url(${currentThumbnailUrl})`;
+            }
+            fetchAndUpdateVolume();
+            pageStateMachine.substates[ManualPageState.Lyric].expand();
+            void invoke("set_expanded", { expanded: true });
+            window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
+          } else {
+            pageStateMachine.substates[ManualPageState.Lyric].collapse();
             void invoke("set_expanded", { expanded: false });
-            window.setTimeout(() => {
-              setIsExpandAnimating(false);
-            }, 50);
-          }, 100);
+            window.setTimeout(() => { setIsExpandAnimating(false); }, 500);
+          }
+        });
+        break;
+      }
+      case ManualPageState.Agent: {
+        const agentSt = pageStateMachine.getPageState(ManualPageState.Agent);
+        if (agentSt !== AgentPageSubstate.Collapsed) {
+          if (!target.closest("#agent-status-bar") || target.closest("#agent-clear-btn")) return;
+        } else {
+          if (target.closest("#agent-input") || target.closest("#agent-send-btn")
+              || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn")
+              || target.closest(".thinking-section") || target.closest("#agent-messages")
+              || target.closest("#agent-confirm-dialog")) return;
         }
-      }, 250));
-      return;
+        e.stopPropagation();
+        debouncedClick(agentClickTimer, setAgentClickTimer, () => {
+          if (isExpandAnimating) return;
+          setIsExpandAnimating(true);
+          if (pageStateMachine.getPageState(ManualPageState.Agent) === "collapsed") {
+            pageStateMachine.substates[ManualPageState.Agent].expand();
+            void invoke("set_expanded", { expanded: true });
+            window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
+          } else {
+            const agentArea = document.getElementById("agent-area");
+            if (agentArea) agentArea.classList.add("collapsing");
+            window.setTimeout(() => {
+              pageStateMachine.substates[ManualPageState.Agent].collapse();
+              void invoke("set_expanded", { expanded: false });
+              window.setTimeout(() => {
+                if (agentArea) agentArea.classList.remove("collapsing");
+                setIsExpandAnimating(false);
+              }, 50);
+            }, 100);
+          }
+        });
+        break;
+      }
+      case ManualPageState.Sadb: {
+        const sadbSt = pageStateMachine.getPageState(ManualPageState.Sadb);
+        switch (sadbSt) {
+          case SadbPageSubstate.Mirroring:
+            break;
+          case SadbPageSubstate.IdlePanel:
+            if (!target.closest("#sadb-status-bar")) return;
+            e.stopPropagation();
+            debouncedClick(sadbClickTimer, setSadbClickTimer, () => {
+              if (isExpandAnimating) return;
+              setIsExpandAnimating(true);
+              pageStateMachine.substates[ManualPageState.Sadb].collapse();
+              void invoke("set_expanded", { expanded: false });
+              window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
+            });
+            break;
+          default:
+            if (target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop")
+                || target.closest("#sadb-canvas")) return;
+            e.stopPropagation();
+            debouncedClick(sadbClickTimer, setSadbClickTimer, () => {
+              if (isExpandAnimating) return;
+              setIsExpandAnimating(true);
+              pageStateMachine.substates[ManualPageState.Sadb].idlePanel();
+              void invoke("set_expanded", { expanded: false });
+              window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
+            });
+            break;
+        }
+        break;
+      }
+      case ManualPageState.Email: {
+        debouncedClick(emailClickTimer, setEmailClickTimer, () => {
+          if (pageStateMachine.getPageState(ManualPageState.Email) === "expanded") {
+            pageStateMachine.substates[ManualPageState.Email].collapse();
+            void invoke("set_expanded", { expanded: false });
+          } else {
+            pageStateMachine.substates[ManualPageState.Email].expand();
+            void invoke("set_expanded", { expanded: true });
+          }
+        });
+        break;
+      }
+      case ManualPageState.Downloader: {
+        if (!(target instanceof HTMLDivElement)) return;
+        e.stopPropagation();
+        debouncedClick(downloaderClickTimer, setDownloaderClickTimer, () => {
+          if (isExpandAnimating) return;
+          setIsExpandAnimating(true);
+          if (pageStateMachine.getPageState(ManualPageState.Downloader) === "collapsed") {
+            pageStateMachine.substates[ManualPageState.Downloader].expand();
+            void invoke("set_expanded", { expanded: true });
+            window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
+          } else {
+            window.setTimeout(() => {
+              pageStateMachine.substates[ManualPageState.Downloader].collapse();
+              void invoke("set_expanded", { expanded: false });
+              window.setTimeout(() => {
+                setIsExpandAnimating(false);
+              }, 50);
+            }, 100);
+          }
+        });
+        break;
+      }
+      default:
+        break;
     }
   });
   capsule.addEventListener("dblclick", (e: MouseEvent) => {
@@ -257,24 +212,26 @@ export function initCapsuleInteraction() {
     if (target.closest(".url-item") || target.closest("#notice-area") || target.closest(".media-btn") || target.closest(".view-dot") || target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn") || target.closest("#sadb-btn-start") || target.closest("#sadb-btn-stop") || target.closest("#sadb-canvas") || target.closest(".downloader-btn")) {
       return;
     }
-    [panelClickTimer, agentClickTimer, musicClickTimer, sadbClickTimer, emailClickTimer]
+    [panelClickTimer, agentClickTimer, musicClickTimer, sadbClickTimer, emailClickTimer, downloaderClickTimer]
       .forEach(t => t && clearTimeout(t));
     setPanelClickTimer(null);
     setAgentClickTimer(null);
     setMusicClickTimer(null);
     setSadbClickTimer(null);
     setEmailClickTimer(null);
+    setDownloaderClickTimer(null);
     e.stopPropagation();
     switchToNextView();
   });
-  // 右键菜单功能
+  // 鍙抽敭鑿滃崟鍔熻兘
   capsule.addEventListener("contextmenu", (e: MouseEvent) => {
     e.preventDefault();
-    // Agent 展开态时不显示菜单
-    if (capsule.classList.contains("agent-expanded") || capsule.classList.contains("music-expanded")) return;
-    // 隐私弹窗显示时不显示菜单
+    // Agent 闈炴敹璧锋€併€丩yric 灞曞紑鎬佹椂涓嶆樉绀鸿彍鍗?
+    if (pageStateMachine.getPageState(ManualPageState.Agent) !== "collapsed"
+        || pageStateMachine.getPageState(ManualPageState.Lyric) === "expanded") return;
+    // 闅愮寮圭獥鏄剧ず鏃朵笉鏄剧ず鑿滃崟锛堥殣绉侀潪鎵嬪姩椤甸潰锛屾棤鐘舵€佹満鏉＄洰锛屼繚鎸?classList 鍒ゆ柇锛?
     if (capsule.classList.contains("privacy-active")) return;
-    // 显示系统菜单
+    // 鏄剧ず绯荤粺鑿滃崟
     showContextMenu();
   });
 }

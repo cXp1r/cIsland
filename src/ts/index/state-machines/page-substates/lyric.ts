@@ -1,9 +1,9 @@
-import { definePageSubstate, PageSubstateKind } from "../page-substates";
+import { definePageSubstate, PageSubstateKind } from "./common";
 
 export const LyricPageSubstate = {
   Collapsed: "collapsed",
   Expanded: "expanded",
-  Seeking: "seeking", // 拖动或调整进度
+  Seeking: "seeking",
 } as const;
 
 export type LyricPageSubstate = (typeof LyricPageSubstate)[keyof typeof LyricPageSubstate];

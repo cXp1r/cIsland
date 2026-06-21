@@ -1,12 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { capsule } from "../dom";
-import { currentView } from "../state";
-import { ManualPageState, isManualPageState } from "../state-machines/page";
+import { ManualPageState } from "../state-machines/page";
 import {
-  createPageSubmachineKey,
-  getPageState,
-} from "../state-machines/page-submachines";
+  pageStateMachine,
+} from "../state-machines/page-machine";
 
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
   const calcX = (t: number) => 3 * p1x * t * (1 - t) ** 2 + 3 * p2x * t ** 2 * (1 - t) + t ** 3;
@@ -43,24 +41,24 @@ const SEARCH_EXPANDED_SIZE: CapsuleSize = [420, 430];
 const NOTICE_SIZE: CapsuleSize = [400, 70];
 
 const sizeTable: Record<SizeKey, CapsuleSize> = {
-  [createPageSubmachineKey(ManualPageState.Time, "collapsed")]: DEFAULT_SIZE,
-  [createPageSubmachineKey(ManualPageState.Time, "expanded")]: PANEL_EXPANDED_SIZE,
-  [createPageSubmachineKey(ManualPageState.Lyric, "collapsed")]: [340, 50] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Lyric, "expanded")]: MUSIC_EXPANDED_SIZE,
-  [createPageSubmachineKey(ManualPageState.Lyric, "seeking")]: MUSIC_EXPANDED_SIZE,
-  [createPageSubmachineKey(ManualPageState.Agent, "collapsed")]: DEFAULT_SIZE,
-  [createPageSubmachineKey(ManualPageState.Agent, "expanded")]: [640, 620] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Agent, "thinking")]: [640, 620] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Agent, "generating")]: [640, 620] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Sadb, "collapsed")]: DEFAULT_SIZE,
-  [createPageSubmachineKey(ManualPageState.Sadb, "idle_panel")]: SADB_IDLE_SIZE,
-  [createPageSubmachineKey(ManualPageState.Sadb, "mirroring")]: SADB_IDLE_SIZE,
-  [createPageSubmachineKey(ManualPageState.Email, "collapsed")]: [620, 620] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Email, "expanded")]: [620, 620] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Email, "dragging")]: [620, 620] as CapsuleSize,
-  [createPageSubmachineKey(ManualPageState.Downloader, "collapsed")]: DEFAULT_SIZE,
-  [createPageSubmachineKey(ManualPageState.Downloader, "expanded")]: DOWNLOADER_SIZE,
-  [createPageSubmachineKey(ManualPageState.Downloader, "downloading")]: DOWNLOADER_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Time, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Time, "expanded")]: PANEL_EXPANDED_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Lyric, "collapsed")]: [340, 50] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Lyric, "expanded")]: MUSIC_EXPANDED_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Lyric, "seeking")]: MUSIC_EXPANDED_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Agent, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Agent, "expanded")]: [640, 620] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Agent, "thinking")]: [640, 620] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Agent, "generating")]: [640, 620] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Sadb, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Sadb, "idle_panel")]: SADB_IDLE_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Sadb, "mirroring")]: SADB_IDLE_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Email, "collapsed")]: [620, 620] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Email, "expanded")]: [620, 620] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Email, "dragging")]: [620, 620] as CapsuleSize,
+  [pageStateMachine.createKey(ManualPageState.Downloader, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Downloader, "expanded")]: DOWNLOADER_SIZE,
+  [pageStateMachine.createKey(ManualPageState.Downloader, "downloading")]: DOWNLOADER_SIZE,
 };
 
 let raf: number;
@@ -72,13 +70,12 @@ let fromH = Math.round(rect.height);
 
 function resolveTargetSize(): CapsuleSize {
   let res = [0, 0] as CapsuleSize;
-  if (isManualPageState(currentView)) {
-    const state = getPageState(currentView);
-    if (state) {
-      const key = createPageSubmachineKey(currentView, state) as keyof typeof sizeTable;
-      const nextSize = sizeTable[key];
-      if (nextSize) res = nextSize;
-    }
+  const page = pageStateMachine.getCurrentPage();
+  const state = pageStateMachine.getPageState(page);
+  if (state) {
+    const key = pageStateMachine.createKey(page, state) as keyof typeof sizeTable;
+    const nextSize = sizeTable[key];
+    if (nextSize) res = nextSize;
   }
 
   if (capsule.classList.contains("search-active")) {
@@ -128,7 +125,7 @@ port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t:
   });
 };
 
-// 高减少作为缩小的判断
+// 楂樺噺灏戜綔涓虹缉灏忕殑鍒ゆ柇
 export function animateCapsule(toW: number, toH: number): void {
   if (toW === targetW && toH === targetH) return;
   void invoke("set_capsule_target_rect", { height: toH, width: toW });

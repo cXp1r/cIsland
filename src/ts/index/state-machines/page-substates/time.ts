@@ -1,8 +1,8 @@
-import { definePageSubstate, PageSubstateKind } from "../page-substates";
+import { definePageSubstate, PageSubstateKind } from "./common";
 
 export const TimePageSubstate = {
-  Collapsed: "collapsed", // 通用收起态
-  Expanded: "expanded", // 通用展开态
+  Collapsed: "collapsed",
+  Expanded: "expanded",
 } as const;
 
 export type TimePageSubstate = (typeof TimePageSubstate)[keyof typeof TimePageSubstate];

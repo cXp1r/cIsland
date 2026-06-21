@@ -6,7 +6,6 @@ import {
   emailDragHandle,
 } from "../dom";
 import {
-  currentView,
   isDragging, setIsDragging,
   dragStarted, setDragStarted,
   lastX, setLastX,
@@ -15,8 +14,10 @@ import {
   mouseDownY, setMouseDownY,
   DRAG_THRESHOLD,
 } from "../state";
+import { ManualPageState } from "../state-machines/page";
+import { pageStateMachine } from "../state-machines/page-machine";
 
-// ===== 收起/展开功能 =====
+// ===== 鏀惰捣/灞曞紑鍔熻兘 =====
 
 export function applyIndicatorColor(color: string) {
 
@@ -117,7 +118,7 @@ function endWindowDrag() {
 
 export function initDragger() {
 
-  // 监听菜单动作
+  // 鐩戝惉鑿滃崟鍔ㄤ綔
 
   listen<string>("context-menu-action", (event) => {
 
@@ -125,7 +126,7 @@ export function initDragger() {
 
     if (action === "settings") {
 
-      // 延迟执行，确保菜单完全关闭后再打开设置窗口
+      // 寤惰繜鎵ц锛岀‘淇濊彍鍗曞畬鍏ㄥ叧闂悗鍐嶆墦寮€璁剧疆绐楀彛
 
       setTimeout(() => {
 
@@ -148,7 +149,7 @@ export function initDragger() {
 
   capsule.addEventListener("mousedown", (e: MouseEvent) => {
 
-    // 右键不触发拖动
+    // 鍙抽敭涓嶈Е鍙戞嫋鍔?
 
     if (e.button !== 0) return;
 
@@ -160,9 +161,9 @@ export function initDragger() {
 
     }
 
-    // Agent 展开态下，排除输入框和按钮，但允许拖动状态栏和消息区域
+    // Agent 灞曞紑鎬佷笅锛屾帓闄よ緭鍏ユ鍜屾寜閽紝浣嗗厑璁告嫋鍔ㄧ姸鎬佹爮鍜屾秷鎭尯鍩?
 
-    if (currentView === "agent" && capsule.classList.contains("agent-expanded")) {
+    if (pageStateMachine.getCurrentPage() === ManualPageState.Agent && capsule.classList.contains("agent-expanded")) {
 
       if (target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn")) {
 
@@ -182,7 +183,7 @@ export function initDragger() {
 
   emailDragHandle.addEventListener("pointerdown", (e: PointerEvent) => {
 
-    if (currentView !== "email" || e.button !== 0) return;
+    if (pageStateMachine.getCurrentPage() !== ManualPageState.Email || e.button !== 0) return;
 
     e.preventDefault();
 
@@ -196,7 +197,7 @@ export function initDragger() {
 
   emailDragHandle.addEventListener("pointermove", (e: PointerEvent) => {
 
-    if (currentView !== "email" || !emailDragHandle.hasPointerCapture(e.pointerId)) return;
+    if (pageStateMachine.getCurrentPage() !== ManualPageState.Email || !emailDragHandle.hasPointerCapture(e.pointerId)) return;
 
     e.preventDefault();
 

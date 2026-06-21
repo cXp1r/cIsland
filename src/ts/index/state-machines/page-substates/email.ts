@@ -1,9 +1,9 @@
-import { definePageSubstate, PageSubstateKind } from "../page-substates";
+import { definePageSubstate, PageSubstateKind } from "./common";
 
 export const EmailPageSubstate = {
   Collapsed: "collapsed",
   Expanded: "expanded",
-  Dragging: "dragging", // 拖动窗口或内容
+  Dragging: "dragging",
 } as const;
 
 export type EmailPageSubstate = (typeof EmailPageSubstate)[keyof typeof EmailPageSubstate];

@@ -1,9 +1,9 @@
-import { definePageSubstate, PageSubstateKind } from "../page-substates";
+import { definePageSubstate, PageSubstateKind } from "./common";
 
 export const DownloaderPageSubstate = {
   Collapsed: "collapsed",
   Expanded: "expanded",
-  Downloading: "downloading", // 正在执行下载任务
+  Downloading: "downloading",
 } as const;
 
 export type DownloaderPageSubstate =

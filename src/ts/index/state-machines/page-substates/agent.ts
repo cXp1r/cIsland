@@ -1,10 +1,10 @@
-import { definePageSubstate, PageSubstateKind } from "../page-substates";
+import { definePageSubstate, PageSubstateKind } from "./common";
 
 export const AgentPageSubstate = {
   Collapsed: "collapsed",
   Expanded: "expanded",
-  Thinking: "thinking", // 思考阶段
-  Generating: "generating", // 回复生成阶段
+  Thinking: "thinking",
+  Generating: "generating",
 } as const;
 
 export type AgentPageSubstate = (typeof AgentPageSubstate)[keyof typeof AgentPageSubstate];

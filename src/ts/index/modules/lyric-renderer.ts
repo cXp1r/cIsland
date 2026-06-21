@@ -13,7 +13,6 @@ import {
   setCurrentDurationMs,
   isSeeking,
   isMpSeeking,
-  currentView,
   userChosenView, setUserChosenView,
   tokenSpans, setTokenSpans,
   currentLyricTokenKey, setCurrentLyricTokenKey,
@@ -36,23 +35,25 @@ import { formatTime } from "../utils";
 import { setView, updateSwitcherUI, updatePlayIcon } from "./view-switcher";
 import { updateSeekable } from "./music-controls";
 import { logd } from "../logger";
+import { ManualPageState } from "../state-machines/page";
+import { pageStateMachine } from "../state-machines/page-machine";
 
 const TAG: string = "Lyrics"
 
 /**
- * 生成 token 列表的稳定标识，用于判断 DOM 是否需要重建。
- * @param tokens token 序列（含文本与起止时间戳）。
- * @returns 可用于等值比较的 key 字符串。
+ * 闂佹眹鍨婚崰鎰板垂?token 闂佸憡甯楅〃澶愬Υ閸愵喗鍎嶉柛鏇ㄥ帎閺冨倵鍋撶憴鍕暡闁绘牭绲块幏鐘诲幢椤撶姷顦梺娲绘娇閸斿鑺遍鍕闁靛牆妫欓悞?DOM 闂佸搫瀚烽崹浼村箚娓氣偓濡線鍩€椤掑倹鍟哄〒姘ｅ亾闁革絿顭堥娆撳箒閹哄棗浜?
+ * @param tokens token 闁瑰吋娼欑换鎰板垂椤忓牊鏅柛顐ｇ箖閸庢捇鏌￠崒姘婵犫偓閻楀牏鈻旈幖娣€栧畷铏叏濠靛嫬鐏俊鐐插€垮鑽も偓娑櫭悡鍫ユ煥濞戞﹩妲堕柍?
+ * @returns 闂佸憡鐟崹鎶藉极閵堝棛顩查幖杈剧悼閹煎ジ鏌涙繝鍌氭倯闁伙富鍠楀蹇涘礃椤忓懐鏆?key 闁诲孩绋掗〃鍫ヮ敄娴ｅ湱鈻旈悘鐐插€甸崑?
  */
 function buildTokensKey(tokens: Array<{ text: string; start_ms: number; end_ms: number }>): string {
   return tokens.map((t) => `${t.text}\u0001${t.start_ms}\u0001${t.end_ms}`).join('\u0002');
 }
 
 /**
- * 根据当前播放时间更新所有 token span 的 `--sweep` CSS 变量，驱动卡拉OK式逐字高亮。
- * @param spans 与 tokens 一一对应的 span 元素数组。
- * @param tokens token 序列（含起止时间戳）。
- * @param timeMs 当前估计的播放时间（毫秒）。
+ * 闂佸搫绉烽～澶婄暤娴ｅ浜归柟鎯у暱椤ゅ懘鏌熺紒銏犲箺闁哄倷绶氬顕€宕奸弴鐕傜吹闂佸搫娲ら悺銊╁蓟婵犲洤绠ラ柍褜鍓熷?token span 闂?`--sweep` CSS 闂佸憡鐟﹂敃銏ゅ闯濞差亝鏅€光偓閸曘劍鏁甸梺鍛婃煟閸斿苯鐣烽柆宥呯濠靛鈧喓鈧鍠栫换姗€鍩€椤掍礁濮囬柣鈯欏嫷娈楁俊顖滄嚀閻︺劑鏌?
+ * @param spans 婵?tokens 婵炴垶鎸撮崑鎾斥槈閹绢垰浜鹃柣搴ｆ暩閹虫挾鑺遍弻銉﹀剭?span 闂佺绻愰崯鎵矆瀹€鍕瀬闁规鍠氶惌瀣煏?
+ * @param tokens token 闁瑰吋娼欑换鎰板垂椤忓牊鏅柛顐ｇ箖閸庢捇鎮硅閺€閬嶎敆濞戙垹绫嶉柛顐ｆ礃閿涚喖鏌熺€靛壊鍔滅紒杈ㄥ哺婵?
+ * @param timeMs 閻熸粎澧楅幐鍛婃櫠閻樺啿顕遍柟宄扮焾閸氣偓闂佹眹鍔岀€氼參骞愰柆宥呯哗闁绘劦鍓氶ˇ褔姊婚崒婵囧涧缂佽鲸鐟ヨ妞ゆ劑鍊ゅ锟犳煥濞戞﹩妲堕柍?
  */
 function updateTokenSweep(
   spans: HTMLSpanElement[],
@@ -64,30 +65,29 @@ function updateTokenSweep(
     if (!span) return;
 
     if (timeMs >= token.start_ms && timeMs <= token.end_ms) {
-      // Currently playing token: calculate sweep progress
+      // Fallback to plain text rendering
       const duration = Math.max(1, token.end_ms - token.start_ms);
       const progress = (timeMs - token.start_ms) / duration;
       span.style.setProperty('--sweep', Math.min(1, Math.max(0, progress)).toString());
     } else if (timeMs > token.end_ms) {
-      // Already sung: fully highlighted
+      // Fallback to plain text rendering
       span.style.setProperty('--sweep', '1');
     } else {
-      // Not yet sung: no highlight
+      // Fallback to plain text rendering
       span.style.setProperty('--sweep', '0');
     }
   });
 }
 
 /**
- * 以 token 形式渲染灵动岛收起态当前行，并由 `updateTokenSweep` 驱动高亮。
- * @param container 当前行文本容器（通常为 `#lyric-text-inner`）。
- * @param tokens 当前行的 token 序列。
- * @param currentTimeMs 当前估计的播放时间（毫秒）。
+ * 婵?token 閻熸粏鍩囬崹鍦閳ョ偨鈧帡宕ｆ径灞藉脯闂佽绻樺褎鎱ㄩ埡浣烘殕婵炴垶鐟﹂弳顏堟偣瑜旈弨閬嶅焵椤戣法顦︾紓宥咁儔瀹曟粌顓奸崼顐ｆ杸闂佹寧绋戦懟顖炴嚐閻斿吋鍋?`updateTokenSweep` 婵＄偟鎳撳畷顒佹叏閳哄偆娈楁俊顖滄嚀閻︺劑鏌?
+ * @param container 閻熸粎澧楅幐鍛婃櫠閻樺灚鍋橀悘鐐靛亾閻庮噣鏌￠崼顐㈠妞ゆ梹鍔欏畷鎶解€﹂幒鏃傤槱闂備緡鍋呴懝楣冩偉閼哥數鈻?`#lyric-text-inner`闂佹寧绋戦ˇ顓㈠焵?
+ * @param tokens 閻熸粎澧楅幐鍛婃櫠閻樺灚鍋樼€光偓閳ь剙鈻?token 闁瑰吋娼欑换鎰板垂椤忓牆违?
+ * @param currentTimeMs 閻熸粎澧楅幐鍛婃櫠閻樺啿顕遍柟宄扮焾閸氣偓闂佹眹鍔岀€氼參骞愰柆宥呯哗闁绘劦鍓氶ˇ褔姊婚崒婵囧涧缂佽鲸鐟ヨ妞ゆ劑鍊ゅ锟犳煥濞戞﹩妲堕柍?
  */
 function renderLyricWithTokens(container: HTMLElement, tokens: Array<{ text: string; start_ms: number; end_ms: number }>, currentTimeMs: number) {
   const nextKey = buildTokensKey(tokens);
-
-  // Rebuild DOM only when lyric line/tokens changed
+      // Fallback to plain text rendering
   if (currentLyricTokenKey !== nextKey || tokenSpans.length !== tokens.length || container.children.length !== tokens.length) {
     setCurrentLyricTokenKey(nextKey);
     container.innerHTML = '';
@@ -109,10 +109,10 @@ function renderLyricWithTokens(container: HTMLElement, tokens: Array<{ text: str
 
 
 /**
- * 以 token 形式渲染展开态音乐面板的当前行，实现与收起态一致的逐字 sweep 高亮。
- * @param container 音乐面板当前行的文本容器（`.mp-lyric-line-inner`）。
- * @param tokens 当前行的 token 序列。
- * @param currentTimeMs 当前估计的播放时间（毫秒）。
+ * 婵?token 閻熸粏鍩囬崹鍦閳ョ偨鈧帡宕ｆ径灞藉脯闁诲繒鍋炲ú鏍閹达箑绠戝〒姘ｅ亾闁绘捁鍩栫粙濠囧箛閻楀牊銆冮梺鍝勵槼濞夋洖鈻撻幋锝冧汗闁规儳鍟块·鍛存偠濞戞鐒跨紒杈ㄧ箘閳ь剙婀遍崑鐔肩嵁閸ャ劎鈻旈幖娣灪閺嗩亪鎮硅閺€閬嶅焵椤戞寧顦风紒鏃€鎸抽幊娑氣偓闈涙啞閻ｉ亶姊洪锝呭闁?sweep 婵°倕鍊圭湁閻庡灚甯℃俊?
+ * @param container 闂傚倸锕ら崢鏍不娴煎瓨顥堥柕蹇婂墲缁惰尙鎲搁悧鍫熷碍濠⒀呭Х閹澘鐣濋埀顒€鈻撻幋锕€妫橀柛銉ｅ妽閹烽亶鎮楅崷顓熷殌婵炲懏甯￠弫宥夊锤?mp-lyric-line-inner`闂佹寧绋戦ˇ顓㈠焵?
+ * @param tokens 閻熸粎澧楅幐鍛婃櫠閻樺灚鍋樼€光偓閳ь剙鈻?token 闁瑰吋娼欑换鎰板垂椤忓牆违?
+ * @param currentTimeMs 閻熸粎澧楅幐鍛婃櫠閻樺啿顕遍柟宄扮焾閸氣偓闂佹眹鍔岀€氼參骞愰柆宥呯哗闁绘劦鍓氶ˇ褔姊婚崒婵囧涧缂佽鲸鐟ヨ妞ゆ劑鍊ゅ锟犳煥濞戞﹩妲堕柍?
  */
 function renderMpLyricWithTokens(
   container: HTMLElement,
@@ -183,8 +183,7 @@ function applyIslandLyricScroll(positionMs: number) {
   const progress = positionMs < scrollStart
     ? 0
     : Math.min(1, (positionMs - scrollStart) / scrollDuration);
-
-  // Island compact lyric scroll
+      // Fallback to plain text rendering
   const overflow = Math.max(0, lyricTextInner.scrollWidth - lyricText.clientWidth);
   if (overflow <= 1) {
     if (lyricTextInner.style.transform !== "") lyricTextInner.style.transform = "";
@@ -196,8 +195,7 @@ function applyIslandLyricScroll(positionMs: number) {
       setLyricScrollLastX(x);
     }
   }
-
-  // Music panel current line scroll
+      // Fallback to plain text rendering
   if (mpCurrentLyricInner && mpCurrentLyricOuter) {
     const mpOverflow = Math.max(0, mpCurrentLyricInner.scrollWidth - mpCurrentLyricOuter.clientWidth);
     if (mpOverflow <= 1) {
@@ -225,7 +223,7 @@ function ensureLyricTokenAnimationLoop() {
     if (hasTokens) {
       const tokens = activeLyricTokens as Array<{ text: string; start_ms: number; end_ms: number }>;
       renderLyricWithTokens(lyricTextInner, tokens, estimatedPosMs);
-      // 同步更新音乐面板当前行的逐字 sweep
+      // Fallback to plain text rendering
       if (mpCurrentLyricInner) {
         renderMpLyricWithTokens(mpCurrentLyricInner, tokens, estimatedPosMs);
       }
@@ -268,7 +266,7 @@ function renderLyricPlainText(container: HTMLElement, text: string) {
   }
 }
 
-/** 为 nearby_lyrics 生成稳定 key：相同文本按出现次序追加序号，避免副歌重复导致匹配错乱 */
+/** 婵?nearby_lyrics 闂佹眹鍨婚崰鎰板垂濮樿京鐭欓柛鎰皺閺?key闂佹寧绋掑銊ッ规径鎰Е閻忕偟鍋撻悗顕€鏌￠崼顐㈠閻庡灚绮撳畷娆撴惞閻熸壆鐤€濠电偛妫岄埀顒€纾喊宥夊级閳哄嫭顥夊┑顔惧仦閹棁绠涢幘鍐测枏闂佹寧绋戦惌鍌涘閳哄懎绀傜€广儱鎳庨ˉ灞炬叏濠靛棛鐒搁柛锝呮啞瀵板嫬顓奸崪浣告闂佸ジ鏀卞娆戜焊椤曗偓閺屽﹤顓兼径瀣珦婵?*/
 function buildLineKeys(nearby: Array<{ text: string; is_current: boolean }>): string[] {
   const counts = new Map<string, number>();
   const keys: string[] = [];
@@ -281,33 +279,31 @@ function buildLineKeys(nearby: Array<{ text: string; is_current: boolean }>): st
 }
 
 /**
- * 以 FLIP（First-Last-Invert-Play）技术让多行歌词切换时像轨道一样平滑滚动：
- * 复用行做位移过渡，新行从底部淡入，退出行向上淡出。
- * 若 tokens 非空，则为当前行渲染逐字 token spans 以实现卡拉OK式 sweep 高亮。
+ * 婵?FLIP闂佹寧绋戝﹢姊歳st-Last-Invert-Play闂佹寧绋戦ˇ鐗堜繆瑜斿鐢割敍濠垫劕鏁ゆ繝銏ｅ煐娣囨椽銆侀幋婵愭桨鐎光偓閸愵亝袚闂佸憡甯掑ú锕€鐣烽弻銉ョ睄閻犲搫鎼崜濂稿级閻愵亜濮傚ù婊呭亾缁嬪鍩€椤掑嫬鍐€鐎瑰嫪鍗抽幐顒佺節婵犲啫鐏︾紒顔芥尦瀹曟繈鈥﹂幒鏃傜崶
+ * 婵犮垼娉涚粔鍫曞极閵堝洦鍋橀悘鐐村灊缁潧霉閿濆懐肖娴滄盯寮堕埡浣瑰婵炴惌鍣ｉ弫宥囦沪閻愵剛鍘愰柣鐐寸☉婵傛梻鍒掗悩铏劅闁哄洢鍨归崝銉︾箾閿濆倵鍋撻崘鎻掓辈闂佹寧绋戦惌鍌炲焵椤戣棄浜鹃梺鍛婂灴缂傛岸銆侀幋锕€瑙﹂柟瀛樼矌閻熸劖绻涢敐鍌楀亾閸愬弶鐦旈梺?
+ * 闂?tokens 闂傚倸鐗忛崑鐔煎煘閺嶎厽鏅悘鐐舵閻忕喎鈽夐幘铏儓缂傚秴顑夊畷婊冾吋閸偅鏂€濠电偞鎸稿鍫曟偂鐎ｎ喗鐒婚柟閭﹀墰閹?token spans 婵炲濮伴崕閬嶆偪閸曨垱鍋濋柡澶婄仢楠炪垽鏌熷畡閭︽晝K閻?sweep 婵°倕鍊圭湁閻庡灚甯℃俊?
  */
 function renderNearbyLyricsFlip(
   nearby: Array<{ text: string; is_current: boolean }>,
   tokens: Array<{ text: string; start_ms: number; end_ms: number }> | null,
   currentTimeMs: number,
 ) {
-  // 清理 prevLineMap 中已不在 DOM 的无效引用（可能被其他分支如 textContent="♪" 破坏过）
+      // Fallback to plain text rendering
   for (const [k, el] of Array.from(prevLineMap)) {
     if (!mpLyricText.contains(el)) prevLineMap.delete(k);
   }
-  // 若此时 mpLyricText 里是文本节点（如 "♪"）或已无行元素，清空作为全新入场
+      // Fallback to plain text rendering
   if (prevLineMap.size === 0) {
     while (mpLyricText.firstChild) mpLyricText.removeChild(mpLyricText.firstChild);
   }
 
   const keys = buildLineKeys(nearby);
-
-  // ===== FIRST：记录所有旧行的矩形位置（读布局） =====
+      // Fallback to plain text rendering
   const oldRects = new Map<HTMLElement, DOMRect>();
   for (const el of prevLineMap.values()) {
     oldRects.set(el, el.getBoundingClientRect());
   }
-
-  // ===== 分类：reused（复用）/ entering（新增）/ exiting（稍后从剩余 prevLineMap 中得出） =====
+      // Fallback to plain text rendering
   const newMap = new Map<string, HTMLElement>();
   const reusedEls: HTMLElement[] = [];
   const enteringEls: HTMLElement[] = [];
@@ -327,19 +323,19 @@ function renderNearbyLyricsFlip(
       enteringEls.push(el);
       isNew = true;
     }
-    // 清除可能残留的 inline 样式（上一次动画的尾巴）
+      // Fallback to plain text rendering
     el.style.position = "";
     el.style.left = "";
     el.style.top = "";
     el.style.width = "";
     el.style.transition = "";
     el.style.transform = "";
-    // 更新 class：mp-lyric-line [+ mp-lyric-current] [+ entering]
+      // Fallback to plain text rendering
     let cls = "mp-lyric-line";
     if (line.is_current) cls += " mp-lyric-current";
     if (isNew) cls += " entering";
     el.className = cls;
-    // Current line: use inner span for horizontal scroll; others: plain text with ellipsis
+      // Fallback to plain text rendering
     if (line.is_current) {
       let inner = el.querySelector(".mp-lyric-line-inner") as HTMLSpanElement | null;
       if (!inner) {
@@ -350,15 +346,15 @@ function renderNearbyLyricsFlip(
       }
       if (mpCurrentLyricInner !== inner) {
         inner.style.transform = '';
-        // 新的当前行容器：清除旧 token spans 缓存，强制重建
+      // Fallback to plain text rendering
         setMpTokenSpans([]);
         setCurrentMpLyricTokenKey('');
       }
       if (tokens && tokens.length > 0) {
-        // 使用逐字 token 渲染（卡拉OK式 sweep）
+      // Fallback to plain text rendering
         renderMpLyricWithTokens(inner, tokens, currentTimeMs);
       } else {
-        // 无 token：回退到整行纯文本；若上一次是 token 模式，清空缓存并重置内容
+      // Fallback to plain text rendering
         if (inner.children.length > 0 || inner.textContent !== line.text) {
           inner.textContent = line.text;
         }
@@ -377,22 +373,17 @@ function renderNearbyLyricsFlip(
     newMap.set(key, el);
     fragment.appendChild(el);
   }
-
-  // 剩下的 prevLineMap 即是 exiting 集合
+      // Fallback to plain text rendering
   const exitingEls: HTMLElement[] = Array.from(prevLineMap.values());
-
-  // ===== 直接移除 exiting 元素，不做移出动画 =====
+      // Fallback to plain text rendering
   for (const el of exitingEls) {
     if (el.parentNode) el.remove();
   }
-
-  // ===== LAST：将复用/新增元素按新顺序插入容器（复用元素会被移动到新位置） =====
+      // Fallback to plain text rendering
   mpLyricText.appendChild(fragment);
-
-  // 强制 reflow，让浏览器计算出复用元素的新 rect
+      // Fallback to plain text rendering
   void mpLyricText.offsetHeight;
-
-  // ===== INVERT：对复用元素设置反向 translate，使其视觉上"留在原位" =====
+      // Fallback to plain text rendering
   for (const el of reusedEls) {
     const oldRect = oldRects.get(el);
     if (!oldRect) continue;
@@ -404,11 +395,9 @@ function renderNearbyLyricsFlip(
       el.style.transform = `translateY(${dy}px) scale(${isCurrent ? 1.05 : 1})`;
     }
   }
-
-  // 再次 reflow，确保上一步的 inline 样式被浏览器采纳
+      // Fallback to plain text rendering
   void mpLyricText.offsetHeight;
-
-  // ===== PLAY：下一帧清空 inline、去掉 entering、给 exiting 打标记，让 CSS transition 接管 =====
+      // Fallback to plain text rendering
   requestAnimationFrame(() => {
     for (const el of reusedEls) {
       el.style.transition = "";
@@ -422,10 +411,10 @@ function renderNearbyLyricsFlip(
   setPrevLineMap(newMap);
 }
 
-/** 当 mpLyricText 被其他分支覆盖成纯文本（如 "♪"、歌名）时调用，丢弃 FLIP 状态 */
+/** 閻?mpLyricText 闁荤偞鍑归崑鍕矗閻愵剛顩烽柡宓啰鈧鏌￠埀顒勵敍濠垫劖鑸归梺鐑╂櫆閻楁宕瑰杈╂／妞ゆ牗绋掗悗顕€鏌￠崼顐㈠⒕缂佽鲸鐟︽穱?"闂?闂侀潧妫旈悞锕傛偤閺囥垹瑙︾€广儱绻掔粈鍡涙煛閸愨晛鍔堕柣銊у枛閹粙鈥﹂幒鏃傤槷婵炴垶鎸堕崹鍦?FLIP 闂佺粯顭堥崺鏍焵?*/
 export function resetMpLyricFlipState() {
   prevLineMap.clear();
-  // mpLyricText 的 children 已被清空，这些引用都已失效；同步清理 token 缓存
+      // Fallback to plain text rendering
   setMpCurrentLyricInner(null);
   setMpCurrentLyricOuter(null);
   setMpTokenSpans([]);
@@ -436,7 +425,7 @@ export function initLyricRenderer() {
 
   listen<string>("lyric-mode-changed", (event) => {
     setLyricMode(event.payload);
-    if (lyricMode === "off" && currentView === "lyric") {
+    if (lyricMode === "off" && pageStateMachine.getCurrentPage() === ManualPageState.Lyric) {
       setUserChosenView("time");
       setView("time", true);
     }
@@ -469,19 +458,16 @@ export function initLyricRenderer() {
       setActiveLyricBasePositionMs(position_ms);
       setActiveLyricBasePerfMs(performance.now());
     }
-
-    // 从 lyric-update 同步播放状态，避免 playback-state 事件丢失
+      // Fallback to plain text rendering
     if (event.payload.is_playing !== undefined && event.payload.is_playing !== isPlaying) {
       setIsPlaying(event.payload.is_playing);
       updatePlayIcon();
     }
-
-    // 同步 seekable 状态
+      // Fallback to plain text rendering
     if (event.payload.seekable !== undefined) {
       updateSeekable(event.payload.seekable);
     }
-
-    // 更新进度条（收起态 + 面板）
+      // Fallback to plain text rendering
     if (duration_ms && duration_ms > 0 && position_ms !== undefined) {
       setCurrentDurationMs(duration_ms);
       const pct = Math.min(100, Math.max(0, (position_ms / duration_ms) * 100));
@@ -499,7 +485,7 @@ export function initLyricRenderer() {
 
     if (lyricMode === "info" || text === null) {
       resetIslandLyricScroll();
-      renderLyricPlainText(lyricTextInner, text === null && lyricMode !== "info" ? "♪" : "");
+      renderLyricPlainText(lyricTextInner, "");
       lyricMeta.textContent = title;
       lyricMeta.style.fontSize = "13px";
       lyricMeta.style.color = "rgba(255,255,255,0.85)";
@@ -520,8 +506,6 @@ export function initLyricRenderer() {
       } else {
         resetIslandLyricScroll();
       }
-
-      // Handle token-based highlighting for compact lyric view
       const tokens = event.payload.tokens;
       if (tokens && tokens.length > 0 && position_ms !== undefined) {
         setActiveLyricTokens(tokens);
@@ -531,7 +515,6 @@ export function initLyricRenderer() {
         setActiveLyricTokens(null);
         setCurrentLyricTokenKey("");
         setTokenSpans([]);
-        // Fallback to plain text rendering
         if (lyricTextInner.children.length > 0) {
           renderLyricPlainText(lyricTextInner, text);
           applyIslandLyricScroll(position_ms ?? activeLyricBasePositionMs);
@@ -556,19 +539,16 @@ export function initLyricRenderer() {
       setView("lyric", true);
     }
 
-    // 同步歌词到展开面板（多行）— 使用 FLIP 技术做轨道式平滑滚动
     const nearby = event.payload.nearby_lyrics;
     const mpTokens = event.payload.tokens ?? null;
     const mpCurrentTimeMs = position_ms ?? activeLyricBasePositionMs;
     if (nearby && nearby.length > 0) {
       renderNearbyLyricsFlip(nearby, mpTokens, mpCurrentTimeMs);
     } else if (text !== null && text !== undefined) {
-      // 前奏/等待歌词阶段：强制显示音乐符号，避免残留多行歌词造成"提前显示后续歌词"
-      if (text === "♪") {
-        mpLyricText.textContent = "♪";
+      if (text === "") {
+        mpLyricText.textContent = "";
         resetMpLyricFlipState();
       } else {
-        // 如果面板已有多行歌词槽位，不用单行文本覆盖
         if (mpLyricText.children.length === 0) {
           mpLyricText.textContent = text;
           resetMpLyricFlipState();

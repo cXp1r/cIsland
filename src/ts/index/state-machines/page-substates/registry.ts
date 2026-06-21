@@ -5,7 +5,7 @@ import { agentPageSubstateDefinition } from "./agent";
 import { sadbPageSubstateDefinition } from "./sadb";
 import { emailPageSubstateDefinition } from "./email";
 import { downloaderPageSubstateDefinition } from "./downloader";
-import { createPageSubstateRegistry, type PageSubstateRegistry } from "../page-substates";
+import { createPageSubstateRegistry, type PageSubstateRegistry } from "./common";
 
 export const pageSubstateRegistry: PageSubstateRegistry = createPageSubstateRegistry([
   { page: ManualPageState.Time, definition: timePageSubstateDefinition },

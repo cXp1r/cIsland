@@ -1,9 +1,9 @@
-import { definePageSubstate, PageSubstateKind } from "../page-substates";
+import { definePageSubstate, PageSubstateKind } from "./common";
 
 export const SadbPageSubstate = {
   Collapsed: "collapsed",
-  IdlePanel: "idle_panel", // 待机面板态
-  Mirroring: "mirroring", // 镜像态
+  IdlePanel: "idle_panel",
+  Mirroring: "mirroring",
 } as const;
 
 export type SadbPageSubstate = (typeof SadbPageSubstate)[keyof typeof SadbPageSubstate];
