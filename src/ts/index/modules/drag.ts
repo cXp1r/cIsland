@@ -14,7 +14,7 @@ import {
   mouseDownY, setMouseDownY,
   DRAG_THRESHOLD,
 } from "../state";
-import { ManualPageState } from "../state-machines/page";
+import { PageState } from "../state-machines/page";
 import { pageStateMachine } from "../state-machines/page-machine";
 
 // ===== 鏀惰捣/灞曞紑鍔熻兘 =====
@@ -118,7 +118,7 @@ function endWindowDrag() {
 
 export function initDragger() {
 
-  // 鐩戝惉鑿滃崟鍔ㄤ綔
+  // 鐩戝惉鑿滃崟鍔ㄤ�?
 
   listen<string>("context-menu-action", (event) => {
 
@@ -126,7 +126,7 @@ export function initDragger() {
 
     if (action === "settings") {
 
-      // 寤惰繜鎵ц锛岀‘淇濊彍鍗曞畬鍏ㄥ叧闂悗鍐嶆墦寮€璁剧疆绐楀彛
+      // 寤惰繜鎵ц锛岀‘淇濊彍鍗曞畬鍏ㄥ叧闂悗鍐嶆墦寮€璁剧疆绐楀�?
 
       setTimeout(() => {
 
@@ -149,7 +149,7 @@ export function initDragger() {
 
   capsule.addEventListener("mousedown", (e: MouseEvent) => {
 
-    // 鍙抽敭涓嶈Е鍙戞嫋鍔?
+    // 鍙抽敭涓嶈Е鍙戞嫋�?
 
     if (e.button !== 0) return;
 
@@ -163,7 +163,7 @@ export function initDragger() {
 
     // Agent 灞曞紑鎬佷笅锛屾帓闄よ緭鍏ユ鍜屾寜閽紝浣嗗厑璁告嫋鍔ㄧ姸鎬佹爮鍜屾秷鎭尯鍩?
 
-    if (pageStateMachine.getCurrentPage() === ManualPageState.Agent && capsule.classList.contains("agent-expanded")) {
+    if (pageStateMachine.getCurrentPage() === PageState.Agent && capsule.classList.contains("agent-expanded")) {
 
       if (target.closest("#agent-input") || target.closest("#agent-send-btn") || target.closest("#agent-stop-btn") || target.closest("#agent-clear-btn")) {
 
@@ -183,7 +183,7 @@ export function initDragger() {
 
   emailDragHandle.addEventListener("pointerdown", (e: PointerEvent) => {
 
-    if (pageStateMachine.getCurrentPage() !== ManualPageState.Email || e.button !== 0) return;
+    if (pageStateMachine.getCurrentPage() !== PageState.Email || e.button !== 0) return;
 
     e.preventDefault();
 
@@ -197,7 +197,7 @@ export function initDragger() {
 
   emailDragHandle.addEventListener("pointermove", (e: PointerEvent) => {
 
-    if (pageStateMachine.getCurrentPage() !== ManualPageState.Email || !emailDragHandle.hasPointerCapture(e.pointerId)) return;
+    if (pageStateMachine.getCurrentPage() !== PageState.Email || !emailDragHandle.hasPointerCapture(e.pointerId)) return;
 
     e.preventDefault();
 

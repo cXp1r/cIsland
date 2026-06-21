@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { capsule } from "../dom";
-import { ManualPageState } from "../state-machines/page";
+import { PageState } from "../state-machines/page";
 import {
   pageStateMachine,
 } from "../state-machines/page-machine";
@@ -28,7 +28,7 @@ const easing = ease(0.25, 1, 0.5, 1);
 const { port1, port2 } = new MessageChannel();
 
 type CapsuleSize = [number, number];
-type SizeKey = `${ManualPageState}:${string}`;
+type SizeKey = `${PageState}:${string}`;
 
 const DEFAULT_SIZE: CapsuleSize = [140, 50];
 
@@ -41,24 +41,24 @@ const SEARCH_EXPANDED_SIZE: CapsuleSize = [420, 430];
 const NOTICE_SIZE: CapsuleSize = [400, 70];
 
 const sizeTable: Record<SizeKey, CapsuleSize> = {
-  [pageStateMachine.createKey(ManualPageState.Time, "collapsed")]: DEFAULT_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Time, "expanded")]: PANEL_EXPANDED_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Lyric, "collapsed")]: [340, 50] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Lyric, "expanded")]: MUSIC_EXPANDED_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Lyric, "seeking")]: MUSIC_EXPANDED_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Agent, "collapsed")]: DEFAULT_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Agent, "expanded")]: [640, 620] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Agent, "thinking")]: [640, 620] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Agent, "generating")]: [640, 620] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Sadb, "collapsed")]: DEFAULT_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Sadb, "idle_panel")]: SADB_IDLE_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Sadb, "mirroring")]: SADB_IDLE_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Email, "collapsed")]: [620, 620] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Email, "expanded")]: [620, 620] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Email, "dragging")]: [620, 620] as CapsuleSize,
-  [pageStateMachine.createKey(ManualPageState.Downloader, "collapsed")]: DEFAULT_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Downloader, "expanded")]: DOWNLOADER_SIZE,
-  [pageStateMachine.createKey(ManualPageState.Downloader, "downloading")]: DOWNLOADER_SIZE,
+  [pageStateMachine.createKey(PageState.Time, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(PageState.Time, "expanded")]: PANEL_EXPANDED_SIZE,
+  [pageStateMachine.createKey(PageState.Lyric, "collapsed")]: [340, 50] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Lyric, "expanded")]: MUSIC_EXPANDED_SIZE,
+  [pageStateMachine.createKey(PageState.Lyric, "seeking")]: MUSIC_EXPANDED_SIZE,
+  [pageStateMachine.createKey(PageState.Agent, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(PageState.Agent, "expanded")]: [640, 620] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Agent, "thinking")]: [640, 620] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Agent, "generating")]: [640, 620] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Sadb, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(PageState.Sadb, "idle_panel")]: SADB_IDLE_SIZE,
+  [pageStateMachine.createKey(PageState.Sadb, "mirroring")]: SADB_IDLE_SIZE,
+  [pageStateMachine.createKey(PageState.Email, "collapsed")]: [620, 620] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Email, "expanded")]: [620, 620] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Email, "dragging")]: [620, 620] as CapsuleSize,
+  [pageStateMachine.createKey(PageState.Downloader, "collapsed")]: DEFAULT_SIZE,
+  [pageStateMachine.createKey(PageState.Downloader, "expanded")]: DOWNLOADER_SIZE,
+  [pageStateMachine.createKey(PageState.Downloader, "downloading")]: DOWNLOADER_SIZE,
 };
 
 let raf: number;
@@ -125,7 +125,7 @@ port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t:
   });
 };
 
-// 楂樺噺灏戜綔涓虹缉灏忕殑鍒ゆ柇
+// 楂樺噺灏戜綔涓虹缉灏忕殑鍒ゆ�?
 export function animateCapsule(toW: number, toH: number): void {
   if (toW === targetW && toH === targetH) return;
   void invoke("set_capsule_target_rect", { height: toH, width: toW });

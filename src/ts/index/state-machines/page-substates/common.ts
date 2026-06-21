@@ -1,4 +1,4 @@
-import type { ManualPageState } from "../page";
+import type { PageState } from "../page";
 
 export const PageSubstateKind = {
   Time: "time",
@@ -17,14 +17,14 @@ export interface PageSubstateDefinition<S extends string = string> {
   states: readonly S[];
 }
 
-export type PageSubstateRegistry = Partial<Record<ManualPageState, PageSubstateDefinition>>;
+export type PageSubstateRegistry = Partial<Record<PageState, PageSubstateDefinition>>;
 
 export function definePageSubstate<S extends string>(definition: PageSubstateDefinition<S>) {
   return definition;
 }
 
 export function createPageSubstateRegistry(
-  entries: Array<{ page: ManualPageState; definition: PageSubstateDefinition }>,
+  entries: Array<{ page: PageState; definition: PageSubstateDefinition }>,
 ): PageSubstateRegistry {
   const registry: PageSubstateRegistry = {};
   for (const entry of entries) {

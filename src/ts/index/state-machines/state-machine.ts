@@ -1,52 +1,52 @@
 import type { ViewMode } from "../types";
-import { ManualPageState } from "./page";
+import { PageState } from "./page";
 import type {
   PageStateMachine,
-  ManualPageSubmachine,
+  PageSubmachine,
 } from "./page-machine";
-import { pageStateMachine } from "./page-machine";
+import { pageStateMachine as pageStateMachineImpl } from "./page-machine";
 import type { OverlayStateMachine } from "./overlay-machine";
 import { overlayStateMachine } from "./overlay-machine";
 
 export interface StateMachine {
-  readonly manualPage: PageStateMachine;
+  readonly pageStateMachine: PageStateMachine;
   readonly overlay: OverlayStateMachine;
   readonly substates: PageStateMachine["substates"];
 
-  currentPage: ManualPageState;
+  currentPage: PageState;
   overlayPriority: OverlayStateMachine["priority"];
 
-  getCurrentPage(): ManualPageState;
-  setCurrentPage(page: ManualPageState): void;
+  getCurrentPage(): PageState;
+  setCurrentPage(page: PageState): void;
   currentPageAsViewMode(): ViewMode;
-  getPageState(page: ManualPageState): string | undefined;
-  setPageState(page: ManualPageState, state: string): void;
-  getSubmachine(page: ManualPageState): ManualPageSubmachine | undefined;
-  getSubmachineState(page: ManualPageState): string | undefined;
-  createKey(page: ManualPageState, state: string): string;
-  getPageClasses(page: ManualPageState): string;
-  setPageClasses(page: ManualPageState, classValue: string): string;
-  savePageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined;
-  applyPageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined;
-  syncPageState(page: ManualPageState, classList: DOMTokenList): string | undefined;
+  getPageState(page: PageState): string | undefined;
+  setPageState(page: PageState, state: string): void;
+  getSubmachine(page: PageState): PageSubmachine | undefined;
+  getSubmachineState(page: PageState): string | undefined;
+  createKey(page: PageState, state: string): string;
+  getPageClasses(page: PageState): string;
+  setPageClasses(page: PageState, classValue: string): string;
+  savePageClasses(page: PageState, classList: DOMTokenList): string | undefined;
+  applyPageClasses(page: PageState, classList: DOMTokenList): string | undefined;
+  syncPageState(page: PageState, classList: DOMTokenList): string | undefined;
   isOverlayOccupied(): boolean;
   canPreempt(incoming: OverlayStateMachine["priority"], current?: OverlayStateMachine["priority"]): boolean;
 }
 
 class StateMachineImpl implements StateMachine {
-  readonly manualPage = pageStateMachine;
+  readonly pageStateMachine = pageStateMachineImpl;
   readonly overlay = overlayStateMachine;
 
   get substates(): PageStateMachine["substates"] {
-    return this.manualPage.substates;
+    return this.pageStateMachine.substates;
   }
 
-  get currentPage(): ManualPageState {
-    return this.manualPage.currentPage;
+  get currentPage(): PageState {
+    return this.pageStateMachine.currentPage;
   }
 
-  set currentPage(page: ManualPageState) {
-    this.manualPage.currentPage = page;
+  set currentPage(page: PageState) {
+    this.pageStateMachine.currentPage = page;
   }
 
   get overlayPriority(): OverlayStateMachine["priority"] {
@@ -57,56 +57,56 @@ class StateMachineImpl implements StateMachine {
     this.overlay.setPriority(v);
   }
 
-  getCurrentPage(): ManualPageState {
-    return this.manualPage.getCurrentPage();
+  getCurrentPage(): PageState {
+    return this.pageStateMachine.getCurrentPage();
   }
 
-  setCurrentPage(page: ManualPageState): void {
-    this.manualPage.setCurrentPage(page);
+  setCurrentPage(page: PageState): void {
+    this.pageStateMachine.setCurrentPage(page);
   }
 
   currentPageAsViewMode(): ViewMode {
-    return this.manualPage.currentPageAsViewMode();
+    return this.pageStateMachine.currentPageAsViewMode();
   }
 
-  getPageState(page: ManualPageState): string | undefined {
-    return this.manualPage.getPageState(page);
+  getPageState(page: PageState): string | undefined {
+    return this.pageStateMachine.getPageState(page);
   }
 
-  setPageState(page: ManualPageState, state: string): void {
-    this.manualPage.setPageState(page, state);
+  setPageState(page: PageState, state: string): void {
+    this.pageStateMachine.setPageState(page, state);
   }
 
-  getSubmachine(page: ManualPageState): ManualPageSubmachine | undefined {
-    return this.manualPage.getSubmachine(page);
+  getSubmachine(page: PageState): PageSubmachine | undefined {
+    return this.pageStateMachine.getSubmachine(page);
   }
 
-  getSubmachineState(page: ManualPageState): string | undefined {
-    return this.manualPage.getSubmachineState(page);
+  getSubmachineState(page: PageState): string | undefined {
+    return this.pageStateMachine.getSubmachineState(page);
   }
 
-  createKey(page: ManualPageState, state: string): string {
-    return this.manualPage.createKey(page, state);
+  createKey(page: PageState, state: string): string {
+    return this.pageStateMachine.createKey(page, state);
   }
 
-  getPageClasses(page: ManualPageState): string {
-    return this.manualPage.getPageClasses(page);
+  getPageClasses(page: PageState): string {
+    return this.pageStateMachine.getPageClasses(page);
   }
 
-  setPageClasses(page: ManualPageState, classValue: string): string {
-    return this.manualPage.setPageClasses(page, classValue);
+  setPageClasses(page: PageState, classValue: string): string {
+    return this.pageStateMachine.setPageClasses(page, classValue);
   }
 
-  savePageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined {
-    return this.manualPage.savePageClasses(page, classList);
+  savePageClasses(page: PageState, classList: DOMTokenList): string | undefined {
+    return this.pageStateMachine.savePageClasses(page, classList);
   }
 
-  applyPageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined {
-    return this.manualPage.applyPageClasses(page, classList);
+  applyPageClasses(page: PageState, classList: DOMTokenList): string | undefined {
+    return this.pageStateMachine.applyPageClasses(page, classList);
   }
 
-  syncPageState(page: ManualPageState, classList: DOMTokenList): string | undefined {
-    return this.manualPage.syncPageState(page, classList);
+  syncPageState(page: PageState, classList: DOMTokenList): string | undefined {
+    return this.pageStateMachine.syncPageState(page, classList);
   }
 
   isOverlayOccupied(): boolean {

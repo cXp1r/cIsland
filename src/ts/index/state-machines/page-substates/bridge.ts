@@ -1,5 +1,5 @@
 import { capsule } from "../../dom";
-import { ManualPageState } from "../page";
+import { PageState } from "../page";
 import { PageSubstateKind } from "./common";
 import { TimePageSubstate } from "./time";
 import { LyricPageSubstate } from "./lyric";
@@ -16,7 +16,7 @@ type ClassEffect = {
 type CommitCallback<S extends string> = (state: S, classList: DOMTokenList) => void;
 
 export interface SubstateBridge<S extends string = string> {
-  readonly page: ManualPageState;
+  readonly page: PageState;
   readonly kind: typeof PageSubstateKind[keyof typeof PageSubstateKind];
   getState(): S;
   setState(state: S): void;
@@ -25,7 +25,7 @@ export interface SubstateBridge<S extends string = string> {
 }
 
 interface SubstateBridgeConfig<S extends string> {
-  page: ManualPageState;
+  page: PageState;
   kind: typeof PageSubstateKind[keyof typeof PageSubstateKind];
   initialState: S;
   expandState: S;
@@ -37,7 +37,7 @@ interface SubstateBridgeConfig<S extends string> {
 }
 
 abstract class SubstateBridgeBase<S extends string> implements SubstateBridge<S> {
-  public readonly page: ManualPageState;
+  public readonly page: PageState;
   public readonly kind: typeof PageSubstateKind[keyof typeof PageSubstateKind];
   protected readonly expandState: S;
   protected readonly collapseState: S;
@@ -122,7 +122,7 @@ export interface DownloaderSubstateBridge extends SubstateBridge<DownloaderPageS
 export class TimeSubstateBridgeImpl extends SubstateBridgeBase<TimePageSubstate> implements TimeSubstateBridge {
   constructor(onCommit: CommitCallback<TimePageSubstate>) {
     super({
-      page: ManualPageState.Time,
+      page: PageState.Time,
       kind: PageSubstateKind.Time,
       initialState: TimePageSubstate.Collapsed,
       expandState: TimePageSubstate.Expanded,
@@ -141,7 +141,7 @@ export class TimeSubstateBridgeImpl extends SubstateBridgeBase<TimePageSubstate>
 export class LyricSubstateBridgeImpl extends SubstateBridgeBase<LyricPageSubstate> implements LyricSubstateBridge {
   constructor(onCommit: CommitCallback<LyricPageSubstate>) {
     super({
-      page: ManualPageState.Lyric,
+      page: PageState.Lyric,
       kind: PageSubstateKind.Lyric,
       initialState: LyricPageSubstate.Collapsed,
       expandState: LyricPageSubstate.Expanded,
@@ -164,7 +164,7 @@ export class LyricSubstateBridgeImpl extends SubstateBridgeBase<LyricPageSubstat
 export class AgentSubstateBridgeImpl extends SubstateBridgeBase<AgentPageSubstate> implements AgentSubstateBridge {
   constructor(onCommit: CommitCallback<AgentPageSubstate>) {
     super({
-      page: ManualPageState.Agent,
+      page: PageState.Agent,
       kind: PageSubstateKind.Agent,
       initialState: AgentPageSubstate.Collapsed,
       expandState: AgentPageSubstate.Expanded,
@@ -204,7 +204,7 @@ export class AgentSubstateBridgeImpl extends SubstateBridgeBase<AgentPageSubstat
 export class SadbSubstateBridgeImpl extends SubstateBridgeBase<SadbPageSubstate> implements SadbSubstateBridge {
   constructor(onCommit: CommitCallback<SadbPageSubstate>) {
     super({
-      page: ManualPageState.Sadb,
+      page: PageState.Sadb,
       kind: PageSubstateKind.Sadb,
       initialState: SadbPageSubstate.Collapsed,
       expandState: SadbPageSubstate.Mirroring,
@@ -232,7 +232,7 @@ export class SadbSubstateBridgeImpl extends SubstateBridgeBase<SadbPageSubstate>
 export class EmailSubstateBridgeImpl extends SubstateBridgeBase<EmailPageSubstate> implements EmailSubstateBridge {
   constructor(onCommit: CommitCallback<EmailPageSubstate>) {
     super({
-      page: ManualPageState.Email,
+      page: PageState.Email,
       kind: PageSubstateKind.Email,
       initialState: EmailPageSubstate.Collapsed,
       expandState: EmailPageSubstate.Expanded,
@@ -258,7 +258,7 @@ export class DownloaderSubstateBridgeImpl
 {
   constructor(onCommit: CommitCallback<DownloaderPageSubstate>) {
     super({
-      page: ManualPageState.Downloader,
+      page: PageState.Downloader,
       kind: PageSubstateKind.Downloader,
       initialState: DownloaderPageSubstate.Collapsed,
       expandState: DownloaderPageSubstate.Expanded,

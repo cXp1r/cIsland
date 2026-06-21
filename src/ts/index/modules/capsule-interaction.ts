@@ -21,7 +21,7 @@ import { switchToNextView } from "./view-switcher";
 import { fetchAndUpdateVolume } from "./music-controls";
 import { showContextMenu } from "./drag";
 import { logd } from "../logger";
-import { ManualPageState } from "../state-machines/page";
+import { PageState } from "../state-machines/page";
 import { overlayStateMachine } from "../state-machines/overlay-machine";
 import { pageStateMachine } from "../state-machines/page-machine";
 import { AgentPageSubstate } from "../state-machines/page-substates/agent";
@@ -49,33 +49,33 @@ export function initCapsuleInteraction() {
     logd("Capsule",`click on view '${currentView}'`);
     const target = e.target as HTMLElement;
     console.log(target);
-    // 濡傛灉鍒氬垰鍙戠敓浜嗘嫋鍔紝涓嶈Е鍙戠偣鍑?
+    // 濡傛灉鍒氬垰鍙戠敓浜嗘嫋鍔紝涓嶈Е鍙戠偣�?
     if (dragStarted) {
       setDragStarted(false);
       return;
     }
 
-    // 鏈夊脊灞傦紙search / notice / privacy锛夋椂锛屼笉瑙﹀彂鍒嗛〉鐐瑰嚮閫昏緫
+    // 鏈夊脊灞傦紙search / notice / privacy锛夋椂锛屼笉瑙﹀彂鍒嗛〉鐐瑰嚮閫昏�?
     if (overlayStateMachine.isOccupied()) return;
 
     const page = pageStateMachine.getCurrentPage();
     switch (page) {
-      case ManualPageState.Time: {
+      case PageState.Time: {
         e.stopPropagation();
         debouncedClick(panelClickTimer, setPanelClickTimer, () => {
-        if (pageStateMachine.getPageState(ManualPageState.Time) === "expanded"
+        if (pageStateMachine.getPageState(PageState.Time) === "expanded"
               && target instanceof HTMLDivElement) {
-          pageStateMachine.substates[ManualPageState.Time].collapse();
+          pageStateMachine.substates[PageState.Time].collapse();
           void invoke("set_expanded", { expanded: false });
         } else {
-          pageStateMachine.substates[ManualPageState.Time].expand();
+          pageStateMachine.substates[PageState.Time].expand();
           void invoke("set_expanded", { expanded: true });
         }
         });
         break;
       }
-      case ManualPageState.Lyric: {
-        if (pageStateMachine.getPageState(ManualPageState.Lyric) === "expanded") {
+      case PageState.Lyric: {
+        if (pageStateMachine.getPageState(PageState.Lyric) === "expanded") {
           if (!target.closest("#music-panel-header")) return;
         } else {
           if (target.closest(".media-btn") || target.closest(".progress-bar")
@@ -85,7 +85,7 @@ export function initCapsuleInteraction() {
         debouncedClick(musicClickTimer, setMusicClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          if (pageStateMachine.getPageState(ManualPageState.Lyric) !== "expanded") {
+          if (pageStateMachine.getPageState(PageState.Lyric) !== "expanded") {
             musicPanelSong.textContent = currentSongTitle || "";
             musicPanelArtist.textContent = currentArtistName || "";
             if (currentThumbnailUrl) {
@@ -93,19 +93,19 @@ export function initCapsuleInteraction() {
               musicPanelCoverImg.style.backgroundImage = `url(${currentThumbnailUrl})`;
             }
             fetchAndUpdateVolume();
-            pageStateMachine.substates[ManualPageState.Lyric].expand();
+            pageStateMachine.substates[PageState.Lyric].expand();
             void invoke("set_expanded", { expanded: true });
             window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
           } else {
-            pageStateMachine.substates[ManualPageState.Lyric].collapse();
+            pageStateMachine.substates[PageState.Lyric].collapse();
             void invoke("set_expanded", { expanded: false });
             window.setTimeout(() => { setIsExpandAnimating(false); }, 500);
           }
         });
         break;
       }
-      case ManualPageState.Agent: {
-        const agentSt = pageStateMachine.getPageState(ManualPageState.Agent);
+      case PageState.Agent: {
+        const agentSt = pageStateMachine.getPageState(PageState.Agent);
         if (agentSt !== AgentPageSubstate.Collapsed) {
           if (!target.closest("#agent-status-bar") || target.closest("#agent-clear-btn")) return;
         } else {
@@ -118,15 +118,15 @@ export function initCapsuleInteraction() {
         debouncedClick(agentClickTimer, setAgentClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          if (pageStateMachine.getPageState(ManualPageState.Agent) === "collapsed") {
-            pageStateMachine.substates[ManualPageState.Agent].expand();
+          if (pageStateMachine.getPageState(PageState.Agent) === "collapsed") {
+            pageStateMachine.substates[PageState.Agent].expand();
             void invoke("set_expanded", { expanded: true });
             window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
           } else {
             const agentArea = document.getElementById("agent-area");
             if (agentArea) agentArea.classList.add("collapsing");
             window.setTimeout(() => {
-              pageStateMachine.substates[ManualPageState.Agent].collapse();
+              pageStateMachine.substates[PageState.Agent].collapse();
               void invoke("set_expanded", { expanded: false });
               window.setTimeout(() => {
                 if (agentArea) agentArea.classList.remove("collapsing");
@@ -137,8 +137,8 @@ export function initCapsuleInteraction() {
         });
         break;
       }
-      case ManualPageState.Sadb: {
-        const sadbSt = pageStateMachine.getPageState(ManualPageState.Sadb);
+      case PageState.Sadb: {
+        const sadbSt = pageStateMachine.getPageState(PageState.Sadb);
         switch (sadbSt) {
           case SadbPageSubstate.Mirroring:
             break;
@@ -148,7 +148,7 @@ export function initCapsuleInteraction() {
             debouncedClick(sadbClickTimer, setSadbClickTimer, () => {
               if (isExpandAnimating) return;
               setIsExpandAnimating(true);
-              pageStateMachine.substates[ManualPageState.Sadb].collapse();
+              pageStateMachine.substates[PageState.Sadb].collapse();
               void invoke("set_expanded", { expanded: false });
               window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
             });
@@ -160,7 +160,7 @@ export function initCapsuleInteraction() {
             debouncedClick(sadbClickTimer, setSadbClickTimer, () => {
               if (isExpandAnimating) return;
               setIsExpandAnimating(true);
-              pageStateMachine.substates[ManualPageState.Sadb].idlePanel();
+              pageStateMachine.substates[PageState.Sadb].idlePanel();
               void invoke("set_expanded", { expanded: false });
               window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
             });
@@ -168,31 +168,31 @@ export function initCapsuleInteraction() {
         }
         break;
       }
-      case ManualPageState.Email: {
+      case PageState.Email: {
         debouncedClick(emailClickTimer, setEmailClickTimer, () => {
-          if (pageStateMachine.getPageState(ManualPageState.Email) === "expanded") {
-            pageStateMachine.substates[ManualPageState.Email].collapse();
+          if (pageStateMachine.getPageState(PageState.Email) === "expanded") {
+            pageStateMachine.substates[PageState.Email].collapse();
             void invoke("set_expanded", { expanded: false });
           } else {
-            pageStateMachine.substates[ManualPageState.Email].expand();
+            pageStateMachine.substates[PageState.Email].expand();
             void invoke("set_expanded", { expanded: true });
           }
         });
         break;
       }
-      case ManualPageState.Downloader: {
+      case PageState.Downloader: {
         if (!(target instanceof HTMLDivElement)) return;
         e.stopPropagation();
         debouncedClick(downloaderClickTimer, setDownloaderClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          if (pageStateMachine.getPageState(ManualPageState.Downloader) === "collapsed") {
-            pageStateMachine.substates[ManualPageState.Downloader].expand();
+          if (pageStateMachine.getPageState(PageState.Downloader) === "collapsed") {
+            pageStateMachine.substates[PageState.Downloader].expand();
             void invoke("set_expanded", { expanded: true });
             window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
           } else {
             window.setTimeout(() => {
-              pageStateMachine.substates[ManualPageState.Downloader].collapse();
+              pageStateMachine.substates[PageState.Downloader].collapse();
               void invoke("set_expanded", { expanded: false });
               window.setTimeout(() => {
                 setIsExpandAnimating(false);
@@ -223,15 +223,15 @@ export function initCapsuleInteraction() {
     e.stopPropagation();
     switchToNextView();
   });
-  // 鍙抽敭鑿滃崟鍔熻兘
+  // 鍙抽敭鑿滃崟鍔熻�?
   capsule.addEventListener("contextmenu", (e: MouseEvent) => {
     e.preventDefault();
-    // Agent 闈炴敹璧锋€併€丩yric 灞曞紑鎬佹椂涓嶆樉绀鸿彍鍗?
-    if (pageStateMachine.getPageState(ManualPageState.Agent) !== "collapsed"
-        || pageStateMachine.getPageState(ManualPageState.Lyric) === "expanded") return;
-    // 闅愮寮圭獥鏄剧ず鏃朵笉鏄剧ず鑿滃崟锛堥殣绉侀潪鎵嬪姩椤甸潰锛屾棤鐘舵€佹満鏉＄洰锛屼繚鎸?classList 鍒ゆ柇锛?
+    // Agent 闈炴敹璧锋€併€丩yric 灞曞紑鎬佹椂涓嶆樉绀鸿彍�?
+    if (pageStateMachine.getPageState(PageState.Agent) !== "collapsed"
+        || pageStateMachine.getPageState(PageState.Lyric) === "expanded") return;
+    // 闅愮寮圭獥鏄剧ず鏃朵笉鏄剧ず鑿滃崟锛堥殣绉侀潪鎵嬪姩椤甸潰锛屾棤鐘舵€佹満鏉＄洰锛屼繚�?classList 鍒ゆ柇锛?
     if (capsule.classList.contains("privacy-active")) return;
-    // 鏄剧ず绯荤粺鑿滃崟
+    // 鏄剧ず绯荤粺鑿滃�?
     showContextMenu();
   });
 }

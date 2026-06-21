@@ -1,6 +1,6 @@
 import { capsule } from "../dom";
 import type { ViewMode } from "../types";
-import { ManualPageState, isManualPageState } from "./page";
+import { PageState, isPageState } from "./page";
 import {
   getPageSubstateInitialState,
   pageSubstateRegistry,
@@ -25,97 +25,97 @@ import {
   type DownloaderSubstateBridge,
 } from "./page-substates";
 
-export interface ManualPageSubmachine<S extends string = string> {
-  page: ManualPageState;
+export interface PageSubmachine<S extends string = string> {
+  page: PageState;
   definition: PageSubstateDefinition<S>;
   currentState: S;
 }
 
-export type ManualPageSubmachineMap = Partial<Record<ManualPageState, ManualPageSubmachine>>;
-export type ManualPageCapsuleClassSnapshotMap = Partial<Record<ManualPageState, string>>;
+export type PageSubmachineMap = Partial<Record<PageState, PageSubmachine>>;
+export type PageCapsuleClassSnapshotMap = Partial<Record<PageState, string>>;
 
 export interface PageStateMachine {
-  state: ManualPageState;
-  currentPage: ManualPageState;
-  readonly submachines: ManualPageSubmachineMap;
+  state: PageState;
+  currentPage: PageState;
+  readonly submachines: PageSubmachineMap;
   readonly substates: Readonly<{
-    [ManualPageState.Time]: TimeSubstateBridge;
-    [ManualPageState.Lyric]: LyricSubstateBridge;
-    [ManualPageState.Agent]: AgentSubstateBridge;
-    [ManualPageState.Sadb]: SadbSubstateBridge;
-    [ManualPageState.Email]: EmailSubstateBridge;
-    [ManualPageState.Downloader]: DownloaderSubstateBridge;
+    [PageState.Time]: TimeSubstateBridge;
+    [PageState.Lyric]: LyricSubstateBridge;
+    [PageState.Agent]: AgentSubstateBridge;
+    [PageState.Sadb]: SadbSubstateBridge;
+    [PageState.Email]: EmailSubstateBridge;
+    [PageState.Downloader]: DownloaderSubstateBridge;
   }>;
 
-  getCurrentPage(): ManualPageState;
-  setCurrentPage(page: ManualPageState): void;
+  getCurrentPage(): PageState;
+  setCurrentPage(page: PageState): void;
   currentPageAsViewMode(): ViewMode;
 
-  getSubmachine(page: ManualPageState): ManualPageSubmachine | undefined;
-  getSubmachineState(page: ManualPageState): string | undefined;
-  createKey(page: ManualPageState, state: string): string;
+  getSubmachine(page: PageState): PageSubmachine | undefined;
+  getSubmachineState(page: PageState): string | undefined;
+  createKey(page: PageState, state: string): string;
 
-  getPageState(page: ManualPageState): string | undefined;
-  setPageState(page: ManualPageState, state: string): void;
+  getPageState(page: PageState): string | undefined;
+  setPageState(page: PageState, state: string): void;
 
-  getPageClasses(page: ManualPageState): string;
-  setPageClasses(page: ManualPageState, classValue: string): string;
-  savePageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined;
-  applyPageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined;
-  syncPageState(page: ManualPageState, classList: DOMTokenList): string | undefined;
+  getPageClasses(page: PageState): string;
+  setPageClasses(page: PageState, classValue: string): string;
+  savePageClasses(page: PageState, classList: DOMTokenList): string | undefined;
+  applyPageClasses(page: PageState, classList: DOMTokenList): string | undefined;
+  syncPageState(page: PageState, classList: DOMTokenList): string | undefined;
 }
 
-const pageCapsuleClassDefaultSnapshotMap: Record<ManualPageState, string> = {
-  [ManualPageState.Time]: "",
-  [ManualPageState.Lyric]: "lyric-collapsed",
-  [ManualPageState.Agent]: "",
-  [ManualPageState.Sadb]: "",
-  [ManualPageState.Email]: "",
-  [ManualPageState.Downloader]: "",
+const pageCapsuleClassDefaultSnapshotMap: Record<PageState, string> = {
+  [PageState.Time]: "",
+  [PageState.Lyric]: "lyric-collapsed",
+  [PageState.Agent]: "",
+  [PageState.Sadb]: "",
+  [PageState.Email]: "",
+  [PageState.Downloader]: "",
 };
 
 class PageStateMachineImpl implements PageStateMachine {
-  private _currentPage: ManualPageState = ManualPageState.Time;
+  private _currentPage: PageState = PageState.Time;
 
-  readonly submachines: ManualPageSubmachineMap = {};
-  private readonly pageCapsuleClassSnapshotMap: ManualPageCapsuleClassSnapshotMap = {
-    [ManualPageState.Time]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Time],
-    [ManualPageState.Lyric]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Lyric],
-    [ManualPageState.Agent]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Agent],
-    [ManualPageState.Sadb]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Sadb],
-    [ManualPageState.Email]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Email],
-    [ManualPageState.Downloader]: pageCapsuleClassDefaultSnapshotMap[ManualPageState.Downloader],
+  readonly submachines: PageSubmachineMap = {};
+  private readonly pageCapsuleClassSnapshotMap: PageCapsuleClassSnapshotMap = {
+    [PageState.Time]: pageCapsuleClassDefaultSnapshotMap[PageState.Time],
+    [PageState.Lyric]: pageCapsuleClassDefaultSnapshotMap[PageState.Lyric],
+    [PageState.Agent]: pageCapsuleClassDefaultSnapshotMap[PageState.Agent],
+    [PageState.Sadb]: pageCapsuleClassDefaultSnapshotMap[PageState.Sadb],
+    [PageState.Email]: pageCapsuleClassDefaultSnapshotMap[PageState.Email],
+    [PageState.Downloader]: pageCapsuleClassDefaultSnapshotMap[PageState.Downloader],
   };
 
   readonly substates = {
-    [ManualPageState.Time]: new TimeSubstateBridgeImpl((state) => {
-      this.setPageState(ManualPageState.Time, state);
-      this.savePageClasses(ManualPageState.Time, capsule.classList);
+    [PageState.Time]: new TimeSubstateBridgeImpl((state) => {
+      this.setPageState(PageState.Time, state);
+      this.savePageClasses(PageState.Time, capsule.classList);
     }),
-    [ManualPageState.Lyric]: new LyricSubstateBridgeImpl((state) => {
-      this.setPageState(ManualPageState.Lyric, state);
-      this.savePageClasses(ManualPageState.Lyric, capsule.classList);
+    [PageState.Lyric]: new LyricSubstateBridgeImpl((state) => {
+      this.setPageState(PageState.Lyric, state);
+      this.savePageClasses(PageState.Lyric, capsule.classList);
     }),
-    [ManualPageState.Agent]: new AgentSubstateBridgeImpl((state) => {
-      this.setPageState(ManualPageState.Agent, state);
-      this.savePageClasses(ManualPageState.Agent, capsule.classList);
+    [PageState.Agent]: new AgentSubstateBridgeImpl((state) => {
+      this.setPageState(PageState.Agent, state);
+      this.savePageClasses(PageState.Agent, capsule.classList);
     }),
-    [ManualPageState.Sadb]: new SadbSubstateBridgeImpl((state) => {
-      this.setPageState(ManualPageState.Sadb, state);
-      this.savePageClasses(ManualPageState.Sadb, capsule.classList);
+    [PageState.Sadb]: new SadbSubstateBridgeImpl((state) => {
+      this.setPageState(PageState.Sadb, state);
+      this.savePageClasses(PageState.Sadb, capsule.classList);
     }),
-    [ManualPageState.Email]: new EmailSubstateBridgeImpl((state) => {
-      this.setPageState(ManualPageState.Email, state);
-      this.savePageClasses(ManualPageState.Email, capsule.classList);
+    [PageState.Email]: new EmailSubstateBridgeImpl((state) => {
+      this.setPageState(PageState.Email, state);
+      this.savePageClasses(PageState.Email, capsule.classList);
     }),
-    [ManualPageState.Downloader]: new DownloaderSubstateBridgeImpl((state) => {
-      this.setPageState(ManualPageState.Downloader, state);
-      this.savePageClasses(ManualPageState.Downloader, capsule.classList);
+    [PageState.Downloader]: new DownloaderSubstateBridgeImpl((state) => {
+      this.setPageState(PageState.Downloader, state);
+      this.savePageClasses(PageState.Downloader, capsule.classList);
     }),
   } as const;
 
   constructor() {
-    for (const page of Object.keys(pageSubstateRegistry) as ManualPageState[]) {
+    for (const page of Object.keys(pageSubstateRegistry) as PageState[]) {
       const definition = pageSubstateRegistry[page];
       if (!definition) continue;
       this.submachines[page] = {
@@ -126,27 +126,27 @@ class PageStateMachineImpl implements PageStateMachine {
     }
   }
 
-  get state(): ManualPageState {
+  get state(): PageState {
     return this._currentPage;
   }
 
-  set state(page: ManualPageState) {
+  set state(page: PageState) {
     this._currentPage = page;
   }
 
-  get currentPage(): ManualPageState {
+  get currentPage(): PageState {
     return this._currentPage;
   }
 
-  set currentPage(page: ManualPageState) {
+  set currentPage(page: PageState) {
     this._currentPage = page;
   }
 
-  getCurrentPage(): ManualPageState {
+  getCurrentPage(): PageState {
     return this._currentPage;
   }
 
-  setCurrentPage(page: ManualPageState): void {
+  setCurrentPage(page: PageState): void {
     this._currentPage = page;
   }
 
@@ -154,80 +154,80 @@ class PageStateMachineImpl implements PageStateMachine {
     return this._currentPage as ViewMode;
   }
 
-  getSubmachine(page: ManualPageState): ManualPageSubmachine | undefined {
+  getSubmachine(page: PageState): PageSubmachine | undefined {
     return this.submachines[page];
   }
 
-  getSubmachineState(page: ManualPageState): string | undefined {
+  getSubmachineState(page: PageState): string | undefined {
     return this.submachines[page]?.currentState;
   }
 
-  createKey(page: ManualPageState, state: string): string {
+  createKey(page: PageState, state: string): string {
     return `${page}:${state}`;
   }
 
-  getPageState(page: ManualPageState): string | undefined {
+  getPageState(page: PageState): string | undefined {
     return this.submachines[page]?.currentState;
   }
 
-  setPageState(page: ManualPageState, state: string): void {
+  setPageState(page: PageState, state: string): void {
     const machine = this.submachines[page];
     if (!machine || machine.currentState === state) return;
     machine.currentState = state;
   }
 
-  getPageClasses(page: ManualPageState): string {
+  getPageClasses(page: PageState): string {
     return this.pageCapsuleClassSnapshotMap[page] ?? pageCapsuleClassDefaultSnapshotMap[page];
   }
 
-  setPageClasses(page: ManualPageState, classValue: string): string {
+  setPageClasses(page: PageState, classValue: string): string {
     this.pageCapsuleClassSnapshotMap[page] = classValue;
     return classValue;
   }
 
-  savePageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined {
-    if (!isManualPageState(page)) return undefined;
+  savePageClasses(page: PageState, classList: DOMTokenList): string | undefined {
+    if (!isPageState(page)) return undefined;
     return this.setPageClasses(page, classList.value);
   }
 
-  applyPageClasses(page: ManualPageState, classList: DOMTokenList): string | undefined {
-    if (!isManualPageState(page)) return undefined;
+  applyPageClasses(page: PageState, classList: DOMTokenList): string | undefined {
+    if (!isPageState(page)) return undefined;
 
     const snapshot = this.getPageClasses(page);
     classList.value = snapshot;
     return snapshot;
   }
 
-  private inferCurrentPageSubmachineState(page: ManualPageState, classList: DOMTokenList): string {
+  private inferCurrentPageSubmachineState(page: PageState, classList: DOMTokenList): string {
     const machine = this.submachines[page];
     if (!machine) return "";
 
     switch (page) {
-      case ManualPageState.Time:
+      case PageState.Time:
         return classList.contains("panel-expanded")
           ? TimePageSubstate.Expanded
           : TimePageSubstate.Collapsed;
-      case ManualPageState.Lyric:
+      case PageState.Lyric:
         if (classList.contains("music-expanded")) return LyricPageSubstate.Expanded;
         return machine.currentState === LyricPageSubstate.Seeking
           ? machine.currentState
           : LyricPageSubstate.Collapsed;
-      case ManualPageState.Agent:
+      case PageState.Agent:
         if (classList.contains("agent-expanded")) return AgentPageSubstate.Expanded;
         return machine.currentState === AgentPageSubstate.Thinking
           || machine.currentState === AgentPageSubstate.Generating
           ? machine.currentState
           : AgentPageSubstate.Collapsed;
-      case ManualPageState.Sadb:
+      case PageState.Sadb:
         if (classList.contains("sadb-expanded")) return SadbPageSubstate.Mirroring;
         if (classList.contains("sadb-idle")) return SadbPageSubstate.IdlePanel;
         return machine.currentState;
-      case ManualPageState.Email:
+      case PageState.Email:
         if (classList.contains("email-expanded")) return EmailPageSubstate.Expanded;
         return machine.currentState === EmailPageSubstate.Dragging
           ? machine.currentState
           : EmailPageSubstate.Collapsed;
-      case ManualPageState.Downloader:
+      case PageState.Downloader:
         if (classList.contains("downloader-expanded")) return DownloaderPageSubstate.Expanded;
         return machine.currentState === DownloaderPageSubstate.Downloading
           ? machine.currentState
@@ -237,8 +237,8 @@ class PageStateMachineImpl implements PageStateMachine {
     }
   }
 
-  syncPageState(page: ManualPageState, classList: DOMTokenList): string | undefined {
-    if (!isManualPageState(page)) return undefined;
+  syncPageState(page: PageState, classList: DOMTokenList): string | undefined {
+    if (!isPageState(page)) return undefined;
 
     this.savePageClasses(page, classList);
 

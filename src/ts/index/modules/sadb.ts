@@ -5,7 +5,7 @@ import { loge, logd, logi, logw } from "../logger";
 import { animateCapsule } from "./rAF";
 import { listen } from "@tauri-apps/api/event";
 import { $ } from "../../shared";
-import { ManualPageState } from "../state-machines/page";
+import { PageState } from "../state-machines/page";
 import { pageStateMachine } from "../state-machines/page-machine";
 
 const sadbArea = $<HTMLDivElement>("sadb-area");
@@ -61,7 +61,7 @@ declare const EncodedAudioChunk: {
   new(init: { type: "key" | "delta"; timestamp: number; data: ArrayBufferView | ArrayBuffer }): unknown;
 };
 
-// 闁冲厜鍋撻柍鍏夊亾 H.264 helpers 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?H.264 helpers 闁冲厜鍋撻柍鍏夊�?
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
@@ -132,7 +132,7 @@ function buildAVCDecoderConfig(sps: Uint8Array, pps: Uint8Array): ArrayBuffer {
   return buf.buffer;
 }
 
-// 闁冲厜鍋撻柍鍏夊亾 State 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?State 闁冲厜鍋撻柍鍏夊�?
 
 const ctx = sadbCanvas.getContext("2d")!;
 
@@ -148,10 +148,10 @@ let mouseButtons = 0;
 let clipboardPollInterval: ReturnType<typeof setInterval> | null = null;
 let currentSerial: string | null = null;
 const SADB_INIT_CAP_W = 280; // 婵炵繝绀侀幆搴ㄥ礉閵婏附顦ч柣銊ュ閻斺偓闁告垵妫楅鏃€鎯?
-const SADB_MIN_SCALE = 0.6;  // 闁哄牃鍋撻悘蹇撶箳缂傚寮ㄩ幘鍛缂?168px 閻庤鏋荤槐?
-const SADB_MAX_SCALE = 3.0;  // 闁哄牃鍋撳鍫嗗懐绱氶柡鈧幘鍛缂?840px 閻庤鏋荤槐?
+const SADB_MIN_SCALE = 0.6;  // 闁哄牃鍋撻悘蹇撶箳缂傚寮ㄩ幘鍛�?168px 閻庤鏋荤槐?
+const SADB_MAX_SCALE = 3.0;  // 闁哄牃鍋撳鍫嗗懐绱氶柡鈧幘鍛�?840px 閻庤鏋荤槐?
 
-// 闁圭顦版晶婊堝嫉?AR 閻犱緤绱曢悾濠氬礄閾忚鐣遍柛鈺佹惈閸ｎ垳浜搁崫鍕靛殶闁挎稑顔抋dbScale 濞戞梹眉缁楀倿宕㈢拠鍙夌殤闁哄嫷鍨伴悿鍕⒔閸涱厽妲€閻?
+// 闁圭顦版晶婊堝�?AR 閻犱緤绱曢悾濠氬礄閾忚鐣遍柛鈺佹惈閸ｎ垳浜搁崫鍕靛殶闁挎稑顔抋dbScale 濞戞梹眉缁楀倿宕㈢拠鍙夌殤闁哄嫷鍨伴悿鍕⒔閸涱厽妲€閻?
 let initCapW = SADB_INIT_CAP_W;
 let initCapH = SADB_INIT_CAP_W;
 let sadbScale = 1.0;
@@ -250,7 +250,7 @@ function tickFps() {
   }
 }
 
-// 闁冲厜鍋撻柍鍏夊亾 Video 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Video 闁冲厜鍋撻柍鍏夊�?
 
 function renderFrame(frame: VideoFrame) {
   if (sadbCanvas.width !== frame.displayWidth || sadbCanvas.height !== frame.displayHeight) {
@@ -271,7 +271,7 @@ function initDecoder(codec: string, width: number, height: number) {
     output: renderFrame,
     error: (e) => {
       loge(TAG, "VideoDecoder error:", e);
-      setStatus(`閻熸瑱绲块悥婊堝闯閵娾晜鏅╅悹? ${e.message}`);
+      setStatus(`閻熸瑱绲块悥婊堝闯閵娾晜鏅╅�? ${e.message}`);
     },
   });
   sadbCanvas.width = width;
@@ -299,7 +299,7 @@ function applyConfigPacket(data: Uint8Array) {
   });
 }
 
-// 闁冲厜鍋撻柍鍏夊亾 Audio (Opus via WebCodecs AudioDecoder) 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Audio (Opus via WebCodecs AudioDecoder) 闁冲厜鍋撻柍鍏夊�?
 
 function initAudioDecoder(configData: Uint8Array) {
   if (typeof AudioDecoder === "undefined") {
@@ -364,7 +364,7 @@ function decodeAudio(pts: number, data: Uint8Array) {
   audioDecoder.decode(chunk);
 }
 
-// 闁冲厜鍋撻柍鍏夊亾 Event handler 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Event handler 闁冲厜鍋撻柍鍏夊�?
 
 function handleEvent(evt: PacketEvent) {
   switch (evt.type) {
@@ -374,8 +374,8 @@ function handleEvent(evt: PacketEvent) {
       deviceH = evt.height;
       initDecoder(evt.codec, evt.width, evt.height);
       setStatus("Mirroring...");
-      // 鐎垫澘鎳忓┃鈧梻鍫涘灪濠?闁?闂傗偓濠婂啫鍓奸悘鐐存礀缁辨垿鏁嶉崷鏄怱 + 闁告艾娴烽?flag闁挎稒绋戦弰鍌溾偓闈涙憸閺?autoFitWindow 閻犱礁澧介悿鍡涙晬?
-      pageStateMachine.substates[ManualPageState.Sadb].mirroring();
+      // 鐎垫澘鎳忓┃鈧梻鍫涘灪�?�?闂傗偓濠婂啫鍓奸悘鐐存礀缁辨垿鏁嶉崷鏄�?+ 闁告艾娴烽?flag闁挎稒绋戦弰鍌溾偓闈涙憸�?autoFitWindow 閻犱礁澧介悿鍡涙�?
+      pageStateMachine.substates[PageState.Sadb].mirroring();
       invoke("set_expanded", { expanded: true }).catch(() => {});
       updateDrawRect();
       autoFitWindow();
@@ -507,11 +507,11 @@ function stopStream() {
   phoneClipboard = null;
   lastSyncedText = null;
   sadbScale = 1.0;
-  // 闁告瑯浜濆﹢浣姐亹閹惧啿顤呭ù鐘茬Т濠€?sadb 閻熸瑥妫楀ù姗€寮懜闈涱枀闁衡偓?capsule 闁哄秴鍢茬槐锟犲椽瀹€鍐冩洟宕?idle 闁告柣鍔庨弫?
-  // 闁兼眹鍎抽弫銈夊箣瀹勬澘鍤掗柛鎺戞处瀹曟煡宕氶弶鍨緭濞寸姵鐗為～瀣炊閹惧懐绀夊ù鐘叉噹娴犳盯宕ユ惔锝庝紓婵炴挸鎳愰幃濠囨晬鐏炶偐鐟濇慨鍏夊墲閻撳宕楅張鐢甸搨閻熸瑥妫楀ù姗€鎯冮崟顐ｆ閻?
+  // 闁告瑯浜濆﹢浣姐亹閹惧啿顤呭ù鐘茬Т濠€?sadb 閻熸瑥妫楀ù姗€寮懜闈涱枀闁衡�?capsule 闁哄秴鍢茬槐锟犲椽瀹€鍐冩洟宕?idle 闁告柣鍔庨弫?
+  // 闁兼眹鍎抽弫銈夊箣瀹勬澘鍤掗柛鎺戞处瀹曟煡宕氶弶鍨緭濞寸姵鐗為～瀣炊閹惧懐绀夊ù鐘叉噹娴犳盯宕ユ惔锝庝紓婵炴挸鎳愰幃濠囨晬鐏炶偐鐟濇慨鍏夊墲閻撳宕楅張鐢甸搨閻熸瑥妫楀ù姗€鎯冮崟顐ｆ�?
   const inSadbView = capsule.classList.contains("sadb-expanded") || capsule.classList.contains("sadb-idle");
   if (inSadbView) {
-    pageStateMachine.substates[ManualPageState.Sadb].idlePanel();
+    pageStateMachine.substates[PageState.Sadb].idlePanel();
     invoke("set_expanded", { expanded: false }).catch(() => {});
   }
   invoke("sadb_stop_mirroring").catch((e) => loge(TAG, "sadb_stop_mirroring failed:", e)).finally(() => {
@@ -532,7 +532,7 @@ async function pollPCClipboard() {
   } catch { /* ignore */ }
 }
 
-// 闁冲厜鍋撻柍鍏夊亾 Mouse input forwarding 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Mouse input forwarding 闁冲厜鍋撻柍鍏夊�?
 
 function toDeviceCoords(e: MouseEvent): [number, number] {
   const rect = sadbCanvas.getBoundingClientRect();
@@ -589,7 +589,7 @@ sadbCanvas.addEventListener("mousedown", () => {
   if (deviceW) imeInput.focus();
 });
 
-// 闁冲厜鍋撻柍鍏夊亾 Keyboard / text input forwarding 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Keyboard / text input forwarding 闁冲厜鍋撻柍鍏夊�?
 
 const imeInput = document.createElement("textarea");
 imeInput.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
@@ -683,7 +683,7 @@ imeInput.addEventListener("paste", (e) => {
   }
 });
 
-// 闁冲厜鍋撻柍鍏夊亾 Buttons 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Buttons 闁冲厜鍋撻柍鍏夊�?
 
 sadbBtnStart.addEventListener("click", startStream);
 sadbBtnStop.addEventListener("click", () => { setStatus("Stopping..."); stopStream(); });
@@ -694,14 +694,14 @@ sadbBtnScan.addEventListener("click", () => {
   sadbDeviceWrapper.replaceChildren();
   void invoke('scan_adb_devices');
 })
-// 闁冲厜鍋撻柍鍏夊亾 Initial placeholder canvas 闁冲厜鍋撻柍鍏夊亾
+// 闁冲厜鍋撻柍鍏夊�?Initial placeholder canvas 闁冲厜鍋撻柍鍏夊�?
 
 sadbCanvas.width = 320;
 sadbCanvas.height = 480;
 ctx.fillStyle = "#0a0a0a";
 ctx.fillRect(0, 0, sadbCanvas.width, sadbCanvas.height);
 
-// 闁归潧顑嗗┃鈧弶鐑嗗枛缁?
+// 闁归潧顑嗗┃鈧弶鐑嗗枛�?
 const phoneX = 90, phoneY = 80, phoneW = 140, phoneH = 240, phoneR = 18;
 ctx.strokeStyle = "rgba(255,255,255,0.12)";
 ctx.lineWidth = 1.5;
@@ -718,7 +718,7 @@ ctx.arcTo(phoneX, phoneY, phoneX + phoneR, phoneY, phoneR);
 ctx.closePath();
 ctx.stroke();
 
-// 閹煎瓨娲熼崕鏉懳熼鍛拫
+// 閹煎瓨娲熼崕鏉懳熼鍛�?
 const barW = 36, barY = phoneY + phoneH - 16;
 ctx.strokeStyle = "rgba(255,255,255,0.08)";
 ctx.lineWidth = 2;
@@ -727,14 +727,14 @@ ctx.moveTo(phoneX + (phoneW - barW) / 2, barY);
 ctx.lineTo(phoneX + (phoneW + barW) / 2, barY);
 ctx.stroke();
 
-// 闁哄秴娲。?
+// 闁哄秴娲�?
 ctx.fillStyle = "rgba(255,255,255,0.5)";
 ctx.font = "600 13px system-ui";
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 ctx.fillText("SADB", sadbCanvas.width / 2, phoneY + phoneH + 36);
 
-// 闁告搩鍨遍悥锝嗭紣?
+// 闁告搩鍨遍悥锝嗭�?
 ctx.fillStyle = "rgba(255,255,255,0.28)";
 ctx.font = "11px system-ui";
 ctx.fillText("No device connected. Please scan or connect a device first.", sadbCanvas.width / 2, phoneY + phoneH + 58);
@@ -745,7 +745,7 @@ export function initSadb() {
   updateDrawRect();
   new ResizeObserver(() => updateDrawRect()).observe(sadbCanvas);
 
-  // 闁冲厜鍋撻柍鍏夊亾 Resize handle 闁冲厜鍋撻柍鍏夊亾
+  // 闁冲厜鍋撻柍鍏夊�?Resize handle 闁冲厜鍋撻柍鍏夊�?
   let resizing = false;
   let resizeStartX = 0;
   let resizeStartScale = 1.0;
@@ -774,7 +774,7 @@ export function initSadb() {
     capsule.style.width = `${capW}px`;
     capsule.style.height = `${capH}px`;
     requestAnimationFrame(updateDrawRect);
-    logi("[sadb-resize]", "move: dx=%d, scale %.3f闁?.3f, cap %dx%d, offsetW=%d",
+    logi("[sadb-resize]", "move: dx=%d, scale %.3f�?.3f, cap %dx%d, offsetW=%d",
       dx, prevScale, sadbScale, capW, capH, capsule.offsetWidth);
     
     if (resizeTimer) clearTimeout(resizeTimer);

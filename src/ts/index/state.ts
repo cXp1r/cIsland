@@ -1,6 +1,6 @@
 import type { ViewMode, PrivacyUsagePayload } from "./types";
 import type { OverlayPriority } from "./state-machines/overlay";
-import { isManualPageState } from "./state-machines/page";
+import { isPageState } from "./state-machines/page";
 import { stateMachine } from "./state-machines/state-machine";
 
 // --- 弹层优先级：-1 无弹层，数值越大优先级越高 ---
@@ -125,7 +125,7 @@ export let currentView: ViewMode = "time";
 export function setCurrentView(v: ViewMode) {
   currentView = v;
   // 同步到状态机的顶层分页状态（search 不属于手动页面，跳过）
-  if (isManualPageState(v)) {
+  if (isPageState(v)) {
     stateMachine.setCurrentPage(v);
   }
 }
