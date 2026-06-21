@@ -2470,9 +2470,9 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
 name = "lyrix"
-version = "26.8.2"
+version = "26.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d3bb958d412292492c66b27175b9542682578fbc2faaf915a3144f3ebffd79f"
+checksum = "20463ed3f2691912e24eb3763fc0a319844dc935c3edfa66a7536fad0dc0236a"
 dependencies = [
  "aes",
  "async-trait",
@@ -2485,6 +2485,7 @@ dependencies = [
  "reqwest 0.13.3",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
  "tokio",
  "urlencoding",
 ]
