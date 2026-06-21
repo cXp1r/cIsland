@@ -9,7 +9,6 @@ const els = {
   shortcutInput: $<HTMLInputElement>("shortcut-input"),
   searchShortcutInput: $<HTMLInputElement>("search-shortcut-input"),
   hideAndSeeInput: $<HTMLInputElement>("hide-and-see-input"),
-  indicatorColorInput: $<HTMLInputElement>("indicator-color"),
   autoStartToggle: $<HTMLInputElement>("auto-start-toggle"),
   saveBtn: $<HTMLButtonElement>("save-btn"),
 };
@@ -26,7 +25,6 @@ function render(): void {
   els.shortcutInput.value = cache!.shortcut_key;
   els.searchShortcutInput.value = cache!.search_shortcut;
   els.hideAndSeeInput.value = cache!.hide_and_see_key;
-  els.indicatorColorInput.value = cache!.indicator_color || "#2edb67";
   els.autoStartToggle.checked = cache!.auto_start;
 }
 
@@ -79,7 +77,6 @@ function readCurrent(): GeneralSettingsConfig | null {
     shortcut_key: shortcutKey as string,
     hide_and_see_key: hideAndSeeKey as string,
     search_shortcut: searchShortcut as string,
-    indicator_color: els.indicatorColorInput.value,
     auto_start: els.autoStartToggle.checked,
   };
 }
@@ -88,7 +85,6 @@ function isEqual(a: GeneralSettingsConfig, b: GeneralSettingsConfig): boolean {
   return a.shortcut_key === b.shortcut_key
     && a.hide_and_see_key === b.hide_and_see_key
     && a.search_shortcut === b.search_shortcut
-    && a.indicator_color === b.indicator_color
     && a.auto_start === b.auto_start;
 }
 
@@ -102,7 +98,6 @@ async function save(): Promise<void> {
       shortcutKey: current.shortcut_key,
       hideAndSeeKey: current.hide_and_see_key,
       searchShortcut: current.search_shortcut,
-      indicatorColor: current.indicator_color,
       autoStart: current.auto_start,
     });
     cache = current;
@@ -128,7 +123,6 @@ export async function initSettingsGeneral(): Promise<void> {
       shortcut_key: settings.shortcut_key,
       hide_and_see_key: settings.hide_and_see_key,
       search_shortcut: settings.search_shortcut,
-      indicator_color: settings.indicator_color,
       auto_start: settings.auto_start,
     };
     bindEvents();

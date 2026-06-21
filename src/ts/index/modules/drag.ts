@@ -2,7 +2,6 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import {
   capsule,
-  collapsedIndicator,
   emailDragHandle,
 } from "../dom";
 import {
@@ -16,26 +15,6 @@ import {
 } from "../state";
 import { PageState } from "../state-machines/page";
 import { pageStateMachine } from "../state-machines/page-machine";
-
-// ===== 鏀惰捣/灞曞紑鍔熻兘 =====
-
-export function applyIndicatorColor(color: string) {
-
-  collapsedIndicator.style.background = `linear-gradient(90deg, ${color}dd, ${color}, ${color}dd)`;
-
-  collapsedIndicator.style.boxShadow = `0 0 8px ${color}80`;
-
-}
-
-
-
-
-
-
-
-
-
-
 
 
 export function showContextMenu() {
@@ -137,14 +116,6 @@ export function initDragger() {
     }
 
   });
-
-
-  listen<string>("indicator-color-changed", (event) => {
-
-    applyIndicatorColor(event.payload);
-
-  });
-
 
 
   capsule.addEventListener("mousedown", (e: MouseEvent) => {

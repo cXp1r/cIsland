@@ -75,7 +75,7 @@ export const viewDots = $<HTMLDivElement>("view-dots");
 export const privacyIndicators = $<HTMLDivElement>("privacy-indicators");
 export const privacyMic = $<HTMLDivElement>("privacy-mic");
 export const privacyCamera = $<HTMLDivElement>("privacy-camera");
-export const collapsedIndicator = $<HTMLDivElement>("collapsed-indicator");export const sadbArea = $<HTMLDivElement>("sadb-area");
+export const sadbArea = $<HTMLDivElement>("sadb-area");
 export const viewElements: Record<ViewMode, HTMLElement> = {
   time: timeWrapper,
   lyric: lyricArea,

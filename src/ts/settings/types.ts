@@ -37,7 +37,6 @@ export type GeneralSettingsConfig = {
   shortcut_key: string;
   hide_and_see_key: string;
   search_shortcut: string;
-  indicator_color: string;
   auto_start: boolean;
 };
 
