@@ -49,13 +49,13 @@ export function initCapsuleInteraction() {
     logd("Capsule",`click on view '${currentView}'`);
     const target = e.target as HTMLElement;
     console.log(target);
-    // 濡傛灉鍒氬垰鍙戠敓浜嗘嫋鍔紝涓嶈Е鍙戠偣�?
+    // 濡傛灉鍒氬垰鍙戠敓浜嗘嫋鍔紝涓嶈Е鍙戠偣�?
     if (dragStarted) {
       setDragStarted(false);
       return;
     }
 
-    // 鏈夊脊灞傦紙search / notice / privacy锛夋椂锛屼笉瑙﹀彂鍒嗛〉鐐瑰嚮閫昏�?
+    // 鏈夊脊灞傦紙search / notice / privacy锛夋椂锛屼笉瑙﹀彂鍒嗛〉鐐瑰嚮閫昏�?
     if (overlayStateMachine.isOccupied()) return;
 
     const page = pageStateMachine.getCurrentPage();
@@ -63,7 +63,7 @@ export function initCapsuleInteraction() {
       case PageState.Time: {
         e.stopPropagation();
         debouncedClick(panelClickTimer, setPanelClickTimer, () => {
-        if (pageStateMachine.getPageState(PageState.Time) === "expanded"
+        if (pageStateMachine.substates[PageState.Time].getState() === "expanded"
               && target instanceof HTMLDivElement) {
           pageStateMachine.substates[PageState.Time].collapse();
           void invoke("set_expanded", { expanded: false });
@@ -75,7 +75,7 @@ export function initCapsuleInteraction() {
         break;
       }
       case PageState.Lyric: {
-        if (pageStateMachine.getPageState(PageState.Lyric) === "expanded") {
+        if (pageStateMachine.substates[PageState.Lyric].getState() === "expanded") {
           if (!target.closest("#music-panel-header")) return;
         } else {
           if (target.closest(".media-btn") || target.closest(".progress-bar")
@@ -85,7 +85,7 @@ export function initCapsuleInteraction() {
         debouncedClick(musicClickTimer, setMusicClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          if (pageStateMachine.getPageState(PageState.Lyric) !== "expanded") {
+          if (pageStateMachine.substates[PageState.Lyric].getState() !== "expanded") {
             musicPanelSong.textContent = currentSongTitle || "";
             musicPanelArtist.textContent = currentArtistName || "";
             if (currentThumbnailUrl) {
@@ -105,7 +105,7 @@ export function initCapsuleInteraction() {
         break;
       }
       case PageState.Agent: {
-        const agentSt = pageStateMachine.getPageState(PageState.Agent);
+        const agentSt = pageStateMachine.substates[PageState.Agent].getState();
         if (agentSt !== AgentPageSubstate.Collapsed) {
           if (!target.closest("#agent-status-bar") || target.closest("#agent-clear-btn")) return;
         } else {
@@ -118,7 +118,7 @@ export function initCapsuleInteraction() {
         debouncedClick(agentClickTimer, setAgentClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          if (pageStateMachine.getPageState(PageState.Agent) === "collapsed") {
+          if (pageStateMachine.substates[PageState.Agent].getState() === "collapsed") {
             pageStateMachine.substates[PageState.Agent].expand();
             void invoke("set_expanded", { expanded: true });
             window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
@@ -138,7 +138,7 @@ export function initCapsuleInteraction() {
         break;
       }
       case PageState.Sadb: {
-        const sadbSt = pageStateMachine.getPageState(PageState.Sadb);
+        const sadbSt = pageStateMachine.substates[PageState.Sadb].getState();
         switch (sadbSt) {
           case SadbPageSubstate.Mirroring:
             break;
@@ -170,7 +170,7 @@ export function initCapsuleInteraction() {
       }
       case PageState.Email: {
         debouncedClick(emailClickTimer, setEmailClickTimer, () => {
-          if (pageStateMachine.getPageState(PageState.Email) === "expanded") {
+          if (pageStateMachine.substates[PageState.Email].getState() === "expanded") {
             pageStateMachine.substates[PageState.Email].collapse();
             void invoke("set_expanded", { expanded: false });
           } else {
@@ -186,7 +186,7 @@ export function initCapsuleInteraction() {
         debouncedClick(downloaderClickTimer, setDownloaderClickTimer, () => {
           if (isExpandAnimating) return;
           setIsExpandAnimating(true);
-          if (pageStateMachine.getPageState(PageState.Downloader) === "collapsed") {
+          if (pageStateMachine.substates[PageState.Downloader].getState() === "collapsed") {
             pageStateMachine.substates[PageState.Downloader].expand();
             void invoke("set_expanded", { expanded: true });
             window.setTimeout(() => { setIsExpandAnimating(false); }, 400);
@@ -223,15 +223,15 @@ export function initCapsuleInteraction() {
     e.stopPropagation();
     switchToNextView();
   });
-  // 鍙抽敭鑿滃崟鍔熻�?
+  // 鍙抽敭鑿滃崟鍔熻�?
   capsule.addEventListener("contextmenu", (e: MouseEvent) => {
     e.preventDefault();
-    // Agent 闈炴敹璧锋€併€丩yric 灞曞紑鎬佹椂涓嶆樉绀鸿彍�?
-    if (pageStateMachine.getPageState(PageState.Agent) !== "collapsed"
-        || pageStateMachine.getPageState(PageState.Lyric) === "expanded") return;
-    // 闅愮寮圭獥鏄剧ず鏃朵笉鏄剧ず鑿滃崟锛堥殣绉侀潪鎵嬪姩椤甸潰锛屾棤鐘舵€佹満鏉＄洰锛屼繚�?classList 鍒ゆ柇锛?
+    // Agent 闈炴敹璧锋€併€丩yric 灞曞紑鎬佹椂涓嶆樉绀鸿彍�?
+    if (pageStateMachine.substates[PageState.Agent].getState() !== "collapsed"
+        || pageStateMachine.substates[PageState.Lyric].getState() === "expanded") return;
+    // 闅愮寮圭獥鏄剧ず鏃朵笉鏄剧ず鑿滃崟锛堥殣绉侀潪鎵嬪姩椤甸潰锛屾棤鐘舵€佹満鏉＄洰锛屼繚�?classList 鍒ゆ柇锛?
     if (capsule.classList.contains("privacy-active")) return;
-    // 鏄剧ず绯荤粺鑿滃�?
+    // 鏄剧ず绯荤粺鑿滃�?
     showContextMenu();
   });
 }

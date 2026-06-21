@@ -13,13 +13,14 @@ type ClassEffect = {
   remove?: string[];
 };
 
-type CommitCallback<S extends string> = (state: S, classList: DOMTokenList) => void;
-
 export interface SubstateBridge<S extends string = string> {
   readonly page: PageState;
   readonly kind: typeof PageSubstateKind[keyof typeof PageSubstateKind];
   getState(): S;
   setState(state: S): void;
+  getPageClasses(): string;
+  savePageClasses(classList: DOMTokenList): string;
+  applyPageClasses(classList: DOMTokenList): string;
   expand(): void;
   collapse(): void;
 }
@@ -28,12 +29,12 @@ interface SubstateBridgeConfig<S extends string> {
   page: PageState;
   kind: typeof PageSubstateKind[keyof typeof PageSubstateKind];
   initialState: S;
+  defaultClassSnapshot?: string;
   expandState: S;
   collapseState: S;
   expandEffect?: ClassEffect;
   collapseEffect?: ClassEffect;
   stateEffects?: Partial<Record<S, ClassEffect>>;
-  onCommit?: CommitCallback<S>;
 }
 
 abstract class SubstateBridgeBase<S extends string> implements SubstateBridge<S> {
@@ -41,22 +42,24 @@ abstract class SubstateBridgeBase<S extends string> implements SubstateBridge<S>
   public readonly kind: typeof PageSubstateKind[keyof typeof PageSubstateKind];
   protected readonly expandState: S;
   protected readonly collapseState: S;
+  protected readonly defaultClassSnapshot: string;
   protected readonly expandEffect?: ClassEffect;
   protected readonly collapseEffect?: ClassEffect;
   protected readonly stateEffects: Partial<Record<S, ClassEffect>>;
-  protected readonly onCommit?: CommitCallback<S>;
   protected currentState: S;
+  protected classSnapshot: string;
 
   constructor(config: SubstateBridgeConfig<S>) {
     this.page = config.page;
     this.kind = config.kind;
     this.expandState = config.expandState;
     this.collapseState = config.collapseState;
+    this.defaultClassSnapshot = config.defaultClassSnapshot ?? "";
     this.expandEffect = config.expandEffect;
     this.collapseEffect = config.collapseEffect;
     this.stateEffects = config.stateEffects ?? {};
-    this.onCommit = config.onCommit;
     this.currentState = config.initialState;
+    this.classSnapshot = this.defaultClassSnapshot;
   }
 
   protected applyEffect(effect?: ClassEffect): void {
@@ -71,7 +74,6 @@ abstract class SubstateBridgeBase<S extends string> implements SubstateBridge<S>
 
   protected commit(state: S): void {
     this.currentState = state;
-    this.onCommit?.(state, capsule.classList);
   }
 
   getState(): S {
@@ -82,6 +84,20 @@ abstract class SubstateBridgeBase<S extends string> implements SubstateBridge<S>
     if (this.currentState === state) return;
     this.applyEffect(this.stateEffects[state]);
     this.commit(state);
+  }
+
+  getPageClasses(): string {
+    return this.classSnapshot;
+  }
+
+  savePageClasses(classList: DOMTokenList): string {
+    this.classSnapshot = classList.value;
+    return this.classSnapshot;
+  }
+
+  applyPageClasses(classList: DOMTokenList): string {
+    classList.value = this.classSnapshot;
+    return this.classSnapshot;
   }
 
   expand(): void {
@@ -120,11 +136,12 @@ export interface DownloaderSubstateBridge extends SubstateBridge<DownloaderPageS
 }
 
 export class TimeSubstateBridgeImpl extends SubstateBridgeBase<TimePageSubstate> implements TimeSubstateBridge {
-  constructor(onCommit: CommitCallback<TimePageSubstate>) {
+  constructor() {
     super({
       page: PageState.Time,
       kind: PageSubstateKind.Time,
       initialState: TimePageSubstate.Collapsed,
+      defaultClassSnapshot: "",
       expandState: TimePageSubstate.Expanded,
       collapseState: TimePageSubstate.Collapsed,
       expandEffect: { add: ["panel-expanded"] },
@@ -133,17 +150,17 @@ export class TimeSubstateBridgeImpl extends SubstateBridgeBase<TimePageSubstate>
         [TimePageSubstate.Collapsed]: { remove: ["panel-expanded"] },
         [TimePageSubstate.Expanded]: { add: ["panel-expanded"] },
       },
-      onCommit,
     });
   }
 }
 
 export class LyricSubstateBridgeImpl extends SubstateBridgeBase<LyricPageSubstate> implements LyricSubstateBridge {
-  constructor(onCommit: CommitCallback<LyricPageSubstate>) {
+  constructor() {
     super({
       page: PageState.Lyric,
       kind: PageSubstateKind.Lyric,
       initialState: LyricPageSubstate.Collapsed,
+      defaultClassSnapshot: "lyric-collapsed",
       expandState: LyricPageSubstate.Expanded,
       collapseState: LyricPageSubstate.Collapsed,
       expandEffect: { add: ["music-expanded"] },
@@ -152,7 +169,6 @@ export class LyricSubstateBridgeImpl extends SubstateBridgeBase<LyricPageSubstat
         [LyricPageSubstate.Collapsed]: { remove: ["music-expanded"] },
         [LyricPageSubstate.Expanded]: { add: ["music-expanded"] },
       },
-      onCommit,
     });
   }
 
@@ -162,11 +178,12 @@ export class LyricSubstateBridgeImpl extends SubstateBridgeBase<LyricPageSubstat
 }
 
 export class AgentSubstateBridgeImpl extends SubstateBridgeBase<AgentPageSubstate> implements AgentSubstateBridge {
-  constructor(onCommit: CommitCallback<AgentPageSubstate>) {
+  constructor() {
     super({
       page: PageState.Agent,
       kind: PageSubstateKind.Agent,
       initialState: AgentPageSubstate.Collapsed,
+      defaultClassSnapshot: "",
       expandState: AgentPageSubstate.Expanded,
       collapseState: AgentPageSubstate.Collapsed,
       expandEffect: { add: ["agent-expanded"] },
@@ -188,7 +205,6 @@ export class AgentSubstateBridgeImpl extends SubstateBridgeBase<AgentPageSubstat
           remove: ["agent-thinking", "agent-idle", "agent-error"],
         },
       },
-      onCommit,
     });
   }
 
@@ -202,11 +218,12 @@ export class AgentSubstateBridgeImpl extends SubstateBridgeBase<AgentPageSubstat
 }
 
 export class SadbSubstateBridgeImpl extends SubstateBridgeBase<SadbPageSubstate> implements SadbSubstateBridge {
-  constructor(onCommit: CommitCallback<SadbPageSubstate>) {
+  constructor() {
     super({
       page: PageState.Sadb,
       kind: PageSubstateKind.Sadb,
       initialState: SadbPageSubstate.Collapsed,
+      defaultClassSnapshot: "",
       expandState: SadbPageSubstate.Mirroring,
       collapseState: SadbPageSubstate.Collapsed,
       expandEffect: { add: ["sadb-expanded"], remove: ["sadb-idle"] },
@@ -216,7 +233,6 @@ export class SadbSubstateBridgeImpl extends SubstateBridgeBase<SadbPageSubstate>
         [SadbPageSubstate.IdlePanel]: { add: ["sadb-idle"], remove: ["sadb-expanded"] },
         [SadbPageSubstate.Mirroring]: { add: ["sadb-expanded"], remove: ["sadb-idle"] },
       },
-      onCommit,
     });
   }
 
@@ -230,11 +246,12 @@ export class SadbSubstateBridgeImpl extends SubstateBridgeBase<SadbPageSubstate>
 }
 
 export class EmailSubstateBridgeImpl extends SubstateBridgeBase<EmailPageSubstate> implements EmailSubstateBridge {
-  constructor(onCommit: CommitCallback<EmailPageSubstate>) {
+  constructor() {
     super({
       page: PageState.Email,
       kind: PageSubstateKind.Email,
       initialState: EmailPageSubstate.Collapsed,
+      defaultClassSnapshot: "",
       expandState: EmailPageSubstate.Expanded,
       collapseState: EmailPageSubstate.Collapsed,
       expandEffect: { add: ["email-expanded"] },
@@ -243,7 +260,6 @@ export class EmailSubstateBridgeImpl extends SubstateBridgeBase<EmailPageSubstat
         [EmailPageSubstate.Collapsed]: { remove: ["email-expanded"] },
         [EmailPageSubstate.Expanded]: { add: ["email-expanded"] },
       },
-      onCommit,
     });
   }
 
@@ -256,11 +272,12 @@ export class DownloaderSubstateBridgeImpl
   extends SubstateBridgeBase<DownloaderPageSubstate>
   implements DownloaderSubstateBridge
 {
-  constructor(onCommit: CommitCallback<DownloaderPageSubstate>) {
+  constructor() {
     super({
       page: PageState.Downloader,
       kind: PageSubstateKind.Downloader,
       initialState: DownloaderPageSubstate.Collapsed,
+      defaultClassSnapshot: "",
       expandState: DownloaderPageSubstate.Expanded,
       collapseState: DownloaderPageSubstate.Collapsed,
       expandEffect: { add: ["downloader-expanded"] },
@@ -269,7 +286,6 @@ export class DownloaderSubstateBridgeImpl
         [DownloaderPageSubstate.Collapsed]: { remove: ["downloader-expanded"] },
         [DownloaderPageSubstate.Expanded]: { add: ["downloader-expanded"] },
       },
-      onCommit,
     });
   }
 

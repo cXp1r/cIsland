@@ -22,7 +22,6 @@ import {
 } from "../state";
 import { logi, logw } from "../logger";
 import { getAvailablePages, resolveNextAvailablePage } from "../state-machines/page";
-import { isPageState } from "../state-machines/page";
 import { pageStateMachine } from "../state-machines/page-machine";
 // ---------------------------------------------------------------------------
 // 闂傚倷绀侀幉锟犳偡椤栫偛鍨傞柟鎯版閺嬩線鏌曢崼婵囧闁哥姴妫濋弻娑㈠焺閸愮偓鐣风紓浣稿€搁悧鎾诲蓟濞戙垹绠抽柟鍨暞閻ｄ粙姊洪棃娑欘棞闁哥喐鎸冲顐㈩吋婢跺﹪鏁滈梺璋庡懐澧ch 婵犵數鍋為崹鍫曞箰閸濄儳鐭撻柡澶嬪焾閸ゆ洘銇勯幒宥堝厡闁崇粯妫冮獮鏍垝閻熸澘鈷夐梺绋垮濞茬喖寮婚敐鍜佺叆閹艰揪绱曟禒鈺呮⒑閹肩偛濡肩紒缁橈耿閻涱噣骞嬮敃鈧～鍛存煟濡搫鏆辨い蹇ｅ灦閺岀喖鎮℃惔锝嗘喖濠电偠灏欓崰鏍х�?dots�?
@@ -219,7 +218,8 @@ function animateViewSwitch(from: ViewMode, to: ViewMode) {
   };
 }
 export function updateCapsuleSize() {
-  pageStateMachine.applyPageClasses(pageStateMachine.getCurrentPage(), capsule.classList);
+  const page = pageStateMachine.getCurrentPage();
+  pageStateMachine.substates[page]?.applyPageClasses(capsule.classList);
 }
 
 // ---------------------------------------------------------------------------
@@ -228,9 +228,6 @@ export function updateCapsuleSize() {
 
 export function setView(mode: ViewMode, animated = true) {
   const previous = currentView;//闂傚倸顭崑鍕归崒鐐茬；闁糕剝绋戦�?
-  if (isPageState(previous)) {
-    pageStateMachine.savePageClasses(previous, capsule.classList);
-  }
   setCurrentView(mode);
   // 婵犵數濮烽。浠嬪焵椤掆偓閸熷潡鍩€椤掆偓缂嶅﹪骞冨Ο璇茬窞閻庯綆鍓﹀ù?agent 闂備浇顕х换鎺楀磻閻愯娲冀椤愶綆娼熼梺纭呮彧缁犳垹绮婚幋婢濆綊鏁愰崶鍓佸姼闂佽楠搁妶鎼佸箖绾拋妲婚柟鐓庣摠缁骸危閹邦兘鏀介悗锝庝簽閸濇姊虹拠鈥崇仯濠⒀勵殔閻ｇ兘鎼归顐ｎ啍闂佺粯鍔樺▔娑㈡偂閹邦優褰掓偑閳ь剟宕板Δ鈧銉╁礋椤愵偄鎮戦梺鎼炲劗閺呮盯鎮欐繝鍥ㄢ拺闁告稑锕﹂幊鏇犵磼闊厾鐭欏┑锛勬暬瀹曞爼鍩￠埀顒勬�?
   if (previous === "agent" && mode !== "agent" && capsule.classList.contains("agent-expanded")) {
@@ -283,10 +280,6 @@ export function setView(mode: ViewMode, animated = true) {
     animateViewSwitch(previous, mode);
   } else {
     showOnlyView(mode);
-  }
-  if (isPageState(mode)) {
-    pageStateMachine.applyPageClasses(mode, capsule.classList);
-    pageStateMachine.syncPageState(mode, capsule.classList);
   }
   syncCurrentView(mode);
   updateCapsuleSize();

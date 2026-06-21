@@ -19,16 +19,8 @@ export interface StateMachine {
   getCurrentPage(): PageState;
   setCurrentPage(page: PageState): void;
   currentPageAsViewMode(): ViewMode;
-  getPageState(page: PageState): string | undefined;
-  setPageState(page: PageState, state: string): void;
   getSubmachine(page: PageState): PageSubmachine | undefined;
-  getSubmachineState(page: PageState): string | undefined;
   createKey(page: PageState, state: string): string;
-  getPageClasses(page: PageState): string;
-  setPageClasses(page: PageState, classValue: string): string;
-  savePageClasses(page: PageState, classList: DOMTokenList): string | undefined;
-  applyPageClasses(page: PageState, classList: DOMTokenList): string | undefined;
-  syncPageState(page: PageState, classList: DOMTokenList): string | undefined;
   isOverlayOccupied(): boolean;
   canPreempt(incoming: OverlayStateMachine["priority"], current?: OverlayStateMachine["priority"]): boolean;
 }
@@ -42,11 +34,11 @@ class StateMachineImpl implements StateMachine {
   }
 
   get currentPage(): PageState {
-    return this.pageStateMachine.currentPage;
+    return this.pageStateMachine.state;
   }
 
   set currentPage(page: PageState) {
-    this.pageStateMachine.currentPage = page;
+    this.pageStateMachine.state = page;
   }
 
   get overlayPriority(): OverlayStateMachine["priority"] {
@@ -69,44 +61,12 @@ class StateMachineImpl implements StateMachine {
     return this.pageStateMachine.currentPageAsViewMode();
   }
 
-  getPageState(page: PageState): string | undefined {
-    return this.pageStateMachine.getPageState(page);
-  }
-
-  setPageState(page: PageState, state: string): void {
-    this.pageStateMachine.setPageState(page, state);
-  }
-
   getSubmachine(page: PageState): PageSubmachine | undefined {
     return this.pageStateMachine.getSubmachine(page);
   }
 
-  getSubmachineState(page: PageState): string | undefined {
-    return this.pageStateMachine.getSubmachineState(page);
-  }
-
   createKey(page: PageState, state: string): string {
     return this.pageStateMachine.createKey(page, state);
-  }
-
-  getPageClasses(page: PageState): string {
-    return this.pageStateMachine.getPageClasses(page);
-  }
-
-  setPageClasses(page: PageState, classValue: string): string {
-    return this.pageStateMachine.setPageClasses(page, classValue);
-  }
-
-  savePageClasses(page: PageState, classList: DOMTokenList): string | undefined {
-    return this.pageStateMachine.savePageClasses(page, classList);
-  }
-
-  applyPageClasses(page: PageState, classList: DOMTokenList): string | undefined {
-    return this.pageStateMachine.applyPageClasses(page, classList);
-  }
-
-  syncPageState(page: PageState, classList: DOMTokenList): string | undefined {
-    return this.pageStateMachine.syncPageState(page, classList);
   }
 
   isOverlayOccupied(): boolean {
