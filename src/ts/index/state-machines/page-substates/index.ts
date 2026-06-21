@@ -1,5 +1,4 @@
 export * from "./common";
-export * from "./bridge";
 export * from "./time";
 export * from "./lyric";
 export * from "./agent";

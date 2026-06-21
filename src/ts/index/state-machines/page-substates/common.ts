@@ -1,40 +1,85 @@
+import { capsule } from "../../dom";
 import type { PageState } from "../page";
 
-export const PageSubstateKind = {
-  Time: "time",
-  Lyric: "lyric",
-  Agent: "agent",
-  Sadb: "sadb",
-  Email: "email",
-  Downloader: "downloader",
-} as const;
+type ClassEffect = {
+  add?: string[];
+  remove?: string[];
+};
 
-export type PageSubstateKind = (typeof PageSubstateKind)[keyof typeof PageSubstateKind];
+export type PageSubstateClickAction = {
+  type: "click";
+  target: HTMLElement;
+  event: MouseEvent;
+};
 
-export interface PageSubstateDefinition<S extends string = string> {
-  kind: PageSubstateKind;
-  initialState: S;
-  states: readonly S[];
-}
+export type PageSubstateAction = PageSubstateClickAction;
 
-export type PageSubstateRegistry = Partial<Record<PageState, PageSubstateDefinition>>;
+export abstract class PageSubstateMachine<S extends string = string> {
+  public readonly page: PageState;
+  protected state: S;
+  protected classSnapshot: string;
 
-export function definePageSubstate<S extends string>(definition: PageSubstateDefinition<S>) {
-  return definition;
-}
-
-export function createPageSubstateRegistry(
-  entries: Array<{ page: PageState; definition: PageSubstateDefinition }>,
-): PageSubstateRegistry {
-  const registry: PageSubstateRegistry = {};
-  for (const entry of entries) {
-    registry[entry.page] = entry.definition;
+  constructor(page: PageState, initialState: S, defaultClassSnapshot = "") {
+    this.page = page;
+    this.state = initialState;
+    this.classSnapshot = defaultClassSnapshot;
   }
-  return registry;
+
+  protected applyEffect(effect?: ClassEffect): void {
+    if (!effect) return;
+    if (effect.remove?.length) capsule.classList.remove(...effect.remove);
+    if (effect.add?.length) capsule.classList.add(...effect.add);
+  }
+
+  protected commit(nextState: S): void {
+    this.state = nextState;
+  }
+
+  protected handleAction(_action: PageSubstateAction): void {}
+
+  getState(): S {
+    return this.state;
+  }
+
+  dispatch(nextState: S): void;
+  dispatch(action: PageSubstateAction): void;
+  dispatch(value: S | PageSubstateAction): void {
+    if (typeof value === "string") {
+      this.commit(value);
+      return;
+    }
+    this.handleAction(value);
+  }
+
+  getPageClasses(): string {
+    return this.classSnapshot;
+  }
+
+  savePageClasses(classList: DOMTokenList): string {
+    this.classSnapshot = classList.value;
+    return this.classSnapshot;
+  }
+
+  applyPageClasses(classList: DOMTokenList): string {
+    classList.value = this.classSnapshot;
+    return this.classSnapshot;
+  }
 }
 
-export function getPageSubstateInitialState<S extends string>(
-  definition: PageSubstateDefinition<S>,
-): S {
-  return definition.initialState;
+export function debouncedAction(
+  timer: number | null,
+  setTimer: (v: number | null) => void,
+  action: () => void,
+  delayMs = 250,
+): void {
+  if (timer) {
+    clearTimeout(timer);
+    setTimer(null);
+    return;
+  }
+
+  setTimer(window.setTimeout(() => {
+    setTimer(null);
+    action();
+  }, delayMs));
 }

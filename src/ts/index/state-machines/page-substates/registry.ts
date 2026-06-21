@@ -1,17 +1,16 @@
 import { PageState } from "../page";
-import { timePageSubstateDefinition } from "./time";
-import { lyricPageSubstateDefinition } from "./lyric";
-import { agentPageSubstateDefinition } from "./agent";
-import { sadbPageSubstateDefinition } from "./sadb";
-import { emailPageSubstateDefinition } from "./email";
-import { downloaderPageSubstateDefinition } from "./downloader";
-import { createPageSubstateRegistry, type PageSubstateRegistry } from "./common";
+import { timePageSubstateMachine } from "./time";
+import { lyricPageSubstateMachine } from "./lyric";
+import { agentPageSubstateMachine } from "./agent";
+import { sadbPageSubstateMachine } from "./sadb";
+import { emailPageSubstateMachine } from "./email";
+import { downloaderPageSubstateMachine } from "./downloader";
 
-export const pageSubstateRegistry: PageSubstateRegistry = createPageSubstateRegistry([
-  { page: PageState.Time, definition: timePageSubstateDefinition },
-  { page: PageState.Lyric, definition: lyricPageSubstateDefinition },
-  { page: PageState.Agent, definition: agentPageSubstateDefinition },
-  { page: PageState.Sadb, definition: sadbPageSubstateDefinition },
-  { page: PageState.Email, definition: emailPageSubstateDefinition },
-  { page: PageState.Downloader, definition: downloaderPageSubstateDefinition },
-]);
+export const pageSubstateRegistry = {
+  [PageState.Time]: timePageSubstateMachine,
+  [PageState.Lyric]: lyricPageSubstateMachine,
+  [PageState.Agent]: agentPageSubstateMachine,
+  [PageState.Sadb]: sadbPageSubstateMachine,
+  [PageState.Email]: emailPageSubstateMachine,
+  [PageState.Downloader]: downloaderPageSubstateMachine,
+} as const;

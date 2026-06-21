@@ -1,4 +1,7 @@
-import { definePageSubstate, PageSubstateKind } from "./common";
+import { PageState } from "../page";
+import { PageSubstateMachine, debouncedAction, type PageSubstateAction } from "./common";
+import { invoke } from "@tauri-apps/api/core";
+import { setPanelClickTimer, panelClickTimer } from "../../state";
 
 export const TimePageSubstate = {
   Collapsed: "collapsed",
@@ -7,8 +10,33 @@ export const TimePageSubstate = {
 
 export type TimePageSubstate = (typeof TimePageSubstate)[keyof typeof TimePageSubstate];
 
-export const timePageSubstateDefinition = definePageSubstate<TimePageSubstate>({
-  kind: PageSubstateKind.Time,
-  initialState: TimePageSubstate.Collapsed,
-  states: [TimePageSubstate.Collapsed, TimePageSubstate.Expanded],
-});
+export class TimePageSubstateMachine extends PageSubstateMachine<TimePageSubstate> {
+  constructor() {
+    super(PageState.Time, TimePageSubstate.Collapsed);
+  }
+
+  expand(): void {
+    this.dispatch(TimePageSubstate.Expanded);
+  }
+
+  collapse(): void {
+    this.dispatch(TimePageSubstate.Collapsed);
+  }
+
+  protected override handleAction(action: PageSubstateAction): void {
+    if (action.type !== "click") return;
+    const { target, event } = action;
+    event.stopPropagation();
+    debouncedAction(panelClickTimer, setPanelClickTimer, () => {
+      if (this.getState() === "expanded" && target instanceof HTMLDivElement) {
+        this.collapse();
+        void invoke("set_expanded", { expanded: false });
+      } else {
+        this.expand();
+        void invoke("set_expanded", { expanded: true });
+      }
+    });
+  }
+}
+
+export const timePageSubstateMachine = new TimePageSubstateMachine();
