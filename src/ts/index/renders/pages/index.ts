@@ -94,15 +94,8 @@ export function initPageRenders() {
         }
     }, { passive: false });
 
-    pagesOut.onmessage = (e: MessageEvent) => {
-        if (e.data === "page") {
-            setView
-        }
+    pageStateMachine.onTransition = (from, to) => {
+        setView(from, to);
     };
 }
 
-function switchToNextView(lastState: PageState, direction: 1 | -1 = 1) {
-    let i = PageStateOrder.indexOf(this.state);
-    let n = direction == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1  : 0;
-    setView(lastState, PageStateOrder[n]);
-}
