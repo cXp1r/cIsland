@@ -1,13 +1,12 @@
-import { pagesElements, PageState, PageStateOrder, DispatchAction } from "../../states/pages/page";
+import { pagesElements, PageState, PageStateOrder } from "../../states/pages/page";
 import {
-    capsule,
     currentViewContainer,
     viewHolder,
     viewSwitcher, viewDots,
 } from "../../doms/dom";
-import { pagesOut } from "../../utils/channels";
 
-import { pageStateMachine, PageStateMachine } from "../../states/pages/page-machine";
+
+import { pageStateMachine } from "../../states/pages/page-machine";
 export function setView(f: PageState, t: PageState){
     const fromEl = pagesElements[f];
     const toEl = pagesElements[t];
