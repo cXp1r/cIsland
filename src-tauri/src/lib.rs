@@ -615,7 +615,6 @@ pub fn run() {
             // --- 鼠标监控线程 ---
             let win_m = window.clone();
             let drag_m = is_dragging.clone();
-            let is_expanded_m = is_expanded.clone();
             let hwnd_raw = hwnd.0 as usize;
             let capsule_h_m = capsule_h.clone();
             let capsule_w_m = capsule_w.clone();
@@ -654,20 +653,15 @@ pub fn run() {
                             window::set_click_through(hwnd, true);
                             was_on_capsule = false;
                         }
-                        if !is_expanded_m.load(Ordering::Relaxed) || was_in_zone {
-                            let in_zone = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= - offset_y_m.load(Ordering::Relaxed) as f64) && (fmy <= 10.0);
-                            if in_zone && !was_in_zone {
-                                logger::debug("HitTest", "in_zone");
-                                was_in_zone = true;
-                                is_expanded_m.store(true, Ordering::Relaxed);
-                                let _ = win_m.emit("set-expand", true);
-
-                            }else if was_in_zone && !in_zone && !hit_on_capsule {
-                                logger::debug("HitTest", "in_zone -> not_in_zone");
-                                was_in_zone = false;
-                                is_expanded_m.store(false, Ordering::Relaxed);
-                                let _ = win_m.emit("set-expand", false);
-                            } 
+                        let in_zone = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= - offset_y_m.load(Ordering::Relaxed) as f64) && (fmy <= 10.0);
+                        if in_zone && !was_in_zone {
+                            logger::debug("HitTest", "in_zone");
+                            was_in_zone = true;
+                            let _ = win_m.emit("set-hover", true);
+                        } else if was_in_zone && !in_zone && !hit_on_capsule {
+                            logger::debug("HitTest", "in_zone -> not_in_zone");
+                            was_in_zone = false;
+                            let _ = win_m.emit("set-hover", false);
                         }
                     }
                     thread::sleep(Duration::from_millis(100));

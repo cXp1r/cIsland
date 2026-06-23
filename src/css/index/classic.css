@@ -87,13 +87,6 @@
     filter: drop-shadow(0 0 10px rgba(46, 219, 103, 0.5));
 }
 
-/* ── 收起指示条 ── */
-#collapsed-indicator {
-    background: rgba(255, 255, 255, 0.3);
-}
-#collapsed-indicator:hover {
-    background: rgba(255, 255, 255, 0.45);
-}
 
 /* ── 音乐展开面板 ── */
 #island-capsule.music-expanded #lyric-area { background: #0C0C14; }

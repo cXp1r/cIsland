@@ -373,3 +373,6 @@
 .media-btn.play-btn { width: 34px; height: 34px; }
 
 
+#island-capsule:not(.expanded) #music-panel{
+    display: none;
+}

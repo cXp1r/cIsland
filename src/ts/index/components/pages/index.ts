@@ -1,0 +1,50 @@
+import { capsule } from "../../doms/dom";
+import { PageState } from "../../states/pages/page";
+import { pageStateMachine } from "../../states/pages/page-machine";
+
+export function initComponents(){
+    capsule.addEventListener("click", (event: MouseEvent) => {
+        if (pageStateMachine.isDragging) {
+            return;
+        }
+        pageStateMachine.dispatch({
+            tag: "click",
+            target: event.target instanceof HTMLElement ? event.target : capsule,
+            Event: event,
+        });
+    });
+    capsule.addEventListener("dblclick", (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (
+            target.closest(".url-item")
+            || target.closest("#notice-area")
+            || target.closest(".media-btn")
+            || target.closest(".view-dot")
+            || target.closest("#agent-input")
+            || target.closest("#agent-send-btn")
+            || target.closest("#agent-stop-btn")
+            || target.closest("#agent-clear-btn")
+            || target.closest("#sadb-btn-start")
+            || target.closest("#sadb-btn-stop")
+            || target.closest("#sadb-canvas")
+            || target.closest(".downloader-btn")
+            ) {
+            return;
+        }
+        event.stopPropagation();
+        pageStateMachine.dispatch({
+            tag: "dbclick",
+            target: event.target instanceof HTMLElement ? event.target : capsule,
+            Event: event,
+        });
+    });
+    capsule.addEventListener("contextmenu", (event: MouseEvent) => {
+        event.preventDefault();
+        if (
+        pageStateMachine.substates[PageState.Agent].state !== "collapsed"
+        || pageStateMachine.substates[PageState.Music].state === "expanded"
+        ) return;
+        if (capsule.classList.contains("privacy-active")) return;
+        showContextMenu();
+    });
+}

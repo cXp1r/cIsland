@@ -28,8 +28,7 @@
 
 }
 
-#island-capsule.expanded #view-switcher.has-views,
-#island-capsule.email-expanded #view-switcher.has-views { display: flex; }
+#island-capsule.hover #view-switcher.has-views { display: flex; }
 
 
 
