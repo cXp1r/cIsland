@@ -4,6 +4,7 @@ import { PageSubstateMachine } from "./common";
 
 export const DownloaderPageSubstate = {
   Collapsed: "collapsed",
+  Hover: "Hover",
   Expanded: "expanded",
   Downloading: "downloading",
 } as const;
