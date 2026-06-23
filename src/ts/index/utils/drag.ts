@@ -93,8 +93,6 @@ export function initDragger() {
   });
 
   emailDragHandle.addEventListener("pointerdown", (e: PointerEvent) => {
-    if (pageStateMachine.state !== PageState.Email || e.button !== 0) return;
-
     e.preventDefault();
     e.stopPropagation();
     emailDragHandle.setPointerCapture(e.pointerId);
@@ -102,8 +100,6 @@ export function initDragger() {
   });
 
   emailDragHandle.addEventListener("pointermove", (e: PointerEvent) => {
-    if (pageStateMachine.state !== PageState.Email || !emailDragHandle.hasPointerCapture(e.pointerId)) return;
-
     e.preventDefault();
     moveWindowDrag(e.screenX, e.screenY);
   });
