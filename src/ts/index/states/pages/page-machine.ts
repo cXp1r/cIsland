@@ -24,19 +24,15 @@ export class PageStateMachine {
         break;
 
       case "dbclick":
-        let i1 = PageStateOrder.indexOf(this.state);
-        let n1 = i1 + 1 == PageStateOrder.length ? 0 : i1 + 1 ;
-        this.transitionTo(PageStateOrder[n1]);
+        this.transitionTo(this.toNth());
         break;
 
       case "chosen":
-        this.transitionTo(PageStateOrder[n]);
+        this.transitionTo(action.target);
         break;
 
       case "wheel":
-        let i = PageStateOrder.indexOf(this.state);
-        let n = action.target == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1 : 0;
-        this.transitionTo(PageStateOrder[n]);
+        this.transitionTo(this.toNth(action.target));
         break;
 
       case "key":
@@ -64,6 +60,12 @@ export class PageStateMachine {
   transitionTo(next: PageState) {
     if (next == this.state) return;
     this.state = next;
+  }
+
+  private toNth(direction: -1 | 1 = 1): PageState {
+    let i = PageStateOrder.indexOf(this.state);
+    let n = direction == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1 : 0;
+    return PageStateOrder[n];
   }
 }
 
