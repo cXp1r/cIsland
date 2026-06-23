@@ -1,17 +1,13 @@
-import { pagesElements, PageState } from "../../states/pages/page";
+import { pagesElements, PageState, PageStateOrder, DispatchAction } from "../../states/pages/page";
 import {
-    currentViewContainer,
-    viewHolder
     capsule,
     currentViewContainer,
     viewHolder,
     viewSwitcher, viewDots,
 } from "../../doms/dom";
 import { pagesOut } from "../../utils/channels";
-import {
-  
-} from "../doms/dom";
-import { PageStateMachine } from "../../states/pages/page-machine";
+
+import { pageStateMachine, PageStateMachine } from "../../states/pages/page-machine";
 export function setView(f: PageState, t: PageState){
     const fromEl = pagesElements[f];
     const toEl = pagesElements[t];
@@ -33,7 +29,6 @@ export function setView(f: PageState, t: PageState){
         }
       };
     }
-
     
     if (toEl.parentElement !== currentViewContainer) {
       currentViewContainer.appendChild(toEl);
@@ -52,42 +47,62 @@ export function setView(f: PageState, t: PageState){
       toEl.style.transform = "";
     };
     updateSwitcherUI();
-  
 }
 
-sdasdasdasd
+
 export function updateSwitcherUI() {
-
-  if (views.length > 1) {
-    viewSwitcher.classList.add("has-views");
-  } else {
-    viewSwitcher.classList.remove("has-views");
-  }
-
   viewDots.innerHTML = "";
-  views.forEach((v) => {
+  PageStateOrder.forEach((v) => {
     const dot = document.createElement("div");
-    dot.className = "view-dot" + (v === currentView ? " active" : "");
-    dot.title = v === "time"
+    dot.className = "view-dot" + (v === pageStateMachine.state ? " active" : "");
+    dot.title = v == "time"
       ? "Time View"
-      : v === "music"
+      : v == "music"
         ? "Lyric View"
-        : v === "agent"
+        : v == "agent"
           ? "Agent"
-          : v === "sadb"
+          : v == "sadb"
             ? "ADB"
-            : v === "email"
+            : v == "email"
               ? "Email"
               : "Downloader";
     dot.addEventListener("click", (e) => {
       e.stopPropagation();
-      PageStateMachine.dispatch
+      pageStateMachine.dispatch({
+        tag: "chosen",
+        target: v,
+      });
     });
     viewDots.appendChild(dot);
   });
 }
 
+export function initPageRenders() {
+    viewSwitcher.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.deltaY > 0) {
+            pageStateMachine.dispatch({
+                tag: "wheel",
+                target: 1,
+            });
+        } else {
+            pageStateMachine.dispatch({
+                tag: "wheel",
+                target: -1,
+            });
+        }
+    }, { passive: false });
 
-pagesOut.onmessage = (e) => {
-  console.log("A收到:", e.data);
-};
+    pagesOut.onmessage = (e: MessageEvent) => {
+        if (e.data === "page") {
+            setView
+        }
+    };
+}
+
+function switchToNextView(lastState: PageState, direction: 1 | -1 = 1) {
+    let i = PageStateOrder.indexOf(this.state);
+    let n = direction == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1  : 0;
+    setView(lastState, PageStateOrder[n]);
+}

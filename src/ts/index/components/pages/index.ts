@@ -10,7 +10,7 @@ export function initComponents(){
         pageStateMachine.dispatch({
             tag: "click",
             target: event.target instanceof HTMLElement ? event.target : capsule,
-            Event: event,
+            event: event,
         });
     });
     capsule.addEventListener("dblclick", (event: MouseEvent) => {
@@ -35,7 +35,7 @@ export function initComponents(){
         pageStateMachine.dispatch({
             tag: "dbclick",
             target: event.target instanceof HTMLElement ? event.target : capsule,
-            Event: event,
+            event: event,
         });
     });
     capsule.addEventListener("contextmenu", (event: MouseEvent) => {

@@ -8,6 +8,7 @@ export type PageSubmachine = PageSubstateMachine;
 
 export class PageStateMachine {
   state: PageState = PageState.Time;
+  lastState: PageState = PageState.Time;
   isHover: boolean = false;
   isDragging: boolean = false;
   readonly substates = pageSubstateRegistry;
@@ -23,11 +24,19 @@ export class PageStateMachine {
         break;
 
       case "dbclick":
-        this.switchToNextView();
+        let i1 = PageStateOrder.indexOf(this.state);
+        let n1 = i1 + 1 == PageStateOrder.length ? 0 : i1 + 1 ;
+        this.transitionTo(PageStateOrder[n1]);
         break;
 
       case "chosen":
-        setView(this.state, action.target);
+        this.transitionTo(PageStateOrder[n]);
+        break;
+
+      case "wheel":
+        let i = PageStateOrder.indexOf(this.state);
+        let n = action.target == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1 : 0;
+        this.transitionTo(PageStateOrder[n]);
         break;
 
       case "key":
@@ -50,12 +59,6 @@ export class PageStateMachine {
       default:
         break;
     }
-  }
-  
-  switchToNextView(direction: 1 | -1 = 1) {
-    let i = PageStateOrder.indexOf(this.state);
-    let n = direction == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1  : 0;
-    setView(this.state, PageStateOrder[n]);
   }
 
   transitionTo(next: PageState) {
