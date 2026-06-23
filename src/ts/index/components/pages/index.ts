@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { capsule } from "../../doms/dom";
 import { PageState } from "../../states/pages/page";
 import { pageStateMachine } from "../../states/pages/page-machine";
@@ -45,6 +46,7 @@ export function initComponents(){
         || pageStateMachine.substates[PageState.Music].state === "expanded"
         ) return;
         if (capsule.classList.contains("privacy-active")) return;
-        showContextMenu();
+        void invoke("show_context_menu");
     });
+    
 }
