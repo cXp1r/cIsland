@@ -8,7 +8,6 @@ export type PageSubmachine = PageSubstateMachine;
 
 export class PageStateMachine {
   state: PageState = PageState.Time;
-  lastState: PageState = PageState.Time;
   isHover: boolean = false;
   isDragging: boolean = false;
   readonly substates = pageSubstateRegistry;
@@ -57,9 +56,14 @@ export class PageStateMachine {
     }
   }
 
+  onTransition?: (from: PageState, to: PageState) => void;
+
   transitionTo(next: PageState) {
-    if (next == this.state) return;
+    const from = this.state;
+    if (next === from) return;
+
     this.state = next;
+    this.onTransition?.(from, next);
   }
 
   private toNth(direction: -1 | 1 = 1): PageState {
