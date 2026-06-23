@@ -1,6 +1,5 @@
 import { $ } from "../../../utils/shared";
 
-
 export const PageState = {
   Time: "time",
   Music: "music",
@@ -9,6 +8,18 @@ export const PageState = {
   Email: "email",
   Downloader: "downloader",
 } as const;
+
+export type PageState = (typeof PageState)[keyof typeof PageState];
+
+export const PageStateOrder = [
+  PageState.Time,
+  PageState.Music,
+  PageState.Agent,
+  PageState.Sadb,
+  PageState.Email,
+  PageState.Downloader,
+] as const;
+
 
 export const pagesElements: Record<PageState, HTMLElement> = {
   time: $<HTMLDivElement>("time-area"),
@@ -20,16 +31,7 @@ export const pagesElements: Record<PageState, HTMLElement> = {
 };
 
 
-export const PageStateOrder = [
-  PageState.Time,
-  PageState.Music,
-  PageState.Agent,
-  PageState.Sadb,
-  PageState.Email,
-  PageState.Downloader,
-] as const;
 
-export type PageState = (typeof PageState)[keyof typeof PageState];
 
 export const PageTransitionSource = {
   DoubleClick: "double_click",
@@ -92,4 +94,8 @@ export type DispatchAction =
   | {
       tag: "chosen";
       target: PageState;
+    }
+  | {
+      tag: "wheel";
+      target: -1 | 1;
   };
