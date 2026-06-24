@@ -21,7 +21,7 @@ function active(): boolean {
 function render(): void {
   els.logLevelSelect.value = cache!.log_level || "info";
   els.logFilterInvertToggle.checked = cache!.log_filter_invert;
-  setLogFilterTags(cache!.log_filter_tags);
+  setLogFilterTags(cache!.log_filter_tags || []);
 }
 
 function readCurrent(): LogSettingsConfig {
@@ -33,6 +33,7 @@ function readCurrent(): LogSettingsConfig {
 }
 
 function sameArray(a: string[], b: string[]): boolean {
+  console.log(a, b);
   return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
@@ -44,6 +45,7 @@ function isEqual(a: LogSettingsConfig, b: LogSettingsConfig): boolean {
 
 async function save(): Promise<void> {
   const current = readCurrent();
+  
   if (cache && isEqual(current, cache)) return;
 
   try {
@@ -76,7 +78,6 @@ export async function initSettingsLog(): Promise<void> {
       log_filter_tags: Array.isArray(settings.log_filter_tags) ? settings.log_filter_tags : [],
       log_filter_invert: settings.log_filter_invert,
     };
-
     const lyrixLogPath = $<HTMLParagraphElement>("lyrix-log-path-text");
     const logPath = $<HTMLParagraphElement>("log-path-text");
     [

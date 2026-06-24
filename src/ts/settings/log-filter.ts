@@ -3,11 +3,11 @@ import { showStatus } from "./shared";
 let logFilterTags: string[] = [];
 
 export function getLogFilterTags(): string[] {
-  return logFilterTags;
+  return [...logFilterTags];
 }
 
 export function setLogFilterTags(tags: string[]) {
-  logFilterTags = Array.isArray(tags) ? tags : [];
+  logFilterTags = Array.isArray(tags) ? [...tags] : [];
   renderLogFilterTags();
 }
 
