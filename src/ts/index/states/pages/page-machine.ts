@@ -37,12 +37,14 @@ export class PageStateMachine {
       case "key":
         break;
 
-      case "system":
+      case "hover":
+        this.isHover = action.event;
+        this.onHover?.(this.isHover);
         break;
 
       case "conditional":
         switch (action.event) {
-          case "download":
+          case "downloader":
             setView(this.state, PageState.Downloader);
             break;
         
@@ -55,6 +57,8 @@ export class PageStateMachine {
         break;
     }
   }
+
+  onHover?: (isHover: boolean) => void;
 
   onTransition?: (from: PageState, to: PageState) => void;
 

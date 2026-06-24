@@ -85,11 +85,16 @@ export type DispatchAction =
       event: KeyboardEvent;
     }
   | {
-      tag: "system";
+      tag: "core";
+      event: string;
+    }
+  | {
+      tag: "hover";
+      event: boolean;
     }
   | {
       tag: "conditional";
-      event: "download";
+      event: "downloader";
     }
   | {
       tag: "chosen";
