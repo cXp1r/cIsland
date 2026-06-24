@@ -1,6 +1,9 @@
 import { capsule } from "../../../doms/dom";
 import type { DispatchAction, PageState } from "../page";
 
+export type PageTransitionListener<S extends string> =
+  (from: S, to: S) => void;
+
 export abstract class PageSubstateMachine<S extends string = string> {
   readonly page: PageState;
   state: S;
@@ -17,7 +20,7 @@ export abstract class PageSubstateMachine<S extends string = string> {
     this.isConfigured = false;
   }
 
-  onTransition?: (from: S, to: S) => void;
+  onTransition?: PageTransitionListener<S>;
 
   transitionTo(next: S) {
     const from = this.state;

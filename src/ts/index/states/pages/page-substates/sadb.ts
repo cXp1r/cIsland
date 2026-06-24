@@ -4,7 +4,6 @@ import { PageSubstateMachine } from "./common";
 
 export const SadbPageSubstate = {
   Collapsed: "collapsed",
-  Hover: "hover",
   IdlePanel: "idle_panel",
   Mirroring: "mirroring",
 } as const;

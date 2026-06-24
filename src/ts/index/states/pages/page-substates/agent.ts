@@ -5,7 +5,6 @@ import { PageSubstateMachine } from "./common";
 
 export const AgentPageSubstate = {
   Collapsed: "collapsed",
-  Hover: "hover",
   Expanded: "expanded",
   Thinking: "thinking",
   Generating: "generating",
