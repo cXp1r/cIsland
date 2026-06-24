@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import { capsule } from "../../doms/dom";
+import { capsule, viewSwitcher } from "../../doms/dom";
 import { PageState } from "../../states/pages/page";
-import { pageStateMachine } from "../../states/pages/page-machine";
+import { pageStateMachine } from "../../states";
+
 
 export function initComponents(){
     capsule.addEventListener("click", (event: MouseEvent) => {
@@ -48,5 +49,19 @@ export function initComponents(){
         if (capsule.classList.contains("privacy-active")) return;
         void invoke("show_context_menu");
     });
-    
+    viewSwitcher.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.deltaY > 0) {
+            pageStateMachine.dispatch({
+                tag: "wheel",
+                target: 1,
+            });
+        } else {
+            pageStateMachine.dispatch({
+                tag: "wheel",
+                target: -1,
+            });
+        }
+    }, { passive: false });
 }

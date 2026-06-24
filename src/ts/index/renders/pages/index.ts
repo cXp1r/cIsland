@@ -2,11 +2,14 @@ import { pagesElements, PageState, PageStateOrder } from "../../states/pages/pag
 import {
     currentViewContainer,
     viewHolder,
-    viewSwitcher, viewDots,
+    viewDots,
 } from "../../doms/dom";
 
 
-import { pageStateMachine } from "../../states/pages/page-machine";
+import { pageStateMachine } from "../../states";
+import { initTimeRenders } from "./time";
+
+
 export function setView(f: PageState, t: PageState){
     const fromEl = pagesElements[f];
     const toEl = pagesElements[t];
@@ -76,25 +79,24 @@ export function updateSwitcherUI() {
   });
 }
 
-export function initPageRenders() {
-    viewSwitcher.addEventListener("wheel", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.deltaY > 0) {
-            pageStateMachine.dispatch({
-                tag: "wheel",
-                target: 1,
-            });
-        } else {
-            pageStateMachine.dispatch({
-                tag: "wheel",
-                target: -1,
-            });
-        }
-    }, { passive: false });
+export function mountView(view: PageState) {
+  const el = pagesElements[view];
 
-    pageStateMachine.onTransition = (from, to) => {
-        setView(from, to);
-    };
+  if (el.parentElement !== currentViewContainer) {
+    currentViewContainer.appendChild(el);
+  }
+
+  el.style.display = "flex";
+  updateSwitcherUI();
+}
+
+export function initPageRenders() {
+  //自动化渲染
+  mountView(PageState.Time);
+  initTimeRenders();
+  //条件渲染
+  pageStateMachine.onTransition = (from: PageState, to: PageState) => {
+    setView(from, to);
+  };
 }
 
