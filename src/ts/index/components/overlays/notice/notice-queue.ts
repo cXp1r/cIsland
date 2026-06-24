@@ -5,7 +5,7 @@ import { isAria2c, setPendingUrls } from "../state";
 import { OverlayPriority } from "../state-machines/overlay";
 import { overlayStateMachine } from "../state-machines/overlay-machine";
 import { truncateUrl } from "../utils";
-import { logi } from "../logger";
+import { logi } from "../utils/logger";
 import { ClipboardUrlsPayload } from "../types";
 import { url } from "./downloader";
 import { setView } from "./view-switcher";
@@ -21,7 +21,7 @@ export type NoticeType = "clipboard" | "email" | "generic";
 const MAX_DURATION = 30000;
 const NOTICE_PRIORITY = OverlayPriority.Notice;
 
-// ===== 通知队列�?=====
+// ===== 通知队列�?=====
 
 export interface NoticeItem {
   id: string;
@@ -46,7 +46,7 @@ interface ClipboardPayload {
   downloadable: boolean;
 }
 
-// ===== 内部状�?=====
+// ===== 内部状�?=====
 
 const queue: NoticeItem[] = [];
 let activeItem: NoticeItem | null = null;
@@ -79,13 +79,13 @@ function iconForType(type: NoticeType): string {
   }
 }
 
-// ===== 通用 HTML 模板（所有类型共用，保持原有结构不变�?====
+// ===== 通用 HTML 模板（所有类型共用，保持原有结构不变�?====
 
 function baseNoticeHtml(item: NoticeItem): string {
   const uuid = item.uuid || item.id;
   const shortUuid = uuid.replace(/-/g, "").slice(0, 8);
 
-  // clipboard 类型�?downloadable=true 时插入下载按�?
+  // clipboard 类型�?downloadable=true 时插入下载按�?
   const p = item.payload as ClipboardUrlsPayload;
   const downloadBtn = (item.type === "clipboard" && p.urls.length === 1 && p.downloadables[0])
     ? isAria2c ? `<button class="notice-button" id="notice-download" type="button">下载</button>` : ""
@@ -132,14 +132,14 @@ function renderUrlList(urls: string[]): void {
   });
 }
 
-// ===== 渲染通知消息（所有类型统一�?baseNoticeHtml�?====
+// ===== 渲染通知消息（所有类型统一�?baseNoticeHtml�?====
 
 function renderMessage(item: NoticeItem): void {
   logi(TAG, `renderMessage: ${describeNotice(item)}`);
   noticeArea.classList.remove("notice-urllist");
   noticeArea.innerHTML = baseNoticeHtml(item);
 
-  // 绑定 .notice-main 点击 �?各类型自己的 action
+  // 绑定 .notice-main 点击 �?各类型自己的 action
   const main = noticeArea.querySelector<HTMLElement>(".notice-main");
   const dismiss = noticeArea.querySelector<HTMLButtonElement>("#notice-dismiss");
   const download = noticeArea.querySelector<HTMLButtonElement>("#notice-download");
@@ -283,7 +283,7 @@ function showNext(): void {
   }, activeItem.duration);
 }
 
-// ===== 状态管�?=====
+// ===== 状态管�?=====
 
 function completeActiveNotice(shouldClearTimer = true, reason = "complete"): void {
   logi(TAG, `complete: reason=${reason} active=${describeNotice_safe(activeItem)} queued=${queue.length} clearTimer=${shouldClearTimer}`);
@@ -363,17 +363,17 @@ export function clearQueue(): void {
   finishAll();
 }
 
-// ===== 初始�?=====
+// ===== 初始�?=====
 
 export function initNoticeQueue(): void {
-  // 更高优先级弹层抢占时，通知自动让位；更高优先级结束后恢�?
+  // 更高优先级弹层抢占时，通知自动让位；更高优先级结束后恢�?
   document.addEventListener("overlay-changed", ((e: CustomEvent) => {
     const newPriority = e.detail.priority as number;
-    // 更高优先级抢�?�?通知让位
+    // 更高优先级抢�?�?通知让位
     if (activeItem && overlayStateMachine.canPreempt(newPriority as typeof NOTICE_PRIORITY, NOTICE_PRIORITY)) {
       logi(TAG, `overlay-changed-yield: newPriority=${newPriority} > NOTICE_PRIORITY active=${describeNotice(activeItem)} queued=${queue.length}`);
       clearTimer();
-      // 把当�?item 放回队首
+      // 把当�?item 放回队首
       queue.unshift(activeItem);
       activeItem = null;
       urlListMode = false;
@@ -383,27 +383,27 @@ export function initNoticeQueue(): void {
       noticeArea.innerHTML = "";
       return;
     }
-    // 更高优先级消�?�?如果有排队通知则恢�?
+    // 更高优先级消�?�?如果有排队通知则恢�?
     if (newPriority < NOTICE_PRIORITY && queue.length > 0 && !activeItem && !urlListMode) {
       logi(TAG, `overlay-changed-resume: newPriority=${newPriority} queued=${queue.length}`);
       showNext();
     }
   }) as EventListener);
 
-  // 点击 notice-area 空白�?
+  // 点击 notice-area 空白�?
   noticeArea.addEventListener("click", (e: MouseEvent) => {
     e.stopPropagation();
     handleAreaClick();
   });
 
-  // 剪贴板链�?
+  // 剪贴板链�?
   listen<ClipboardUrlsPayload>("clipboard-urls", (event) => {
     const c = event.payload;
     if (!c.urls || c.urls.length === 0) return;
     setPendingUrls(c.urls);
     const shortcut = "Alt+O";
     const msg = c.urls.length === 1
-      ? `已复制链接，�?${shortcut} 或点击打开`
+      ? `已复制链接，�?${shortcut} 或点击打开`
       : `检测到 ${c.urls.length} 个链接，点击查看`;
 
 
