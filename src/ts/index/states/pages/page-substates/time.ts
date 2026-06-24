@@ -3,7 +3,7 @@ import { PageSubstateMachine } from "./common";
 
 export const TimePageSubstate = {
   Collapsed: "collapsed",
-  Hover: "Hover",
+  Hover: "hover",
   Expanded: "expanded",
 } as const;
 

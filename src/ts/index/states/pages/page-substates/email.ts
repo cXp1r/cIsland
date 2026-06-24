@@ -3,7 +3,7 @@ import { PageSubstateMachine } from "./common";
 
 export const EmailPageSubstate = {
   Collapsed: "collapsed",
-  Hover: "Hover",
+  Hover: "hover",
   Expanded: "expanded",
 } as const;
 

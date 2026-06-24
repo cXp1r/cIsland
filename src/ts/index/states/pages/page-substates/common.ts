@@ -17,8 +17,14 @@ export abstract class PageSubstateMachine<S extends string = string> {
     this.isConfigured = false;
   }
 
-  protected transitionTo(nextState: S): void {
-    this.state = nextState;
+  onTransition?: (from: S, to: S) => void;
+
+  transitionTo(next: S) {
+    const from = this.state;
+    if (next === from) return;
+
+    this.state = next;
+    this.onTransition?.(from, next);
   }
 
   abstract dispatch(action: DispatchAction): void;
@@ -43,11 +49,11 @@ export abstract class PageSubstateMachine<S extends string = string> {
   ): void {
     if (this.timer) {
       clearTimeout(this.timer);
-      this.timer == null;
+      this.timer = null;
       return;
     }
     this.timer = window.setTimeout(() => {
-      this.timer == null;
+      this.timer = null;
       action();
     }, delayMs);
   }

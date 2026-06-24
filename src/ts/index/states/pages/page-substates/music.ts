@@ -5,7 +5,7 @@ import { PageSubstateMachine } from "./common";
 
 export const LyricPageSubstate = {
   Collapsed: "collapsed",
-  Hover: "Hover",
+  Hover: "hover",
   Expanded: "expanded",
   Seeking: "seeking",
 } as const;
