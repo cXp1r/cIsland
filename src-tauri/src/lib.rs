@@ -627,22 +627,24 @@ pub fn run() {
                 loop {
                     if let Some((mx, my)) = window::get_cursor_pos() {
                         // 直接用实际窗口矩形判断鼠标是否在胶囊上
-                        let Some(rect) = window::get_window_rect(hwnd) else { 
-                            thread::sleep(Duration::from_millis(33)); 
-                            continue 
+                        let Some(rect) = window::get_window_rect(hwnd) else {
+                            thread::sleep(Duration::from_millis(33));
+                            continue
                         };
                         let current_scale = win_m.scale_factor().unwrap_or(1.0).max(0.1);
                         let fmx = (mx as f64 - rect.left as f64) / current_scale;
                         let fmy = (my as f64 - rect.top as f64) / current_scale;
                         let dw = capsule_w_m.load(Ordering::Relaxed) as f64;
                         let dh = capsule_h_m.load(Ordering::Relaxed) as f64;
+                        let offset_y = offset_y_m.load(Ordering::Relaxed) as f64;
+                        let is_dragging = drag_m.load(Ordering::Relaxed);
                         //logger::debug("LIB", &format!("{} {} {} {}",win_x + (win_w - dw) / 2.0 , win_x + (win_w + dw) / 2.0, win_y , win_y + dh));
-                        // 大于左起的x 
+                        // 大于左起的x
                         let capsule_left = 0.0;
                         let capsule_right = capsule_left + dw;
                         let hit_top = 10.0;
                         let on_capsule = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= hit_top) && (fmy <= hit_top + dh);
-                        let hit_on_capsule = on_capsule || drag_m.load(Ordering::Relaxed);
+                        let hit_on_capsule = on_capsule || is_dragging;
 
                         if hit_on_capsule && !was_on_capsule {
                             logger::debug("HitTest", "mouse ON capsule -> click-through OFF");
@@ -653,13 +655,13 @@ pub fn run() {
                             window::set_click_through(hwnd, true);
                             was_on_capsule = false;
                         }
-                        let in_zone = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= - offset_y_m.load(Ordering::Relaxed) as f64) && (fmy <= 10.0);
+                        let in_zone = (fmx >= capsule_left) && (fmx <= capsule_right) && (fmy >= - offset_y) && (fmy <= 10.0);
                         if in_zone && !was_in_zone {
-                            logger::debug("HitTest", "in_zone");
+                            logger::debug("HitTest", &format!("in_zone fmx={fmx:.1} fmy={fmy:.1} dw={dw:.1} offset_y={offset_y:.1} rect=({},{}) scale={current_scale:.2} drag={is_dragging}", rect.left, rect.top));
                             was_in_zone = true;
                             let _ = win_m.emit("set-hover", true);
                         } else if was_in_zone && !in_zone && !hit_on_capsule {
-                            logger::debug("HitTest", "in_zone -> not_in_zone");
+                            logger::debug("HitTest", &format!("in_zone->not_in_zone fmx={fmx:.1} fmy={fmy:.1} dw={dw:.1} offset_y={offset_y:.1} rect=({},{}) scale={current_scale:.2} drag={is_dragging} on_capsule={on_capsule}", rect.left, rect.top));
                             was_in_zone = false;
                             let _ = win_m.emit("set-hover", false);
                         }

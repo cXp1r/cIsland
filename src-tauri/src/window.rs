@@ -491,6 +491,9 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
     logger::debug("rAF", &format!("({}, {}) -> ({}, {})", pos_x, pos_y, target_x, target_y));
     let _ = window.set_position(tauri::LogicalPosition::new(target_x, target_y));
     let _ = window.set_size(tauri::LogicalSize::new(window_width, window_height));
+    // 同步更新胶囊尺寸，避免监控线程读到新窗口位置+旧胶囊宽度的错位
+    state.capsule_w.store(width as u64, Ordering::Relaxed);
+    state.capsule_h.store((height - 10.0).max(0.0) as u64, Ordering::Relaxed);
     /*unsafe {
         let _ = SetWindowPos(
             window.hwnd().unwrap(),
