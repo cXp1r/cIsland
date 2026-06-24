@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import { loge } from "../index/logger";
+
 import { showStatus } from "./shared";
-import { $ } from "../shared";
+import { $ } from "../utils/shared";
 import type { CityResult } from "./types";
+import { loge } from "../utils/logger";
 
 const TAG = "Settings/Weather";
 const els = {

@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./shared";
-import { loge } from "../index/logger";
+import { loge } from "../utils/logger";
 
 const TAG = "Settings/SmtcWhitelist";
 

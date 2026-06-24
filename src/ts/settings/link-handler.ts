@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { loge } from "../index/logger";
+import { loge } from "../utils/logger";
 import { showStatus } from "./shared";
 import type { LinkHandler } from "./types";
 

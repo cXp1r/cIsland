@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
-import { loge } from "../index/logger";
+import { loge } from "../utils/logger";
 import { showStatus } from "./shared";
-import { $ } from "../shared";
+import { $ } from "../utils/shared";
 import type { AISettingsResponse, AiWindowSettingsConfig } from "./types";
 
 const TAG = "Settings/AI";

@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { configDir } from "./main";
-import { $ } from "../shared";
 import type { UpdateInfo } from "./types";
+import { $ } from "../utils/shared";
 
 const openCfgBtn = $<HTMLButtonElement>("open-cfg-btn");
 const currentVersionEl = $<HTMLSpanElement>("current-version");

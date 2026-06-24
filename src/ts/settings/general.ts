@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { showStatus } from "./shared";
-import { $ } from "../shared";
+import { $ } from "../utils/shared";
 import type { GeneralSettingsConfig } from "./types";
 
 const shortcutHint = "请按快捷键...";
