@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { capsule, viewSwitcher } from "../../doms/dom";
 import { PageState } from "../../states/pages/page";
 import { pageStateMachine } from "../../states";
+import { listen } from "@tauri-apps/api/event";
 
 
 export function initComponents(){
@@ -64,4 +65,10 @@ export function initComponents(){
             });
         }
     }, { passive: false });
+    listen<boolean>("set-hover", (event) => {
+        pageStateMachine.dispatch({
+            tag: "hover",
+            event: event.payload,
+        });
+    });
 }
