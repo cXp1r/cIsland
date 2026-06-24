@@ -1,8 +1,7 @@
 import { DispatchAction, PageState, PageStateOrder } from "./page";
 import { pageSubstateRegistry, type PageSubstateMachine } from "./page-substates";
 import { setView } from "../../renders/pages";
-
-
+import { logi } from "../../../utils/logger";
 
 export type PageSubmachine = PageSubstateMachine;
 
@@ -17,6 +16,7 @@ export class PageStateMachine {
   }
 
   dispatch(action: DispatchAction): void {
+    logi("pageStateMachine", action);
     switch (action.tag) {
       case "click":
         this.substates[this.state].dispatch(action);
@@ -76,4 +76,3 @@ export class PageStateMachine {
 
 
 
-export const pageStateMachine = new PageStateMachine();
