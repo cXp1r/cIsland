@@ -79,7 +79,7 @@
     width: calc(var(--lyric-collapsed-w, 320px) + 4px);
 }
 
-#island-glow:has(> #island-capsule.expanded) {
+#island-glow:has(> #island-capsule.hover) {
     width: calc(var(--expanded-w, 330px) + 4px);
     height: calc(var(--expanded-h, 74px) + 4px);
     border-radius: 30px;

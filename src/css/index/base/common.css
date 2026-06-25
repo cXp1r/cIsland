@@ -183,19 +183,13 @@ body {
 
 
 
-#island-capsule.expanded {
-
-    width: var(--expanded-w);
-
-    height: var(--expanded-h);
-
+#island-capsule.hover {
     border-radius: 28px;
-
 }
 
 
 
-#island-capsule.expanded.notice-active {
+#island-capsule.hover.notice-active {
 
     height: var(--notice-expanded-h);
 

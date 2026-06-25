@@ -232,7 +232,7 @@
 
 }
 
-#island-capsule.expanded .progress-bar {
+#island-capsule.hover .progress-bar {
 
     opacity: 1;
 
@@ -332,7 +332,7 @@
 
 }
 
-#island-capsule.expanded .media-controls {
+#island-capsule.hover .media-controls {
 
     max-width: 200px;
 
@@ -373,6 +373,6 @@
 .media-btn.play-btn { width: 34px; height: 34px; }
 
 
-#island-capsule:not(.expanded) #music-panel{
+#island-capsule:not(.hover) #music-panel{
     display: none;
 }

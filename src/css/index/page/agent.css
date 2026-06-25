@@ -374,7 +374,7 @@
 
 
 
-.thinking-section.expanded .thinking-content { display: block; }
+.thinking-section.hover .thinking-content { display: block; }
 
 .thinking-toggle { font-size: 9px; margin-left: auto; }
 
