@@ -7,21 +7,42 @@ import {
 } from "../../doms/dom";
 import { pageStateMachine } from "../../states";
 import {
-  handleTimeSubstateTransition,
   initTimeRenders,
+  timeList,
 } from "./time";
 import { animateCapsule } from "../../utils/rAF";
 
+//应该只有我才能写出这种雷霆代码
+type MaybeFn<T> = T | (() => T);
+export type Size = [MaybeFn<number>, MaybeFn<number>];
+
+export type sc = {
+  classList: string[];
+  size: Size;
+};
+
+const r = (v: MaybeFn<number>) => typeof v === "function" ? v() : v;
+
+const handlers: Record<string, Record<string, sc>> = {};
+
+function renderByState(page: string, state: string): void {
+  const list = handlers[page]?.[state];
+  if (list) {
+    const classlist = list.classList
+    if (classlist) {
+      capsule.classList.add(...classlist);
+    }
+    const [w, h] = [r(list.size[0]), r(list.size[1])];
+    animateCapsule(w, h);
+  }
+}
 
 function initPageSubstateRenders(): void {
+  handlers["time"] = timeList;
   Object.values(pageStateMachine.substates).forEach((machine) => {
     machine.onTransition = (_from: string, to: string) => {
-      if (to == "collapsed") {
-        capsule.classList = "";
-        animateCapsule(140, 50);
-        return;
-      }
-      //占位
+      capsule.classList = "";
+      renderByState(machine.page, to);
     };
   });
 }
@@ -121,7 +142,8 @@ export function initPageRenders() {
       animateCapsule(Math.max(rect.width || 0, 330), Math.max(rect.height || 0, 74));
     } else {
       capsule.classList.remove("hover");
-      animateCapsule(140, 50);
+      const page = pageStateMachine.state;
+      renderByState(page, pageStateMachine.substates[page].state);
     }
   };
 }
