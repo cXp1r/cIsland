@@ -3,9 +3,8 @@ pub mod sadb_core;
 mod privacy;
 mod clipboard;
 mod betterncm;
-mod lyrics;
 pub mod link_handler;
-mod media;
+pub(crate) mod music;
 pub mod settings;
 pub mod ai;
 mod window;
@@ -264,16 +263,16 @@ pub fn run() {
             settings::get_lyric_offset_players, settings::set_lyric_offset_for_player,
             settings::set_lyric_offset_enabled, settings::delete_lyric_offset_player,
             betterncm::install_betterncm_support,
-            media::media_play_pause, media::media_next, media::media_prev,
+            music::media::media_play_pause, music::media::media_next, music::media::media_prev,
             ai::ai_get_settings, ai::ai_save_settings, ai::ai_detect_model_type,
             ai::ai_send_message, ai::ai_stop_generation, ai::ai_clear_history,
             settings::get_link_handlers, settings::save_link_handlers,
             link_handler::open_link_with_handler, link_handler::test_link_handler,
             ceverything::search_query, ceverything::search_execute,
             get_location, get_weather, refresh_weather, save_weather_city, settings::search_city,
-            media::media_seek,
-            media::media_volume_up, media::media_volume_down,
-            media::media_get_volume, media::media_set_volume,
+            music::media::media_seek,
+            music::media::media_volume_up, music::media::media_volume_down,
+            music::media::media_get_volume, music::media::media_set_volume,
             settings::get_auto_start, settings::set_auto_start,
             settings::get_blacklist, settings::save_blacklist,
             settings::get_blacklist_enabled, settings::set_blacklist_enabled,
@@ -431,7 +430,7 @@ pub fn run() {
                         (None, None)
                     },
                 };
-            media::update_smtc_whitelist(
+            music::media::update_smtc_whitelist(
                 smtc_whitelist_enabled.load(Ordering::Relaxed),
                 smtc_app_whitelist.lock().unwrap().clone(),
             );
@@ -1046,410 +1045,17 @@ pub fn run() {
                 }
             });
 
-            // --- 媒体/歌词监控线程 ---
-            let win_media = window.clone();
-            let lyric_mode_media = lyric_mode.clone();
-            let is_music_media = is_music.clone();
-            // 歌词补偿：总开关 + 按播放器表 + 当前命中 app_id；以及 AppHandle 用于持久化/广播事件
-            let lyric_offset_enabled_media = lyric_offset_enabled.clone();
-            let lyric_offsets_media = lyric_offsets_by_player.clone();
-            let active_player_media = active_player_app_id.clone();
-            let app_handle_media = app.handle().clone();
-            let lyrix_m = lyrix.clone();
-            // 歌词异步获取：用 Arc<Mutex> 共享结果 + 代数计数器防止竞态
-            let lyrics_result: Arc<Mutex<Option<(u64, Vec<lyrics::LyricLine>, bool)>>> = Arc::new(Mutex::new(None));
-            // (generation, lyrics, not_found)
-            use std::sync::atomic::AtomicU64 as AtomicU64Import;
-            let lyrics_generation: Arc<AtomicU64Import> = Arc::new(AtomicU64Import::new(0));
-            // 封面代数计数器，防止旧封面覆盖新歌
-            let thumb_generation: Arc<AtomicU64Import> = Arc::new(AtomicU64Import::new(0));
-
-            thread::spawn(move || {
-                let mut current_lyrics: Vec<lyrics::LyricLine> = Vec::new();
-                let mut current_track = String::new();
-                let mut last_lyric_text = String::new();
-                let mut last_info_track = String::new();
-                let mut was_playing = false;
-                let mut last_is_playing = false;
-                let mut lyrics_not_found = false;
-                let mut current_gen: u64 = 0;
-                let mut fetch_pending = false; // 当前代是否还在等待结果
-                // SMTC 会话丢失宽限期：部分播放器（如汽水音乐）在自动切歌瞬间会短暂关闭
-                // 并重建会话，若立即发 lyric-update:null 会导致前端从歌词视图回退到时间视图。
-                // 轮询周期 80ms，阈值 63 次 ≈ 5s，确认确实没有任何音乐会话后再关闭视图。
-                let mut no_session_count: u32 = 0;
-                const NO_SESSION_GRACE_CYCLES: u32 = 63;
-
-                loop {
-                    thread::sleep(Duration::from_millis(80));
-
-                    // 检查异步歌词获取结果（只接受当前代的结果）
-                    {
-                        let mut result = lyrics_result.lock().unwrap_or_else(|e| e.into_inner());
-                        if let Some((gen, ref lyric_lines, not_found)) = result.take() {
-                            if gen == current_gen {
-                                // 当前代的结果，接受
-                                current_lyrics = lyric_lines.clone();
-                                lyrics_not_found = not_found;
-                                fetch_pending = false;
-                                last_lyric_text.clear();
-                                last_info_track.clear();
-                            }
-                            // 旧代的结果直接丢弃（take 已经移除了）
-                        }
-                    }
-
-                    let mode = lyric_mode_media.lock().unwrap().clone();
-                    if mode == "off" {
-                        if was_playing {
-                            crate::logger::warn("Lyrics", "playback state=stopped reason=lyric_mode_off");
-                            was_playing = false;
-                            last_is_playing = false;
-                            current_track.clear();
-                            is_music_media.store(false, Ordering::Relaxed);
-                            let _ = win_media.emit("lyric-update", serde_json::json!(null));
-                        }
-                        continue;
-                    }
-
-                    let info = media::get_smtc_media_info();
-                    let (status, media_info, position_ms_raw, is_playing, raw_app_id) = match info {
-                        Some(v) => {
-                            // 拿到有效会话，重置宽限期计数
-                            no_session_count = 0;
-                            v
-                        }
-                        None => {
-                            if was_playing {
-                                // 会话短暂丢失：先走宽限期，避免切歌瞬间被误判为停止播放
-                                no_session_count = no_session_count.saturating_add(1);
-                                if no_session_count < NO_SESSION_GRACE_CYCLES {
-                                    continue;
-                                }
-                                crate::logger::warn(
-                                    "Lyrics",
-                                    "playback state=stopped reason=no_smtc_session (grace expired)",
-                                );
-                                no_session_count = 0;
-                                was_playing = false;
-                                last_is_playing = false;
-                                current_track.clear();
-                                is_music_media.store(false, Ordering::Relaxed);
-                                let _ = win_media.emit("lyric-update", serde_json::json!(null));
-                            }
-                            continue;
-                        }
-                    };
-                    // Closed (4) 表示会话已关闭，立即清空状态通知前端
-                    if status == 4 {
-                        if was_playing {
-                            crate::logger::warn("Lyrics", "playback state=stopped reason=smtc_session_closed");
-                            was_playing = false;
-                            last_is_playing = false;
-                            current_track.clear();
-                            is_music_media.store(false, Ordering::Relaxed);
-                            let _ = win_media.emit("lyric-update", serde_json::json!(null));
-                        }
-                        continue;
-                    }
-
-                    let app_id = settings::normalize_app_id(&raw_app_id);
-
-                    // --- 活跃播放器变化：更新 state 并广播，供 settings 子页高亮 ---
-                    {
-                        let mut active = active_player_media.lock().unwrap();
-                        let changed = active.as_deref() != Some(app_id.as_str());
-                        if changed {
-                            *active = Some(app_id.clone());
-                            drop(active);
-                            let _ = app_handle_media.emit(
-                                "lyric-offset-active-player-changed",
-                                serde_json::json!({ "app_id": app_id }),
-                            );
-                        }
-                    }
-
-                    // --- 自动发现：新播放器首次出现时，默认 0ms 入表并落盘广播 ---
-                    let offset_ms = {
-                        let needs_insert = !app_id.is_empty() && {
-                            let map = lyric_offsets_media.lock().unwrap();
-                            !map.contains_key(&app_id)
-                        };
-                        if needs_insert {
-                            {
-                                let mut map = lyric_offsets_media.lock().unwrap();
-                                map.entry(app_id.clone()).or_insert(0);
-                            }
-                            // 持久化（通过 Tauri State 访问完整配置）
-                            let state_ref = app_handle_media.state::<IslandState>();
-                            let data = settings::build_settings_data(&state_ref);
-                            if let Err(e) = settings::save_settings_to_file(&data) {
-                                crate::logger::warn(
-                                    "Lyrics",
-                                    &format!("persist lyric_offsets_by_player failed: {}", e),
-                                );
-                            }
-                            let _ = app_handle_media.emit(
-                                "lyric-offset-players-changed",
-                                serde_json::json!({ "new_app_id": app_id }),
-                            );
-                        }
-                        let map = lyric_offsets_media.lock().unwrap();
-                        *map.get(&app_id).unwrap_or(&0)
-                    };
-
-                    let offset_enabled = lyric_offset_enabled_media.load(Ordering::Relaxed);
-                    let position_ms = if offset_enabled {
-                        position_ms_raw.saturating_add(offset_ms).max(0)
-                    } else {
-                        position_ms_raw
-                    };
-
-                    // 播放/暂停状态变化
-                    if is_playing != last_is_playing {
-                        last_is_playing = is_playing;
-                        crate::logger::info("Lyrics", &format!(
-                            "playback state={} title='{}' artist='{}' genre='{}' position_raw_ms={} position_effective_ms={}",
-                            if is_playing { "playing" } else { "paused" },
-                            media_info.title,
-                            media_info.artist,
-                            media_info.genre,
-                            position_ms_raw,
-                            position_ms
-                        ));
-                        let _ = win_media.emit("playback-state", is_playing);
-                    }
-
-                    is_music_media.store(true, Ordering::Relaxed);
-
-                    if !is_playing {
-                        if was_playing {
-                            was_playing = false;
-                            crate::logger::info("Lyrics", &format!(
-                                "playback paused title='{}' artist='{}'",
-                                media_info.title, media_info.artist
-                            ));
-                            let _ = win_media.emit("media-paused", serde_json::json!({
-                                "title": media_info.title,
-                                "artist": media_info.artist
-                            }));
-                        }
-                        continue;
-                    }
-
-                    // 歌曲切换时重新获取歌词
-                    let track_key = format!("{} - {}", media_info.artist, media_info.title);
-                    if track_key != current_track {
-                        crate::logger::info("Lyrics", &format!(
-                            "\nsmtc: track changed title='{}' artist='{}' genre='{}' duration_ms={} position_ms={} is_playing={} offset_enabled={} offset_ms={}",
-                            media_info.title, media_info.artist, media_info.genre,
-                            media_info.duration_ms, position_ms_raw, is_playing,
-                            offset_enabled, offset_ms
-                        ));
-                        current_track = track_key.clone();
-                        media::dump_smtc_session("");
-                        last_lyric_text.clear();
-                        last_info_track.clear();
-                        current_lyrics.clear();
-                        lyrics_not_found = false;
-
-                        // 递增代数，使旧线程的结果自动失效
-                        current_gen = lyrics_generation.fetch_add(1, Ordering::Relaxed) + 1;
-                        fetch_pending = false;
-
-                        let _ = win_media.emit("media-changed", serde_json::json!({
-                            "title": media_info.title,
-                            "artist": media_info.artist,
-                            "genre": media_info.genre,
-                            "thumbnail": null,
-                            "duration_ms": media_info.duration_ms,
-                            "seekable": media_info.seekable
-                        }));
-
-                        // 异步获取封面（独立线程，不阻塞轮询）
-                        {
-                            let win_thumb = win_media.clone();
-                            let thumb_gen_val = thumb_generation.fetch_add(1, Ordering::Relaxed) + 1;
-                            let thumb_gen_ref = thumb_generation.clone();
-                            thread::Builder::new()
-                                .name("thumb-fetch".into())
-                                .spawn(move || {
-                                    // 最多重试 3 次，每次间隔递增（150ms / 400ms / 800ms）
-                                    let delays = [150u64, 400, 800];
-                                    for (i, &delay_ms) in delays.iter().enumerate() {
-                                        thread::sleep(std::time::Duration::from_millis(delay_ms));
-                                        // 代数已变说明新歌切换，放弃
-                                        if thumb_gen_ref.load(Ordering::Relaxed) != thumb_gen_val {
-                                            return;
-                                        }
-                                        if let Some(thumb) = media::get_smtc_thumbnail() {
-                                            if thumb_gen_ref.load(Ordering::Relaxed) == thumb_gen_val {
-                                                let _ = win_thumb.emit("media-thumbnail", serde_json::json!({
-                                                    "thumbnail": thumb
-                                                }));
-                                            }
-                                            return;
-                                        }
-                                        let _ = i; // suppress unused warning on last iter
-                                    }
-                                }).ok();
-                        }
-
-                        // 异步获取歌词（不阻塞主循环，LRCLIB 和网易云并行）
-                        if mode == "lyric" {
-                            let title = media_info.title.clone();
-                            let artist = media_info.artist.clone();
-                            let album_title = media_info.album_title.clone();
-                            let album_artist = media_info.album_artist.clone();
-                            let duration_ms = media_info.duration_ms;
-                            let genre = media_info.genre.clone();
-                            let gen = current_gen;
-                            let result_ref = lyrics_result.clone();
-                            let gen_ref = lyrics_generation.clone();
-                            fetch_pending = true;
-                            crate::logger::info("Lyrics", &format!(
-                                "lyric fetch start gen={} title='{}' artist='{}' genre='{}' strategy=genre_ncmid",
-                                gen, title, artist, genre
-                            ));
-                            let lyrix_l = lyrix_m.clone();
-                            thread::Builder::new()
-                                .name("lyric-fetch".into())
-                                .stack_size(512 * 1024)
-                                .spawn(move || {
-                                // 提前检查代数
-                                if gen_ref.load(Ordering::Relaxed) != gen { return; }
-                                let fetched_lyrics = lyrics::fetch_lyrics_from_lyrix(
-                                    &title,
-                                    &artist,
-                                    &album_title,
-                                    &album_artist,
-                                    &raw_app_id,
-                                    duration_ms,
-                                    &genre,
-                                    gen_ref.clone(),
-                                    gen,
-                                    lyrix_l,
-                                );
-                                // 只有当前代才写入结果；已有 found 结果时不允许被 not_found 覆盖
-                                if gen_ref.load(Ordering::Relaxed) == gen {
-                                    let not_found = fetched_lyrics.is_none();
-                                    let line_count = fetched_lyrics.as_ref().map(|v| v.len()).unwrap_or(0);
-                                    let mut guard = result_ref.lock().unwrap_or_else(|e| e.into_inner());
-                                    let already_found = guard.as_ref()
-                                        .map(|(g, _, nf)| *g == gen && !nf)
-                                        .unwrap_or(false);
-                                    if already_found && not_found {
-                                        crate::logger::warn("Lyrics", &format!(
-                                            "lyric fetch skip stale not_found gen={} (already have result)",
-                                            gen
-                                        ));
-                                    } else {
-                                        crate::logger::info("Lyrics", &format!(
-                                            "lyric fetch done gen={} found={} lines={}",
-                                            gen, !not_found, line_count
-                                        ));
-                                        *guard = Some((gen, fetched_lyrics.unwrap_or_default(), not_found));
-                                    }
-                                } else {
-                                    crate::logger::warn("Lyrics", &format!(
-                                        "lyric fetch drop stale gen={} current_gen={}",
-                                        gen,
-                                        gen_ref.load(Ordering::Relaxed)
-                                    ));
-                                }
-                            }).ok();
-                        }
-                    }
-
-                    was_playing = true;
-
-                    // 当 SMTC 不提供时长时，用最后一句歌词时间 +5s 做估算
-                    let effective_duration_ms = if media_info.duration_ms > 0 {
-                        media_info.duration_ms
-                    } else if let Some(last) = current_lyrics.last() {
-                        last.time_ms + 5000
-                    } else {
-                        0
-                    };
-
-                    if mode == "lyric" {
-                        // 构建歌词文本和附近歌词（文本去重，但始终发送位置）
-                        let (text_val, nearby_json, line_tokens, line_start_ms, next_line_time_ms) = if fetch_pending && current_lyrics.is_empty() {
-                            // 正在获取歌词中
-                            (serde_json::json!("♪"), None, None, None, None)
-                        } else if lyrics_not_found || (!fetch_pending && current_lyrics.is_empty()) {
-                            // 歌词未找到
-                            (serde_json::json!(null), None, None, None, None)
-                        } else if let Some(line_idx) = current_lyrics.iter().rposition(|l| l.time_ms <= position_ms) {
-                            let line = &current_lyrics[line_idx];
-                            // 仅在歌词行变化时计算附近歌词
-                            let nearby = if line.text != last_lyric_text {
-                                last_lyric_text = line.text.clone();
-                                let nearby = lyrics::get_nearby_lyrics(&current_lyrics, position_ms);
-                                Some(nearby.iter().map(|(text, is_current)| {
-                                    serde_json::json!({"text": text, "is_current": is_current})
-                                }).collect::<Vec<_>>())
-                            } else {
-                                None
-                            };
-                            let tokens = if line.tokens.is_empty() {
-                                None
-                            } else {
-                                Some(line.tokens.clone())
-                            };
-                            let next_switch_ms = if line_idx + 1 < current_lyrics.len() {
-                                current_lyrics[line_idx + 1].time_ms
-                            } else {
-                                line.end_time_ms
-                            };
-                            (serde_json::json!(line.text), nearby, tokens, Some(line.time_ms), Some(next_switch_ms))
-                        } else {
-                            let nearby = lyrics::get_nearby_lyrics(&current_lyrics, position_ms);
-                            let nearby_json = Some(nearby.iter().map(|(text, is_current)| {
-                                serde_json::json!({"text": text, "is_current": is_current})
-                            }).collect::<Vec<_>>());
-                            (serde_json::json!("♪"), nearby_json, None, None, None)
-                        };
-
-                        // 始终发送，确保进度条持续更新
-                        let mut payload = serde_json::json!({
-                            "text": text_val,
-                            "title": media_info.title,
-                            "artist": media_info.artist,
-                            "genre": media_info.genre,
-                            "position_ms": position_ms,
-                            "duration_ms": effective_duration_ms,
-                            "is_playing": is_playing,
-                            "seekable": media_info.seekable
-                        });
-                        if let Some(nearby) = nearby_json {
-                            payload["nearby_lyrics"] = serde_json::json!(nearby);
-                        }
-                        if let Some(tokens) = line_tokens {
-                            payload["tokens"] = serde_json::json!(tokens);
-                        }
-                        if let Some(v) = line_start_ms {
-                            payload["line_start_ms"] = serde_json::json!(v);
-                        }
-                        if let Some(v) = next_line_time_ms {
-                            payload["next_line_time_ms"] = serde_json::json!(v);
-                        }
-                        let _ = win_media.emit("lyric-update", payload);
-                    } else {
-                        // info mode: 始终发送位置
-                        let _ = win_media.emit("lyric-update", serde_json::json!({
-                            "text": null,
-                            "title": media_info.title,
-                            "artist": media_info.artist,
-                            "genre": media_info.genre,
-                            "position_ms": position_ms,
-                            "duration_ms": effective_duration_ms,
-                            "is_playing": is_playing,
-                            "seekable": media_info.seekable
-                        }));
-                    }
-                }
-            });
+            // --- Media / lyrics monitor thread ---
+            music::spawn_music_monitor(
+                window.clone(),
+                lyric_mode.clone(),
+                is_music.clone(),
+                lyric_offset_enabled.clone(),
+                lyric_offsets_by_player.clone(),
+                active_player_app_id.clone(),
+                app.handle().clone(),
+                lyrix.clone(),
+            );
 
             Ok(())
         })

@@ -540,7 +540,7 @@ pub fn save_settings(
     if smtc_whitelist_changed {
         let enabled = state.smtc_whitelist_enabled.load(Ordering::Relaxed);
         let app_ids = state.smtc_app_whitelist.lock().unwrap().clone();
-        crate::media::update_smtc_whitelist(enabled, app_ids);
+        crate::music::media::update_smtc_whitelist(enabled, app_ids);
     }
 
     // 通知前端指示器颜色变更
@@ -937,7 +937,7 @@ pub fn set_smtc_whitelist_enabled(
     save_settings_to_file(&settings_data)?;
 
     let app_ids = state.smtc_app_whitelist.lock().unwrap().clone();
-    crate::media::update_smtc_whitelist(enabled, app_ids);
+    crate::music::media::update_smtc_whitelist(enabled, app_ids);
 
     Ok(())
 }
@@ -960,7 +960,7 @@ pub fn save_smtc_whitelist(
 
     let enabled = state.smtc_whitelist_enabled.load(Ordering::Relaxed);
     let app_ids = state.smtc_app_whitelist.lock().unwrap().clone();
-    crate::media::update_smtc_whitelist(enabled, app_ids);
+    crate::music::media::update_smtc_whitelist(enabled, app_ids);
 
     Ok(())
 }

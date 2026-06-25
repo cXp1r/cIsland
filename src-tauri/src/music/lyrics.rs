@@ -1,4 +1,4 @@
-use lyrix::models::{LyricsData, LineInfo, TextInfo};
+use lyrix::models::{LineInfo, LyricsData, TextInfo};
 use lyrix::smtc_lyrics::{self, Lyrix};
 use std::sync::Arc;
 
@@ -17,7 +17,6 @@ pub(crate) struct LyricLine {
     pub tokens: Vec<LyricToken>,
 }
 
-
 pub(crate) fn fetch_lyrics_from_lyrix(
     title: &str,
     artist: &str,
@@ -34,40 +33,76 @@ pub(crate) fn fetch_lyrics_from_lyrix(
         "\nlyric-fetch: song='{}' artist='{}' album='{}' album_artist='{}' duration_ms={} genre='{}'",
         title, artist, album_title, album_artist, duration_ms, genre
     ));
-    crate::logger::info("Lyrics", &format!("rust-api: enabled, title='{}' artist='{}'", title, artist));
+    crate::logger::info(
+        "Lyrics",
+        &format!("rust-api: enabled, title='{}' artist='{}'", title, artist),
+    );
     let rt = match tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
     {
         Ok(rt) => rt,
         Err(e) => {
-            crate::logger::warn("Lyrics", &format!("\nrust-api: tokio runtime init failed: {}", e));
+            crate::logger::warn(
+                "Lyrics",
+                &format!("\nrust-api: tokio runtime init failed: {}", e),
+            );
             return None;
         }
     };
 
-    let artist_opt = if artist.trim().is_empty() { None } else { Some(artist) };
-    let album_opt: Option<&str> = if album_title.trim().is_empty() { None } else { Some(album_title) };
-    let album_artist_opt: Option<&str> = if album_artist.trim().is_empty() { None } else { Some(album_artist) };
+    let artist_opt = if artist.trim().is_empty() {
+        None
+    } else {
+        Some(artist)
+    };
+    let album_opt: Option<&str> = if album_title.trim().is_empty() {
+        None
+    } else {
+        Some(album_title)
+    };
+    let album_artist_opt: Option<&str> = if album_artist.trim().is_empty() {
+        None
+    } else {
+        Some(album_artist)
+    };
     let duration_ms_u32: u32 = duration_ms.clamp(0, i64::from(u32::MAX)) as u32;
     let data = rt.block_on(async {
-        crate::logger::info("Lyrics", &format!(
-            "\nrust-api: title='{}' artist='{}' album artist='{}' duration_ms={}", title, artist, album_artist, duration_ms
-        ));
+        crate::logger::info(
+            "Lyrics",
+            &format!(
+                "\nrust-api: title='{}' artist='{}' album artist='{}' duration_ms={}",
+                title, artist, album_artist, duration_ms
+            ),
+        );
         if gen_ref.load(std::sync::atomic::Ordering::Relaxed) != gen {
             crate::logger::warn("Lyrics", &format!("rust-api: abort gen={} (stale)", gen));
             return None;
         }
-        let player = lyrix::smtc_lyrics::id2player(app_id).unwrap_or(smtc_lyrics::MusicPlayer::Netease);
+        let player =
+            lyrix::smtc_lyrics::id2player(app_id).unwrap_or(smtc_lyrics::MusicPlayer::Netease);
         lyrix::logger::set_level("debug");
-        match lyrix.get_lyrics_with_player(&player, title, artist_opt, album_opt, album_artist_opt, duration_ms_u32).await {
+        match lyrix
+            .get_lyrics_with_player(
+                &player,
+                title,
+                artist_opt,
+                album_opt,
+                album_artist_opt,
+                duration_ms_u32,
+            )
+            .await
+        {
             Ok(data) => {
                 let ddata = if let Some(meta) = &data.track_metadata {
                     match meta.is_trial {
                         true => match lyrix.get_trial_part(data.clone()) {
                             Ok(l) => l,
                             Err(_e) => {
-                                crate::logger::info("Lyrics", "rust-api: failed to get trial part, return raw_lyrics");
+                                crate::logger::info(
+                                    "Lyrics",
+                                    "rust-api: failed to get trial part, return raw_lyrics",
+                                );
                                 data
                             }
                         },
@@ -76,23 +111,32 @@ pub(crate) fn fetch_lyrics_from_lyrix(
                 } else {
                     data
                 };
-                crate::logger::info("Lyrics", &format!(
-                "rust-api: raw from='{}' lines={} file={:?} meta={:?}",
-                    player.display_name(),
-                    ddata.lines.len(),
-                    ddata.file.as_ref().map(|f| format!("{:?}/{:?}", f.lyrics_type, f.sync_type)),
-                    ddata.track_metadata,
-                ));
+                crate::logger::info(
+                    "Lyrics",
+                    &format!(
+                        "rust-api: raw from='{}' lines={} file={:?} meta={:?}",
+                        player.display_name(),
+                        ddata.lines.len(),
+                        ddata
+                            .file
+                            .as_ref()
+                            .map(|f| format!("{:?}/{:?}", f.lyrics_type, f.sync_type)),
+                        ddata.track_metadata,
+                    ),
+                );
                 return Some(ddata);
             }
             Err(e) => {
-                crate::logger::warn("Lyrics", &format!(
-                    "rust-api: fallback player='{}' failed: {}",
-                    player.display_name(), e
-                ));
+                crate::logger::warn(
+                    "Lyrics",
+                    &format!(
+                        "rust-api: fallback player='{}' failed: {}",
+                        player.display_name(),
+                        e
+                    ),
+                );
             }
         }
-
 
         crate::logger::warn("Lyrics", "rust-api: all sources exhausted");
         None
@@ -103,7 +147,6 @@ pub(crate) fn fetch_lyrics_from_lyrix(
     crate::logger::warn("Lyrics", "rust-api: failed, Nothing to return");
     None
 }
-
 
 fn tokens_from_syllables(
     syllables: Vec<TextInfo>,
@@ -186,11 +229,19 @@ fn lyrics_data_to_lyric_lines(data: LyricsData) -> Vec<LyricLine> {
 
     let mut out = Vec::with_capacity(n);
     for (pos, line) in items.into_iter().enumerate() {
-        let lyrix::models::LineInfo { start_time, text, syllables, .. } = line;
+        let lyrix::models::LineInfo {
+            start_time,
+            text,
+            syllables,
+            ..
+        } = line;
         let start_ms = i64::from(start_time);
         let end_ms = end_times[pos];
         let display_text = if text.trim().is_empty() {
-            syllables.iter().map(|s| s.text.as_str()).collect::<String>()
+            syllables
+                .iter()
+                .map(|s| s.text.as_str())
+                .collect::<String>()
         } else {
             text
         };
@@ -204,15 +255,12 @@ fn lyrics_data_to_lyric_lines(data: LyricsData) -> Vec<LyricLine> {
     out
 }
 
-
-
-
-
-
 /// 获取当前播放位置周围的歌词行（前2行、当前行、后2行）
 pub(crate) fn get_nearby_lyrics(lyrics: &[LyricLine], position_ms: i64) -> Vec<(String, bool)> {
-    if lyrics.is_empty() { return Vec::new(); }
-    
+    if lyrics.is_empty() {
+        return Vec::new();
+    }
+
     // Find current line index
     let mut current_idx: Option<usize> = None;
     for (i, line) in lyrics.iter().enumerate() {
@@ -222,7 +270,7 @@ pub(crate) fn get_nearby_lyrics(lyrics: &[LyricLine], position_ms: i64) -> Vec<(
             break;
         }
     }
-    
+
     let current_idx = match current_idx {
         Some(i) => i,
         None => {
@@ -234,7 +282,7 @@ pub(crate) fn get_nearby_lyrics(lyrics: &[LyricLine], position_ms: i64) -> Vec<(
                 .collect();
         }
     };
-    
+
     let start = current_idx.saturating_sub(2);
     let end = (current_idx + 3).min(lyrics.len());
     let result = (start..end)
@@ -242,4 +290,3 @@ pub(crate) fn get_nearby_lyrics(lyrics: &[LyricLine], position_ms: i64) -> Vec<(
         .collect();
     result
 }
-
