@@ -11,16 +11,6 @@ export const PageState = {
 
 export type PageState = (typeof PageState)[keyof typeof PageState];
 
-export const PageStateOrder = [
-  PageState.Time,
-  PageState.Music,
-  PageState.Agent,
-  PageState.Sadb,
-  PageState.Email,
-  PageState.Downloader,
-] as const;
-
-
 export const pagesElements: Record<PageState, HTMLElement> = {
   time: $<HTMLDivElement>("time-area"),
   music: $<HTMLDivElement>("music-area"),

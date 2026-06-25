@@ -1,4 +1,4 @@
-import { pagesElements, PageState, PageStateOrder } from "../../states/pages/page";
+import { pagesElements, PageState } from "../../states/pages/page";
 import {
   capsule,
   currentViewContainer,
@@ -90,7 +90,7 @@ export function setView(f: PageState, t: PageState) {
 
 export function updateSwitcherUI() {
   viewDots.innerHTML = "";
-  PageStateOrder.forEach((v) => {
+  pageStateMachine.order.forEach((v) => {
     const dot = document.createElement("div");
     dot.className = "view-dot" + (v === pageStateMachine.state ? " active" : "");
     dot.title = v == "time"

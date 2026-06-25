@@ -1,4 +1,4 @@
-import { DispatchAction, PageState, PageStateOrder } from "./page";
+import { DispatchAction, PageState } from "./page";
 import { pageSubstateRegistry, type PageSubstateMachine } from "./page-substates";
 import { setView } from "../../renders/pages";
 import { logi } from "../../../utils/logger";
@@ -9,6 +9,15 @@ export class PageStateMachine {
   state: PageState = PageState.Time;
   isHover: boolean = false;
   isDragging: boolean = false;
+  order = [
+    PageState.Time,
+    PageState.Music,
+    PageState.Agent,
+    PageState.Sadb,
+    PageState.Email,
+    PageState.Downloader,
+  ];
+
   readonly substates = pageSubstateRegistry;
 
   createKey(page: PageState, state: string): string {
@@ -71,9 +80,9 @@ export class PageStateMachine {
   }
 
   private toNth(direction: -1 | 1 = 1): PageState {
-    let i = PageStateOrder.indexOf(this.state);
-    let n = direction == 1 ? i + 1 == PageStateOrder.length ? 0 : i + 1 : i == 0 ? PageStateOrder.length - 1 : 0;
-    return PageStateOrder[n];
+    let i = this.order.indexOf(this.state);
+    let n = direction == 1 ? i + 1 == this.order.length ? 0 : i + 1 : i == 0 ? this.order.length - 1 : 0;
+    return this.order[n];
   }
 }
 
