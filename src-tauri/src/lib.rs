@@ -125,13 +125,13 @@ fn get_location() -> Option<LocationInfo> {
         .ok()?;
 
     if !resp.status().is_success() {
-        logger::warn("init", "定位失败");
+        logger::warn("init", "location failed");
         return None;
     }
 
     let json: serde_json::Value = resp.json().ok()?;
     if json["status"].as_str()? != "success" {
-        logger::warn("init", "定位失败");
+        logger::warn("init", "location failed");
         return None;
     }
 
@@ -186,7 +186,7 @@ fn fetch_weather_internal(
         println!("[Weather] 使用手动设置城市: {}", manual_city);
         (manual_lat, manual_lon, manual_city.to_string())
     } else {
-        let loc = get_location().ok_or("无法获取位置信息".to_string())?;
+        let loc = get_location().ok_or("failed to get location information".to_string())?;
         let city = loc.city.clone().unwrap_or_default();
         (loc.latitude, loc.longitude, city)
     };
@@ -199,13 +199,13 @@ fn fetch_weather_internal(
     let resp = shared_http_client()
         .get(&url)
         .send()
-        .map_err(|e| format!("天气请求失败: {}", e))?;
+        .map_err(|e| format!("weather request failed: {}", e))?;
 
     if !resp.status().is_success() {
         return Err(format!("HTTP {}", resp.status()));
     }
 
-    let json: serde_json::Value = resp.json().map_err(|e| format!("解析失败: {}", e))?;
+    let json: serde_json::Value = resp.json().map_err(|e| format!("parse error: {}", e))?;
     let current = &json["current"];
     let weather_code = current["weather_code"].as_i64().unwrap_or(0);
     let temp = current["temperature_2m"].as_f64().unwrap_or(0.0).round() as i64;
@@ -218,7 +218,7 @@ fn fetch_weather_internal(
 fn get_weather(state: tauri::State<'_, IslandState>) -> Result<WeatherResult, String> {
     // 仅读取缓存，零阻塞
     state.weather_cache.lock().unwrap().clone()
-        .ok_or_else(|| "天气数据尚未获取".to_string())
+        .ok_or_else(|| "weather cache not found".to_string())
 }
 
 #[tauri::command]
@@ -514,7 +514,7 @@ pub fn run() {
             let menu = MenuBuilder::new(app).item(&settings_item).item(&quit_item).build()?;
             let _tray = TrayIconBuilder::new()
                 .icon(Image::new_owned(create_tray_icon(), 32, 32))
-                .menu(&menu).tooltip("灵动岛")
+                .menu(&menu).tooltip("cIsland")
                 .on_menu_event(move |app, event| {
                     match event.id().as_ref() {
                         "quit" => {
@@ -534,7 +534,7 @@ pub fn run() {
                                 let _ = win.set_focus();
                             } else {
                                 let _ = tauri::WebviewWindowBuilder::new(app, "settings", tauri::WebviewUrl::App("settings.html".into()))
-                                    .title("灵动岛 - 设置")
+                                    .title("cIsland - 设置")
                                     .inner_size(1000.0, 600.0)
                                     .min_inner_size(800.0, 500.0)
                                     .resizable(true)

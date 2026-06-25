@@ -59,7 +59,7 @@ pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result
     let api_url = if is_preview { GITHUB_PREVIEW_API_URL } else { GITHUB_API_URL };
 
     crate::logger::info("Updater", &format!(
-        "检查更新 channel={} url={} current_version={}",
+        "check for updates channel={} url={} current_version={}",
         if is_preview { "preview" } else { "stable" },
         api_url,
         current_version
@@ -102,12 +102,12 @@ pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result
     }
 
     if download_url.is_empty() {
-        crate::logger::warn("Updater", "未找到 .exe 安装包");
-        return Err("未找到 .exe 安装包".to_string());
+        crate::logger::warn("Updater", "failed to find installer");
+        return Err("not found".to_string());
     }
 
     crate::logger::info("Updater", &format!(
-        "解析完成 latest_version={} download_url={} size={}",
+        "latest_version={} download_url={} size={}",
         latest_version, download_url, file_size
     ));
 
@@ -135,7 +135,7 @@ struct DownloadProgress {
 pub fn download_and_install_update(app: tauri::AppHandle, url: String) {
     std::thread::spawn(move || {
         if let Err(e) = do_download_and_install(&app, &url) {
-            println!("[Updater] 下载失败: {}", e);
+            println!("[Updater] failed to download: {}", e);
             let _ = app.emit("update-error", e);
         }
     });
@@ -145,16 +145,16 @@ fn do_download_and_install(app: &tauri::AppHandle, url: &str) -> Result<(), Stri
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()
-        .map_err(|e| format!("创建下载客户端失败: {}", e))?;
+        .map_err(|e| format!("Client error: {}", e))?;
 
     let resp = client
         .get(url)
         .header("User-Agent", "DynamicIsland-Updater")
         .send()
-        .map_err(|e| format!("下载请求失败: {}", e))?;
+        .map_err(|e| format!("request error: {}", e))?;
 
     if !resp.status().is_success() {
-        return Err(format!("下载返回错误: {}", resp.status()));
+        return Err(format!("error from resp: {}", resp.status()));
     }
 
     let total = resp.content_length().unwrap_or(0);
@@ -170,18 +170,18 @@ fn do_download_and_install(app: &tauri::AppHandle, url: &str) -> Result<(), Stri
 
     // 读取全部内容（reqwest blocking 不支持分块读取进度，用 copy 方式）
     // 为了实现进度回报，逐块读取
-    let bytes = resp.bytes().map_err(|e| format!("读取响应失败: {}", e))?;
+    let bytes = resp.bytes().map_err(|e| format!("read error: {}", e))?;
     let total = if total > 0 { total } else { bytes.len() as u64 };
 
     // 写入文件并发送进度
     let chunk_size = 64 * 1024; // 64KB
     let mut file = fs::File::create(&file_path)
-        .map_err(|e| format!("创建临时文件失败: {}", e))?;
+        .map_err(|e| format!("failed to create temp folder: {}", e))?;
 
     let mut downloaded: u64 = 0;
     for chunk in bytes.chunks(chunk_size) {
         file.write_all(chunk)
-            .map_err(|e| format!("写入文件失败: {}", e))?;
+            .map_err(|e| format!("failed to write: {}", e))?;
         downloaded += chunk.len() as u64;
         let percent = if total > 0 {
             (downloaded as f64 / total as f64) * 100.0
@@ -209,7 +209,7 @@ fn do_download_and_install(app: &tauri::AppHandle, url: &str) -> Result<(), Stri
     let _ = Command::new(&file_path)
         .creation_flags(CREATE_NO_WINDOW)
         .spawn()
-        .map_err(|e| format!("启动安装程序失败: {}", e))?;
+        .map_err(|e| format!("failed to start installer: {}", e))?;
 
     // 退出当前应用
     app.exit(0);
