@@ -315,14 +315,6 @@ pub(crate) fn spawn_music_monitor(
 
             was_playing = true;
 
-            let effective_duration_ms = if media_info.duration_ms > 0 {
-                media_info.duration_ms
-            } else if let Some(last) = current_lyrics.last() {
-                last.time_ms + 5000
-            } else {
-                0
-            };
-
             if mode == "lyric" {
                 let (text_val, nearby_json, line_tokens, line_start_ms, next_line_time_ms) =
                     if fetch_pending && current_lyrics.is_empty() {
@@ -386,13 +378,8 @@ pub(crate) fn spawn_music_monitor(
 
                 let mut payload = serde_json::json!({
                     "text": text_val,
-                    "title": media_info.title,
-                    "artist": media_info.artist,
-                    "genre": media_info.genre,
                     "position_ms": position_ms,
-                    "duration_ms": effective_duration_ms,
-                    "is_playing": is_playing,
-                    "seekable": media_info.seekable
+                    "is_playing": is_playing
                 });
                 if let Some(nearby) = nearby_json {
                     payload["nearby_lyrics"] = serde_json::json!(nearby);
@@ -408,19 +395,11 @@ pub(crate) fn spawn_music_monitor(
                 }
                 let _ = window.emit("lyric-update", payload);
             } else {
-                let _ = window.emit(
-                    "lyric-update",
-                    serde_json::json!({
-                        "text": null,
-                        "title": media_info.title,
-                        "artist": media_info.artist,
-                        "genre": media_info.genre,
-                        "position_ms": position_ms,
-                        "duration_ms": effective_duration_ms,
-                        "is_playing": is_playing,
-                        "seekable": media_info.seekable
-                    }),
-                );
+                let _ = window.emit("lyric-update", serde_json::json!({
+                    "text": null,
+                    "position_ms": position_ms,
+                    "is_playing": is_playing
+                }));
             }
         }
     });
