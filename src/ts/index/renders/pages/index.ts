@@ -4,6 +4,7 @@ import {
   currentViewContainer,
   viewHolder,
   viewDots,
+  viewSwitcher,
 } from "../../doms/dom";
 import { pageStateMachine } from "../../states";
 import {
@@ -90,29 +91,36 @@ export function setView(f: PageState, t: PageState) {
 
 export function updateSwitcherUI() {
   viewDots.innerHTML = "";
-  pageStateMachine.order.forEach((v) => {
-    const dot = document.createElement("div");
-    dot.className = "view-dot" + (v === pageStateMachine.state ? " active" : "");
-    dot.title = v == "time"
-      ? "Time View"
-      : v == "music"
-        ? "Lyric View"
-        : v == "agent"
-          ? "Agent"
-          : v == "sadb"
-            ? "ADB"
-            : v == "email"
-              ? "Email"
-              : "Downloader";
-    dot.addEventListener("click", (e) => {
-      e.stopPropagation();
-      pageStateMachine.dispatch({
-        tag: "chosen",
-        target: v,
+  if (pageStateMachine.order.length <= 1) {
+    viewSwitcher.classList = "";
+    return;
+  } else {
+    viewSwitcher.classList.toggle("has-views", true);
+    pageStateMachine.order.forEach((v) => {
+      const dot = document.createElement("div");
+      dot.className = "view-dot" + (v === pageStateMachine.state ? " active" : "");
+      dot.title = v == "time"
+        ? "Time View"
+        : v == "music"
+          ? "Lyric View"
+          : v == "agent"
+            ? "Agent"
+            : v == "sadb"
+              ? "ADB"
+              : v == "email"
+                ? "Email"
+                : "Downloader";
+      dot.addEventListener("click", (e) => {
+        e.stopPropagation();
+        pageStateMachine.dispatch({
+          tag: "chosen",
+          target: v,
+        });
       });
+      viewDots.appendChild(dot);
     });
-    viewDots.appendChild(dot);
-  });
+  }
+  
 }
 
 export function mountView(view: PageState) {
