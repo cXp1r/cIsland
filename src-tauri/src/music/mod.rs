@@ -25,8 +25,6 @@ pub(crate) fn spawn_music_monitor(
     let lyrics_result: Arc<Mutex<Option<(u64, Vec<lyrics::LyricLine>, bool)>>> =
         Arc::new(Mutex::new(None));
     let lyrics_generation = Arc::new(AtomicU64::new(0));
-    let thumb_generation = Arc::new(AtomicU64::new(0));
-
     thread::spawn(move || {
         let mut current_lyrics: Vec<lyrics::LyricLine> = Vec::new();
         let mut current_track = String::new();
@@ -221,44 +219,20 @@ pub(crate) fn spawn_music_monitor(
                 current_gen = lyrics_generation.fetch_add(1, Ordering::Relaxed) + 1;
                 fetch_pending = false;
 
+                let thumbnail = media::get_smtc_thumbnail();
                 let _ = window.emit(
                     "media-changed",
                     serde_json::json!({
                         "title": media_info.title,
                         "artist": media_info.artist,
+                        "album_title": media_info.album_title,
+                        "album_artist": media_info.album_artist,
                         "genre": media_info.genre,
-                        "thumbnail": null,
+                        "thumbnail": thumbnail,
                         "duration_ms": media_info.duration_ms,
                         "seekable": media_info.seekable
                     }),
                 );
-
-                {
-                    let win_thumb = window.clone();
-                    let thumb_gen_val = thumb_generation.fetch_add(1, Ordering::Relaxed) + 1;
-                    let thumb_gen_ref = thumb_generation.clone();
-                    thread::Builder::new()
-                        .name("thumb-fetch".into())
-                        .spawn(move || {
-                            let delays = [150u64, 400, 800];
-                            for &delay_ms in delays.iter() {
-                                thread::sleep(Duration::from_millis(delay_ms));
-                                if thumb_gen_ref.load(Ordering::Relaxed) != thumb_gen_val {
-                                    return;
-                                }
-                                if let Some(thumb) = media::get_smtc_thumbnail() {
-                                    if thumb_gen_ref.load(Ordering::Relaxed) == thumb_gen_val {
-                                        let _ = win_thumb.emit(
-                                            "media-thumbnail",
-                                            serde_json::json!({ "thumbnail": thumb }),
-                                        );
-                                    }
-                                    return;
-                                }
-                            }
-                        })
-                        .ok();
-                }
 
                 if mode == "lyric" {
                     let title = media_info.title.clone();
