@@ -9,7 +9,7 @@
     display: none;
 }
 
-#island-capsule.panel-expanded #panel {
+#island-capsule.expanded #panel {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 0;
