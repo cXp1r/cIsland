@@ -4,6 +4,7 @@ import {
   capsule,
   emailDragHandle,
 } from "../doms/dom";
+import { pageStateMachine } from "../states";
 
 
 export function showContextMenu() {
@@ -11,7 +12,6 @@ export function showContextMenu() {
 }
 
 let isDragging = false;
-let dragStarted = false;
 let lastX = 0;
 let lastY = 0;
 let mouseDownX = 0;
@@ -21,7 +21,7 @@ const DRAG_THRESHOLD = 5;
 
 function beginWindowDrag(screenX: number, screenY: number) {
   isDragging = true;
-  dragStarted = false;
+  pageStateMachine.isDragging = false;
   lastX = screenX;
   lastY = screenY;
   mouseDownX = screenX;
@@ -34,12 +34,12 @@ function moveWindowDrag(screenX: number, screenY: number) {
   const dx = screenX - lastX;
   const dy = screenY - lastY;
 
-  if (!dragStarted) {
+  if (!pageStateMachine.isDragging) {
     const totalDx = Math.abs(screenX - mouseDownX);
     const totalDy = Math.abs(screenY - mouseDownY);
     if (totalDx < DRAG_THRESHOLD && totalDy < DRAG_THRESHOLD) return;
 
-    dragStarted = true;
+    pageStateMachine.isDragging = true;
     void invoke("start_drag");
   }
 
@@ -56,10 +56,10 @@ function endWindowDrag() {
 
   isDragging = false;
 
-  if (dragStarted) {
+  if (pageStateMachine.isDragging) {
     void invoke("end_drag");
     window.setTimeout(() => {
-      dragStarted = false;
+      pageStateMachine.isDragging = false;
     }, 100);
   }
 }

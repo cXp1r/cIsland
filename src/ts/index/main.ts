@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { initPageRenders } from "./renders/pages";
 import { initPageStateMachine } from "./states";
-import { initComponents } from "./components/pages";
+import { initComponents } from "./components";
 
 initPageRenders();
 initPageStateMachine();

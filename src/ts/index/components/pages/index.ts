@@ -5,7 +5,7 @@ import { pageStateMachine } from "../../states";
 import { listen } from "@tauri-apps/api/event";
 
 
-export function initComponents(){
+export function initPagesComponents(){
     capsule.addEventListener("click", (event: MouseEvent) => {
         if (pageStateMachine.isDragging) {
             return;
