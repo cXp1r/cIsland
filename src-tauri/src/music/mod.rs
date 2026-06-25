@@ -39,7 +39,7 @@ pub(crate) fn spawn_music_monitor(
         let mut fetch_pending = false;
         let mut no_session_count: u32 = 0;
         const NO_SESSION_GRACE_CYCLES: u32 = 63;
-
+        
         loop {
             thread::sleep(Duration::from_millis(80));
 
@@ -58,15 +58,10 @@ pub(crate) fn spawn_music_monitor(
 
             let mode = lyric_mode.lock().unwrap().clone();
             if mode == "off" {
-                if was_playing {
-                    logger::warn("Lyrics", "playback state=stopped reason=lyric_mode_off");
-                    was_playing = false;
-                    last_is_playing = false;
-                    current_track.clear();
-                    is_music.store(false, Ordering::Relaxed);
-                    let _ = window.emit("lyric-update", serde_json::json!(null));
-                }
-                continue;
+                logger::warn("Lyrics", "music monitor stopped: lyric_mode is off");
+                is_music.store(false, Ordering::Relaxed);
+                let _ = window.emit("lyric-update", serde_json::json!(null));
+                return;
             }
 
             let info = media::get_smtc_media_info();
