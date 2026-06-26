@@ -39,6 +39,8 @@ type LyricUpdatePayload = {
   next_line_time_ms?: number;
 };
 
+const EMPTY_LYRIC_PLACEHOLDER = "♪";
+
 
 function buildTokensKey(tokens: Array<{ text: string; start_ms: number; end_ms: number }>): string {
   return tokens.map((t) => `${t.text}\u0001${t.start_ms}\u0001${t.end_ms}`).join('\u0002');
@@ -399,7 +401,6 @@ export function resetMpLyricFlipState() {
 
 export function initLyricRenderer() {
   listen<LyricUpdatePayload | null>("lyric-update", (event) => {
-    console.log(event.payload);
     if (event.payload === null) {
       resetIslandLyricScroll();
       stopLyricTokenAnimationLoop();
@@ -410,6 +411,7 @@ export function initLyricRenderer() {
     }
 
     const { text, position_ms } = event.payload;
+    const displayText = text?.trim().length ? text : EMPTY_LYRIC_PLACEHOLDER;
     if (position_ms !== undefined) {
       setActiveLyricBasePositionMs(position_ms);
       setActiveLyricBasePerfMs(performance.now());
@@ -420,7 +422,7 @@ export function initLyricRenderer() {
 
     if (text === null) {
       resetIslandLyricScroll();
-      renderLyricPlainText(lyricTextInner, "");
+      renderLyricPlainText(lyricTextInner, displayText);
     } else {
       if (event.payload.line_start_ms !== undefined && event.payload.next_line_time_ms !== undefined) {
         if (lyricScrollLineStartMs !== event.payload.line_start_ms) {
@@ -446,13 +448,13 @@ export function initLyricRenderer() {
         setCurrentLyricTokenKey("");
         setTokenSpans([]);
         if (lyricTextInner.children.length > 0) {
-          renderLyricPlainText(lyricTextInner, text);
+          renderLyricPlainText(lyricTextInner, displayText);
           applyIslandLyricScroll(position_ms ?? activeLyricBasePositionMs);
           ensureLyricTokenAnimationLoop();
-        } else if (lyricTextInner.textContent !== text) {
+        } else if (lyricTextInner.textContent !== displayText) {
           lyricText.classList.add("fade");
           window.setTimeout(() => {
-            renderLyricPlainText(lyricTextInner, text);
+            renderLyricPlainText(lyricTextInner, displayText);
             applyIslandLyricScroll(position_ms ?? activeLyricBasePositionMs);
             ensureLyricTokenAnimationLoop();
             lyricText.classList.remove("fade");
@@ -469,12 +471,9 @@ export function initLyricRenderer() {
     const mpCurrentTimeMs = position_ms ?? activeLyricBasePositionMs;
     if (nearby && nearby.length > 0) {
       renderNearbyLyricsFlip(nearby, mpTokens, mpCurrentTimeMs);
-    } else if (text !== null && text !== undefined) {
-      if (text === "") {
-        mpLyricText.textContent = "";
-        resetMpLyricFlipState();
-      } else if (mpLyricText.children.length === 0) {
-        mpLyricText.textContent = text;
+    } else if (text !== undefined) {
+      if (mpLyricText.children.length === 0 || mpLyricText.textContent !== displayText) {
+        mpLyricText.textContent = displayText;
         resetMpLyricFlipState();
       }
     } else {
