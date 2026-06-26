@@ -1,6 +1,6 @@
 
 import { invoke } from "@tauri-apps/api/core";
-import { capsule } from "../doms/dom";
+import { capsule } from "../doms";
 import { setLyricMode } from "../state";
 
 export function initResizeObserver() {

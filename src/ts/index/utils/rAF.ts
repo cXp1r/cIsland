@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { capsule } from "../doms/dom";
+import { capsule } from "../doms";
 
 
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {

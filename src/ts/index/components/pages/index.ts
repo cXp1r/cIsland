@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { capsule, viewSwitcher } from "../../doms/dom";
+import { capsule, viewSwitcher } from "../../doms";
 import { PageState } from "../../states/pages/page";
 import { pageStateMachine } from "../../states";
 import { listen } from "@tauri-apps/api/event";

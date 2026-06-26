@@ -6,7 +6,7 @@ import {
   emailCount,
   emailListItems,
   emailRefreshBtn,
-} from "../../../doms/dom";
+} from "../../../doms";
 import { setEmailConfigure } from "../../../utils/state";
 import { logd, logi } from "../../../utils/logger";
 type EmailMeta = {

@@ -2,8 +2,9 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import {
   capsule,
-  emailDragHandle,
-} from "../doms/dom";
+  emailDragHandle
+} from "../doms";
+
 import { pageStateMachine } from "../states";
 
 

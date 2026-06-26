@@ -1,7 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import type { WeatherResult } from "../../../utils/types";
-import { timeWrapper } from "../../../doms/dom";
+import { timeWrapper } from "../../../doms";
 import { $ } from "../../../../utils/shared";
 
 export const timeText = $<HTMLDivElement>("time-text");

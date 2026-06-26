@@ -1,4 +1,4 @@
-import { capsule } from "../../../doms/dom";
+import { capsule } from "../../../doms";
 import type { DispatchAction, PageState } from "../page";
 
 export type PageTransitionListener<S extends string> =
