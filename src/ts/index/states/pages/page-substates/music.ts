@@ -20,7 +20,7 @@ export class LyricPageSubstateMachine extends PageSubstateMachine<LyricPageSubst
     const { target, event } = action;
 
     if (this.state === "expanded") {
-      if (!target.closest("#music-panel-header")) return;
+      //if (!target.closest("#music-panel-header")) return;
     } else if (
       target.closest(".media-btn")
       || target.closest(".progress-bar")

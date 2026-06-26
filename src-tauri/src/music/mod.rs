@@ -69,7 +69,7 @@ pub(crate) fn spawn_music_monitor(
 
             // 读取当前 SMTC 会话；短暂丢会话时给播放器切歌留宽限期。
             let info = media::get_smtc_media_info();
-            let (status, media_info, position_ms_raw, is_playing, raw_app_id) = match info {
+            let (status, media_info, position_ms_raw, is_playing, raw_app_id, thumbnail) = match info {
                 Some(v) => {
                     no_session_count = 0;
                     v
@@ -215,7 +215,16 @@ pub(crate) fn spawn_music_monitor(
                 current_gen = lyrics_generation.fetch_add(1, Ordering::Relaxed) + 1;
                 fetch_pending = false;
 
-                let thumbnail = media::get_smtc_thumbnail();
+                logger::info(
+                    "SMTC",
+                    &format!(
+                        "thumbnail for media-changed: {}",
+                        thumbnail
+                            .as_ref()
+                            .map(|v| format!("{} bytes", v.len()))
+                            .unwrap_or_else(|| "none".to_string())
+                    ),
+                );
                 let _ = window.emit("music-page", true);
                 let _ = window.emit(
                     "media-changed",

@@ -399,6 +399,7 @@ export function resetMpLyricFlipState() {
 
 export function initLyricRenderer() {
   listen<LyricUpdatePayload | null>("lyric-update", (event) => {
+    console.log(event.payload);
     if (event.payload === null) {
       resetIslandLyricScroll();
       stopLyricTokenAnimationLoop();

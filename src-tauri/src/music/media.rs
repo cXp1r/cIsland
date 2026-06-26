@@ -687,7 +687,7 @@ pub fn media_seek(position_ms: i64) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn get_smtc_media_info() -> Option<(u8, MediaInfo, i64, bool, String)> {
+pub(crate) fn get_smtc_media_info() -> Option<(u8, MediaInfo, i64, bool, String, Option<String>)> {
     if let Some((session, media, position_ms, is_playing, app_id)) = select_best_smtc_session() {
         let status = session
             .GetPlaybackInfo()
@@ -705,19 +705,17 @@ pub(crate) fn get_smtc_media_info() -> Option<(u8, MediaInfo, i64, bool, String)
         //println!("app_id: {} position_ms: {}", app_id, position_ms);
         let is_preferred = is_preferred_music_app(&app_id);
         if is_preferred {
-            return Some((status?, media, position_ms, is_playing, app_id));
+            let thumbnail = session
+                .TryGetMediaPropertiesAsync()
+                .ok()
+                .and_then(|op| op.get().ok())
+                .and_then(|props| extract_thumbnail(&props));
+            return Some((status?, media, position_ms, is_playing, app_id, thumbnail));
         }
         return None;
     }
 
     None
-}
-
-/// 仅获取封面（歌曲切换时调用，避免每次轮询都读流）
-pub(crate) fn get_smtc_thumbnail() -> Option<String> {
-    let (session, _, _, _, _) = select_best_smtc_session()?;
-    let props = session.TryGetMediaPropertiesAsync().ok()?.get().ok()?;
-    extract_thumbnail(&props)
 }
 
 /// 获取系统默认音频输出设备的音量 (0.0 ~ 1.0)
