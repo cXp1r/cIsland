@@ -1,6 +1,6 @@
 ﻿/* --- 歌词区域 --- */
 
-#lyric-area {
+#music-area {
 
     display: none;
 
@@ -372,7 +372,16 @@
 
 .media-btn.play-btn { width: 34px; height: 34px; }
 
+#music-collapsed {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
 
-#island-capsule:not(.hover) #music-panel{
+#island-capsule.expanded #music-collapsed {
+    display: none;
+}
+
+#island-capsule:not(.expanded) #music-panel{
     display: none;
 }
