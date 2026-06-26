@@ -6,7 +6,6 @@ import { PageSubstateMachine } from "./common";
 export const LyricPageSubstate = {
   Collapsed: "collapsed",
   Expanded: "expanded",
-  Seeking: "seeking",
 } as const;
 
 export type LyricPageSubstate = (typeof LyricPageSubstate)[keyof typeof LyricPageSubstate];
@@ -14,18 +13,6 @@ export type LyricPageSubstate = (typeof LyricPageSubstate)[keyof typeof LyricPag
 export class LyricPageSubstateMachine extends PageSubstateMachine<LyricPageSubstate> {
   constructor() {
     super(PageState.Music, LyricPageSubstate.Collapsed);
-  }
-
-  expand(): void {
-    
-  }
-
-  collapse(): void {
-    
-  }
-
-  seeking(): void {
-    this.transitionTo(LyricPageSubstate.Seeking);
   }
 
   dispatch(action: DispatchAction): void {
