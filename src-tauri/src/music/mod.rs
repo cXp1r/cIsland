@@ -63,6 +63,7 @@ pub(crate) fn spawn_music_monitor(
                 logger::warn("Lyrics", "music monitor stopped: lyric_mode is off");
                 is_music.store(false, Ordering::Relaxed);
                 let _ = window.emit("lyric-update", serde_json::json!(null));
+                let _ = window.emit("music-page", false);
                 return;
             }
 
@@ -89,6 +90,7 @@ pub(crate) fn spawn_music_monitor(
                         current_track.clear();
                         is_music.store(false, Ordering::Relaxed);
                         let _ = window.emit("lyric-update", serde_json::json!(null));
+                        let _ = window.emit("music-page", false);
                     }
                     continue;
                 }
@@ -105,6 +107,7 @@ pub(crate) fn spawn_music_monitor(
                     current_track.clear();
                     is_music.store(false, Ordering::Relaxed);
                     let _ = window.emit("lyric-update", serde_json::json!(null));
+                    let _ = window.emit("music-page", false);
                 }
                 continue;
             }
@@ -117,11 +120,6 @@ pub(crate) fn spawn_music_monitor(
                 let changed = active.as_deref() != Some(app_id.as_str());
                 if changed {
                     *active = Some(app_id.clone());
-                    drop(active);
-                    let _ = app_handle.emit(
-                        "lyric-offset-active-player-changed",
-                        serde_json::json!({ "app_id": app_id }),
-                    );
                 }
             }
 
@@ -144,10 +142,6 @@ pub(crate) fn spawn_music_monitor(
                             &format!("persist lyric_offsets_by_player failed: {}", e),
                         );
                     }
-                    let _ = app_handle.emit(
-                        "lyric-offset-players-changed",
-                        serde_json::json!({ "new_app_id": app_id }),
-                    );
                 }
                 let map = lyric_offsets_by_player.lock().unwrap();
                 *map.get(&app_id).unwrap_or(&0)
@@ -175,7 +169,7 @@ pub(crate) fn spawn_music_monitor(
                         position_ms
                     ),
                 );
-                let _ = window.emit("playback-state", is_playing);
+                let _ = window.emit("music-page", is_playing);
             }
 
             is_music.store(true, Ordering::Relaxed);
@@ -189,13 +183,6 @@ pub(crate) fn spawn_music_monitor(
                             "playback paused title='{}' artist='{}'",
                             media_info.title, media_info.artist
                         ),
-                    );
-                    let _ = window.emit(
-                        "media-paused",
-                        serde_json::json!({
-                            "title": media_info.title,
-                            "artist": media_info.artist
-                        }),
                     );
                 }
                 continue;
@@ -229,6 +216,7 @@ pub(crate) fn spawn_music_monitor(
                 fetch_pending = false;
 
                 let thumbnail = media::get_smtc_thumbnail();
+                let _ = window.emit("music-page", true);
                 let _ = window.emit(
                     "media-changed",
                     serde_json::json!({

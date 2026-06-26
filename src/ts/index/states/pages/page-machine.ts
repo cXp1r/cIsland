@@ -2,6 +2,7 @@ import { DispatchAction, PageState } from "./page";
 import { pageSubstateRegistry, type PageSubstateMachine } from "./page-substates";
 import { setView } from "../../renders/pages";
 import { logi } from "../../../utils/logger";
+import { listen } from "@tauri-apps/api/event";
 
 export type PageSubmachine = PageSubstateMachine;
 
@@ -17,6 +18,31 @@ export class PageStateMachine {
     PageState.Email,
     PageState.Downloader,
   ];
+
+  constructor() {
+    //先给音乐删了
+    this.order.splice(1, 1);
+    listen<boolean>('music-page', (event) => {
+      const b: boolean = event.payload;
+      const index = this.order.indexOf(PageState.Music);
+      if (!b) {
+        if (index !== -1) {
+          this.order.splice(index, 1);
+          //强制到时间页面
+          this.transitionTo(PageState.Time);
+        }
+      } else {
+        if (index === -1) {
+          this.order.splice(1, 0, PageState.Music);
+          
+        }
+        //强制到音乐分页
+        this.transitionTo(PageState.Music);
+        
+      }
+      
+    })
+  }
 
   readonly substates = pageSubstateRegistry;
 
