@@ -2,18 +2,16 @@ import { pagesElements, PageState } from "../../states/pages/page";
 import {
   capsule,
   currentViewContainer,
-  viewHolder,
   viewDots,
+  viewHolder,
   viewSwitcher,
-} from "../../doms/dom";
+} from "../../doms";
 import { pageStateMachine } from "../../states";
-import {
-  initTimeRenders,
-  timeList,
-} from "./time";
+import { initTimeRenders, timeList } from "./time";
 import { animateCapsule } from "../../utils/rAF";
+import { initMusic, musicList } from "./music";
 
-//应该只有我才能写出这种雷霆代码
+// 页面子状态尺寸/样式配置。
 type MaybeFn<T> = T | (() => T);
 export type Size = [MaybeFn<number>, MaybeFn<number>];
 
@@ -28,21 +26,22 @@ const handlers: Record<string, Record<string, sc>> = {};
 
 function renderByState(page: string, state: string): void {
   const list = handlers[page]?.[state];
-  if (list) {
-    const classlist = list.classList
-    if (classlist) {
-      capsule.classList.add(...classlist);
-    }
-    const [w, h] = [r(list.size[0]), r(list.size[1])];
-    animateCapsule(w, h);
+  if (!list) return;
+
+  const classlist = list.classList;
+  if (classlist) {
+    capsule.classList.add(...classlist);
   }
+  const [w, h] = [r(list.size[0]), r(list.size[1])];
+  animateCapsule(w, h);
 }
 
 function initPageSubstateRenders(): void {
   handlers["time"] = timeList;
+  handlers["music"] = musicList;
   Object.values(pageStateMachine.substates).forEach((machine) => {
     machine.onTransition = (_from: string, to: string) => {
-      capsule.classList = "";
+      capsule.className = "";
       renderByState(machine.page, to);
     };
   });
@@ -87,40 +86,41 @@ export function setView(f: PageState, t: PageState) {
     toEl.style.transform = "";
   };
   updateSwitcherUI();
+  const page = pageStateMachine.state;
+  renderByState(page, pageStateMachine.substates[page].state);
 }
 
 export function updateSwitcherUI() {
   viewDots.innerHTML = "";
   if (pageStateMachine.order.length <= 1) {
-    viewSwitcher.classList = "";
+    viewSwitcher.className = "";
     return;
-  } else {
-    viewSwitcher.classList.toggle("has-views", true);
-    pageStateMachine.order.forEach((v) => {
-      const dot = document.createElement("div");
-      dot.className = "view-dot" + (v === pageStateMachine.state ? " active" : "");
-      dot.title = v == "time"
-        ? "Time View"
-        : v == "music"
-          ? "Lyric View"
-          : v == "agent"
-            ? "Agent"
-            : v == "sadb"
-              ? "ADB"
-              : v == "email"
-                ? "Email"
-                : "Downloader";
-      dot.addEventListener("click", (e) => {
-        e.stopPropagation();
-        pageStateMachine.dispatch({
-          tag: "chosen",
-          target: v,
-        });
-      });
-      viewDots.appendChild(dot);
-    });
   }
-  
+
+  viewSwitcher.classList.toggle("has-views", true);
+  pageStateMachine.order.forEach((v) => {
+    const dot = document.createElement("div");
+    dot.className = "view-dot" + (v === pageStateMachine.state ? " active" : "");
+    dot.title = v === "time"
+      ? "Time View"
+      : v === "music"
+        ? "Lyric View"
+        : v === "agent"
+          ? "Agent"
+          : v === "sadb"
+            ? "ADB"
+            : v === "email"
+              ? "Email"
+              : "Downloader";
+    dot.addEventListener("click", (e) => {
+      e.stopPropagation();
+      pageStateMachine.dispatch({
+        tag: "chosen",
+        target: v,
+      });
+    });
+    viewDots.appendChild(dot);
+  });
 }
 
 export function mountView(view: PageState) {
@@ -138,19 +138,23 @@ export function initPageRenders() {
   mountView(PageState.Time);
   initPageSubstateRenders();
   initTimeRenders();
+  initMusic();
 
   pageStateMachine.onTransition = (from: PageState, to: PageState) => {
+    // 切换页面时清空旧样式，但保留 hover 态。
+    capsule.className = capsule.classList.contains("hover") ? "hover" : "";
     setView(from, to);
   };
 
   pageStateMachine.onHover = (isHover: boolean) => {
-    if (isHover) {//这是喊你展开的意思, 不是已经展开了
+    const page = pageStateMachine.state;
+    if (isHover) {
       capsule.classList.add("hover");
       const rect = capsule.getBoundingClientRect();
-      animateCapsule(Math.max(rect.width || 0, 330), Math.max(rect.height || 0, 74));
+      const minWidth = page === "music" ? 380 : 330;
+      animateCapsule(Math.max(rect.width || 0, minWidth), Math.max(rect.height || 0, 74));
     } else {
       capsule.classList.remove("hover");
-      const page = pageStateMachine.state;
       renderByState(page, pageStateMachine.substates[page].state);
     }
   };
