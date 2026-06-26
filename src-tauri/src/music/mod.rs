@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use lyrix::smtc_lyrics::Lyrix;
+use lyrix::Lyrix;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 use crate::{logger, settings, IslandState};

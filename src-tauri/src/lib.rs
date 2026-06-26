@@ -23,7 +23,7 @@ use std::time::{Duration, Instant};
 use std::os::windows::process::CommandExt;
 
 
-use lyrix::smtc_lyrics::Lyrix;
+use lyrix::Lyrix;
 use tauri::{Emitter, Manager};
 use std::path::PathBuf;
 

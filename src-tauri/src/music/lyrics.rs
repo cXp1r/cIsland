@@ -1,5 +1,5 @@
 use lyrix::models::{LineInfo, LyricsData, TextInfo};
-use lyrix::smtc_lyrics::{self, Lyrix};
+use lyrix::Lyrix;
 use std::sync::Arc;
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -80,7 +80,7 @@ pub(crate) fn fetch_lyrics_from_lyrix(
             return None;
         }
         let player =
-            lyrix::smtc_lyrics::id2player(app_id).unwrap_or(smtc_lyrics::MusicPlayer::Netease);
+            lyrix::id2player(app_id).unwrap_or(lyrix::MusicPlayer::Netease);
         lyrix::logger::set_level("debug");
         match lyrix
             .get_lyrics_with_player(
