@@ -10,6 +10,7 @@ export class PageStateMachine {
   state: PageState = PageState.Time;
   isHover: boolean = false;
   isDragging: boolean = false;
+  private musicPageOffTimer: number | null = null;
   order = [
     PageState.Time,
     PageState.Music,
@@ -20,26 +21,36 @@ export class PageStateMachine {
   ];
 
   constructor() {
-    //先给音乐删了
+    // Start without the music page until playback confirms it should be shown.
     this.order.splice(1, 1);
-    listen<boolean>('music-page', (event) => {
-      const b: boolean = event.payload;
+    listen<boolean>("music-page", (event) => {
+      const visible: boolean = event.payload;
       const index = this.order.indexOf(PageState.Music);
-      if (!b) {
-        if (index !== -1) {
-          this.order.splice(index, 1);
-          //强制到时间页面
-          this.transitionTo(PageState.Time);
+
+      if (visible) {
+        if (this.musicPageOffTimer !== null) {
+          clearTimeout(this.musicPageOffTimer);
+          this.musicPageOffTimer = null;
         }
-      } else {
         if (index === -1) {
           this.order.splice(1, 0, PageState.Music);
-          //强制到音乐分页
+          // Force to the music page once playback is confirmed.
           this.transitionTo(PageState.Music);
         }
+        return;
       }
-      
-    })
+
+      if (this.musicPageOffTimer !== null) clearTimeout(this.musicPageOffTimer);
+      this.musicPageOffTimer = window.setTimeout(() => {
+        this.musicPageOffTimer = null;
+        const currentIndex = this.order.indexOf(PageState.Music);
+        if (currentIndex !== -1) {
+          this.order.splice(currentIndex, 1);
+          // Force back to the time page only after the off-state is stable.
+          this.transitionTo(PageState.Time);
+        }
+      }, 250);
+    });
   }
 
   readonly substates = pageSubstateRegistry;
@@ -80,7 +91,7 @@ export class PageStateMachine {
           case "downloader":
             setView(this.state, PageState.Downloader);
             break;
-        
+
           default:
             break;
         }
@@ -105,11 +116,7 @@ export class PageStateMachine {
 
   private toNth(direction: -1 | 1 = 1): PageState {
     let i = this.order.indexOf(this.state);
-    let n = direction == 1 ? i + 1 == this.order.length ? 0 : i + 1 : i == 0 ? this.order.length - 1 : 0;
+    let n = direction == 1 ? (i + 1 == this.order.length ? 0 : i + 1) : i == 0 ? this.order.length - 1 : 0;
     return this.order[n];
   }
 }
-
-
-
-
