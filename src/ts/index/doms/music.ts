@@ -5,7 +5,8 @@ export const lyricText = $<HTMLDivElement>("lyric-text");
 export const lyricTextInner = $<HTMLSpanElement>("lyric-text-inner");
 export const lyricMeta = $<HTMLDivElement>("lyric-meta");
 export const vinylDisc = $<HTMLDivElement>("vinyl-disc");
-export const vinylCover = $<HTMLDivElement>("vinyl-cover");export const progressBar = $<HTMLDivElement>("progress-bar");
+export const vinylCover = $<HTMLDivElement>("vinyl-cover");
+export const progressBar = $<HTMLDivElement>("progress-bar");
 export const progressFill = $<HTMLDivElement>("progress-fill");
 export const progressThumb = $<HTMLDivElement>("progress-thumb");
 
