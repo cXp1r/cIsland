@@ -4,13 +4,7 @@
 
     display: none;
 
-    align-items: center;
-
     width: 100%; height: 100%;
-
-    padding: 0 12px 0 14px;
-
-    gap: 8px;
 
     overflow: hidden;
 
@@ -374,8 +368,12 @@
 
 #music-collapsed {
     display: flex;
+    align-items: center;
     width: 100%;
     height: 100%;
+    padding: 0 12px 0 14px;
+    gap: 8px;
+    overflow: hidden;
 }
 
 #island-capsule.expanded #music-collapsed {

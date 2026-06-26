@@ -181,60 +181,60 @@
 
             <!-- 收起态：唱片 + 歌词 + 控制按钮 -->
 
-            <div class="vinyl-disc" id="vinyl-disc">
+            <div id="music-collapsed">
+                <div class="vinyl-disc" id="vinyl-disc">
 
-                <div class="vinyl-grooves"></div>
+                    <div class="vinyl-grooves"></div>
 
-                <div class="vinyl-cover" id="vinyl-cover"></div>
+                    <div class="vinyl-cover" id="vinyl-cover"></div>
 
-                <div class="vinyl-center"></div>
-
-            </div>
-
-            <div id="lyric-text-wrap">
-
-                <div id="lyric-text"><span id="lyric-text-inner"></span></div>
-
-                <div id="lyric-meta"></div>
-
-                <!-- 进度条 -->
-
-                <div class="progress-bar" id="progress-bar">
-
-                    <div class="progress-fill" id="progress-fill"></div>
-
-                    <div class="progress-thumb" id="progress-thumb"></div>
+                    <div class="vinyl-center"></div>
 
                 </div>
 
+                <div id="lyric-text-wrap">
+
+                    <div id="lyric-text"><span id="lyric-text-inner"></span></div>
+
+                    <div id="lyric-meta"></div>
+
+                    <!-- 进度条 -->
+
+                    <div class="progress-bar" id="progress-bar">
+
+                        <div class="progress-fill" id="progress-fill"></div>
+
+                        <div class="progress-thumb" id="progress-thumb"></div>
+
+                    </div>
+
+                </div>
+
+                <div class="media-controls" id="media-controls">
+
+                    <button class="media-btn" id="btn-prev" title="上一曲">
+
+                        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+
+                    </button>
+
+                    <button class="media-btn play-btn" id="btn-play" title="播放/暂停">
+
+                        <svg id="icon-play" width="16" height="16" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+
+                        <svg id="icon-pause" width="16" height="16" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg>
+
+                    </button>
+
+                    <button class="media-btn" id="btn-next" title="下一曲">
+
+                        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6z"/></svg>
+
+                    </button>
+
+                </div>
             </div>
-
-            <div class="media-controls" id="media-controls">
-
-                <button class="media-btn" id="btn-prev" title="上一曲">
-
-                    <svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-
-                </button>
-
-                <button class="media-btn play-btn" id="btn-play" title="播放/暂停">
-
-                    <svg id="icon-play" width="16" height="16" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-
-                    <svg id="icon-pause" width="16" height="16" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg>
-
-                </button>
-
-                <button class="media-btn" id="btn-next" title="下一曲">
-
-                    <svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6z"/></svg>
-
-                </button>
-
-            </div>
-
-
-
+            
             <!-- 展开态：音乐面板 -->
 
             <div id="music-panel">
