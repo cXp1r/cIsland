@@ -37,12 +37,32 @@ type MediaChangedPayload = {
   seekable?: boolean;
 };
 
+function renderCoverElement(container: HTMLDivElement, thumbnail?: string | null) {
+  container.textContent = "";
+  if (thumbnail) {
+    const img = document.createElement("img");
+    img.src = thumbnail;
+    img.alt = "album cover";
+    img.decoding = "async";
+    img.loading = "lazy";
+    container.appendChild(img);
+    return;
+  }
+
+  const placeholder = document.createElement("span");
+  placeholder.className = "music-cover-placeholder";
+  placeholder.textContent = "♪";
+  container.appendChild(placeholder);
+}
+
 function updateCover(thumbnail?: string | null) {
   if (thumbnail) {
     logi("SMTC", `thumbnail received ${thumbnail.length} chars`);
     setCurrentThumbnailUrl(thumbnail);
     vinylCover.style.backgroundImage = `url(${thumbnail})`;
     musicPanelCoverImg.style.backgroundImage = `url(${thumbnail})`;
+    renderCoverElement(vinylCover, thumbnail);
+    renderCoverElement(musicPanelCoverImg, thumbnail);
     return;
   }
 
@@ -50,6 +70,8 @@ function updateCover(thumbnail?: string | null) {
   setCurrentThumbnailUrl("");
   vinylCover.style.backgroundImage = "";
   musicPanelCoverImg.style.backgroundImage = "";
+  renderCoverElement(vinylCover, null);
+  renderCoverElement(musicPanelCoverImg, null);
 }
 
 function resetProgress(durationMs?: number) {
