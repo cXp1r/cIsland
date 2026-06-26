@@ -34,11 +34,9 @@ export class PageStateMachine {
       } else {
         if (index === -1) {
           this.order.splice(1, 0, PageState.Music);
-          
+          //强制到音乐分页
+          this.transitionTo(PageState.Music);
         }
-        //强制到音乐分页
-        this.transitionTo(PageState.Music);
-        
       }
       
     })
