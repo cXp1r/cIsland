@@ -25,6 +25,8 @@ pub(crate) fn spawn_music_monitor(
     let lyrics_result: Arc<Mutex<Option<(u64, Vec<lyrics::LyricLine>, bool)>>> =
         Arc::new(Mutex::new(None));
     let lyrics_generation = Arc::new(AtomicU64::new(0));
+
+    // 启动音乐监控线程：负责轮询 SMTC、切歌识别、歌词拉取和前端事件推送。
     thread::spawn(move || {
         let mut current_lyrics: Vec<lyrics::LyricLine> = Vec::new();
         let mut current_track = String::new();
@@ -41,6 +43,7 @@ pub(crate) fn spawn_music_monitor(
         loop {
             thread::sleep(Duration::from_millis(80));
 
+            // 接收异步歌词结果：只接受当前歌曲 generation 对应的结果。
             {
                 let mut result = lyrics_result.lock().unwrap_or_else(|e| e.into_inner());
                 if let Some((gen, ref lyric_lines, not_found)) = result.take() {
@@ -54,6 +57,7 @@ pub(crate) fn spawn_music_monitor(
                 }
             }
 
+            // 歌词模式关闭时直接结束监控线程，后续重新开启由外部再启动。
             let mode = lyric_mode.lock().unwrap().clone();
             if mode == "off" {
                 logger::warn("Lyrics", "music monitor stopped: lyric_mode is off");
@@ -62,6 +66,7 @@ pub(crate) fn spawn_music_monitor(
                 return;
             }
 
+            // 读取当前 SMTC 会话；短暂丢会话时给播放器切歌留宽限期。
             let info = media::get_smtc_media_info();
             let (status, media_info, position_ms_raw, is_playing, raw_app_id) = match info {
                 Some(v) => {
@@ -106,6 +111,7 @@ pub(crate) fn spawn_music_monitor(
 
             let app_id = settings::normalize_app_id(&raw_app_id);
 
+            // 同步当前命中的播放器 app_id，供设置页高亮和歌词偏移配置使用。
             {
                 let mut active = active_player_app_id.lock().unwrap();
                 let changed = active.as_deref() != Some(app_id.as_str());
@@ -119,6 +125,7 @@ pub(crate) fn spawn_music_monitor(
                 }
             }
 
+            // 计算播放器专属歌词偏移；新播放器首次出现时自动入表并落盘。
             let offset_ms = {
                 let needs_insert = !app_id.is_empty() && {
                     let map = lyric_offsets_by_player.lock().unwrap();
@@ -153,6 +160,7 @@ pub(crate) fn spawn_music_monitor(
                 position_ms_raw
             };
 
+            // 同步播放/暂停状态，暂停时只发暂停事件，不推进歌词。
             if is_playing != last_is_playing {
                 last_is_playing = is_playing;
                 logger::info(
@@ -193,6 +201,7 @@ pub(crate) fn spawn_music_monitor(
                 continue;
             }
 
+            // 识别切歌：当前用 artist + title 作为歌曲身份。
             let track_key = format!("{} - {}", media_info.artist, media_info.title);
             if track_key != current_track {
                 logger::info(
@@ -234,6 +243,7 @@ pub(crate) fn spawn_music_monitor(
                     }),
                 );
 
+                // 歌词模式下异步拉取歌词；generation 用来防止旧歌词覆盖新歌。
                 if mode == "lyric" {
                     let title = media_info.title.clone();
                     let artist = media_info.artist.clone();
@@ -315,6 +325,7 @@ pub(crate) fn spawn_music_monitor(
 
             was_playing = true;
 
+            // 推送歌词实时更新：只发歌词、进度和逐字/附近歌词等动态信息。
             if mode == "lyric" {
                 let (text_val, nearby_json, line_tokens, line_start_ms, next_line_time_ms) =
                     if fetch_pending && current_lyrics.is_empty() {
