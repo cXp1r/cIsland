@@ -417,6 +417,7 @@ pub fn run() {
                 format!("--rpc-listen-port={}", &settings.aria2c_rpc_port),//等待可调配置
                 format!("--rpc-secret={}", &settings.aria2c_rpc_secret),
                 "--continue=true".into(),
+                "--disable-ipv6=true".into(),
             ];
 
             let (aria2c_process, aria2c_rpc) = match Command::new(settings.aria2c_path)
