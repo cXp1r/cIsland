@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { pageStateMachine } from "../../../states";
-import { sadbBtnScan, sadbBtnStart, sadbBtnStop, sadbCanvas, sadbDeviceWrapper, sadbStatus } from "../../../doms";
+import { capsule, resizeHandle, sadbBtnScan, sadbBtnStart, sadbBtnStop, sadbCanvas, sadbDeviceWrapper, sadbStatus } from "../../../doms";
 import { createSadbChannel, invalidateSadbSession } from "../../../renderers/pages/sadb/canvas-renderer";
+import { resizeCapsule } from "../../../utils/rAF";
 
 const machine = pageStateMachine.sadb;
 let sadbchannel = createSadbChannel();
@@ -57,7 +58,7 @@ function calcDrawRect() {
 function toDeviceCoords(e: MouseEvent): [number, number] {
   const rect = sadbCanvas.getBoundingClientRect();
   const drawRect = calcDrawRect();
-  pageStateMachine.substates["sadb"].drawRect = drawRect;
+  machine.drawRect = drawRect;
   if (!drawRect.w || !drawRect.h) return [0, 0];
   const rx = (e.clientX - rect.left - drawRect.x) / drawRect.w;
   const ry = (e.clientY - rect.top - drawRect.y) / drawRect.h;
@@ -287,6 +288,92 @@ function onMdnsDone() {
 }
 
 export function initSadb() {
+  let resizing = false;
+  let resizePointerId = -1;
+  let resizeStartX = 0;
+  let resizeStartY = 0;
+  let resizeStartW = 0;
+  let resizeStartH = 0;
+  let pendingResizeW = 0;
+  let pendingResizeH = 0;
+  let resizeFrame = 0;
+
+  function finishResize(releasePointer = true) {
+    if (!resizing) return;
+    resizing = false;
+
+    if (resizeFrame) {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = 0;
+    }
+
+    if (releasePointer && resizePointerId >= 0 && resizeHandle.hasPointerCapture(resizePointerId)) {
+      resizeHandle.releasePointerCapture(resizePointerId);
+    }
+
+    resizePointerId = -1;
+    document.body.style.userSelect = "";
+    resizeCapsule(pendingResizeW, pendingResizeH);
+    machine.drawRect = calcDrawRect();
+  }
+
+  resizeHandle.addEventListener("pointerdown", (e: PointerEvent) => {
+    if (!isMirroring()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    resizing = true;
+    resizePointerId = e.pointerId;
+    resizeHandle.setPointerCapture(e.pointerId);
+    const rect = capsule.getBoundingClientRect();
+    resizeStartX = e.clientX;
+    resizeStartY = e.clientY;
+    resizeStartW = rect.width;
+    resizeStartH = rect.height;
+    pendingResizeW = rect.width;
+    pendingResizeH = rect.height;
+    document.body.style.userSelect = "none";
+  });
+
+  resizeHandle.addEventListener("pointermove", (e: PointerEvent) => {
+    if (!resizing || e.pointerId !== resizePointerId) return;
+    e.preventDefault();
+    const dx = e.clientX - resizeStartX;
+    const dy = e.clientY - resizeStartY;
+    const denom = (resizeStartW * resizeStartW) + (resizeStartH * resizeStartH);
+    if (!denom) return;
+
+    const scale = Math.max(
+      0.25,
+      ((resizeStartW + dx) * resizeStartW + (resizeStartH + dy) * resizeStartH) / denom,
+    );
+    pendingResizeW = Math.max(1, Math.round(resizeStartW * scale));
+    pendingResizeH = Math.max(1, Math.round(resizeStartH * scale));
+
+    if (resizeFrame) return;
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      if (resizing) {
+        resizeCapsule(pendingResizeW, pendingResizeH);
+      }
+    });
+  });
+
+  resizeHandle.addEventListener("pointerup", (e: PointerEvent) => {
+    if (!resizing || e.pointerId !== resizePointerId) return;
+    e.preventDefault();
+    finishResize();
+  });
+
+  resizeHandle.addEventListener("pointercancel", (e: PointerEvent) => {
+    if (!resizing || e.pointerId !== resizePointerId) return;
+    e.preventDefault();
+    finishResize();
+  });
+
+  resizeHandle.addEventListener("lostpointercapture", () => {
+    finishResize(false);
+  });
+
   sadbCanvas.addEventListener("mousedown", (e) => {
     if (!isMirroring()) return;
     e.preventDefault();
@@ -350,4 +437,6 @@ export function initSadb() {
 
   listen<AdbDevice>("mdns-found", onMdnsFound);
   listen("mdns-done", onMdnsDone);
+
+  machine.drawRect = calcDrawRect();
 }
