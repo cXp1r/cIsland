@@ -46,6 +46,7 @@ export class SadbPageSubstateMachine extends PageSubstateMachine<SadbPageSubstat
         target.closest("#sadb-btn-start")
         || target.closest("#sadb-btn-stop")
         || target.closest("#sadb-canvas")
+        || target.closest("#sadb-resize-handle")
       ) return;
 
       event.stopPropagation();

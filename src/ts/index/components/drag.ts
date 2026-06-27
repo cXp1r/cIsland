@@ -81,6 +81,7 @@ export function initDragger() {
     const target = e.target as HTMLElement;
     if (
       target.closest("#email-drag-handle")
+      || target.closest("#sadb-resize-handle")
       || target.closest(".url-item")
       || target.closest("#notice-area")
       || target.closest(".media-btn")
