@@ -9,7 +9,7 @@ export abstract class PageSubstateMachine<S extends string = string> {
   state: S;
   protected classSnapshot: string;
   capsule: HTMLDivElement;
-  isConfigured: boolean;
+  isConfigured: boolean = true;
   timer: number | null = null;
 
   constructor(page: PageState, initialState: S, defaultClassSnapshot = "") {
