@@ -9,4 +9,8 @@ export const sadbList: Record<string, sc> = {
     classList: ["sadb-idle"],
     size: [400, 440],
   },
+  "mirroring": {
+    classList: ["sadb-expanded"],
+    size: [-1, -1],
+  }
 };
