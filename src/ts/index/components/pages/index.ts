@@ -5,6 +5,7 @@ import { pageStateMachine } from "../../states";
 import { listen } from "@tauri-apps/api/event";
 import { initSadb } from "./sadb";
 import { initTime } from "./time/panel";
+import { initDownloader } from "./downloader/downloader";
 
 
 export function initPagesComponents(){
@@ -76,4 +77,5 @@ export function initPagesComponents(){
     });
     initTime()
     initSadb();
+    initDownloader();
 }
