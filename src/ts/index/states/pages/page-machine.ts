@@ -1,16 +1,23 @@
 import { DispatchAction, PageState } from "./page";
-import { pageSubstateRegistry, type PageSubstateMachine } from "./page-substates";
 import { setView } from "../../renders/pages";
 import { logi } from "../../../utils/logger";
 import { listen } from "@tauri-apps/api/event";
 
-export type PageSubmachine = PageSubstateMachine;
+
+import { timePageSubstateMachine } from "./page-substates/time";
+import { lyricPageSubstateMachine } from "./page-substates/music";
+import { agentPageSubstateMachine } from "./page-substates/agent";
+import { sadbPageSubstateMachine } from "./page-substates/sadb";
+import { emailPageSubstateMachine } from "./page-substates/email";
+import { downloaderPageSubstateMachine } from "./page-substates/downloader";
+
 
 export class PageStateMachine {
   state: PageState = PageState.Time;
   isHover: boolean = false;
   isDragging: boolean = false;
   private musicPageOffTimer: number | null = null;
+  //下次从配置获取显示顺序
   order = [
     PageState.Time,
     PageState.Music,
@@ -19,9 +26,9 @@ export class PageStateMachine {
     PageState.Email,
     PageState.Downloader,
   ];
+  
 
   constructor() {
-    // Start without the music page until playback confirms it should be shown.
     this.order.splice(1, 1);
     listen<boolean>("music-page", (event) => {
       const visible: boolean = event.payload;
@@ -34,7 +41,6 @@ export class PageStateMachine {
         }
         if (index === -1) {
           this.order.splice(1, 0, PageState.Music);
-          // Force to the music page once playback is confirmed.
           this.transitionTo(PageState.Music);
         }
         return;
@@ -53,7 +59,7 @@ export class PageStateMachine {
     });
   }
 
-  readonly substates = pageSubstateRegistry;
+  
 
   createKey(page: PageState, state: string): string {
     return `${page}:${state}`;
@@ -119,4 +125,21 @@ export class PageStateMachine {
     let n = direction == 1 ? (i + 1 == this.order.length ? 0 : i + 1) : i == 0 ? this.order.length - 1 : 0;
     return this.order[n];
   }
+
+  readonly time = timePageSubstateMachine;
+  readonly music = lyricPageSubstateMachine;
+  readonly agent = agentPageSubstateMachine;
+  readonly sadb = sadbPageSubstateMachine;
+  readonly email = emailPageSubstateMachine;
+  readonly downloader = downloaderPageSubstateMachine;
+
+  //TODO 有空的时候把substates private一下去把复杂读取明确time的给处理一下
+  readonly substates = {
+    [PageState.Time]: this.time,
+    [PageState.Music]: this.music,
+    [PageState.Agent]: this.agent,
+    [PageState.Sadb]: this.sadb,
+    [PageState.Email]: this.email,
+    [PageState.Downloader]: this.downloader,
+  } as const;
 }
