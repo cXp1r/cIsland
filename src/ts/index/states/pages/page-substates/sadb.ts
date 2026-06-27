@@ -4,7 +4,7 @@ import { PageSubstateMachine } from "./common";
 
 export const SadbPageSubstate = {
   Collapsed: "collapsed",
-  IdlePanel: "idle_panel",
+  Idle: "idle",
   Mirroring: "mirroring",
 } as const;
 
@@ -22,7 +22,7 @@ export class SadbPageSubstateMachine extends PageSubstateMachine<SadbPageSubstat
     const sadbState = this.state;
 
     if (sadbState === SadbPageSubstate.Mirroring) return;
-    if (sadbState === SadbPageSubstate.IdlePanel) {
+    if (sadbState === SadbPageSubstate.Idle) {
       if (!target.closest("#sadb-status-bar")) return;
       event.stopPropagation();
       this.debouncedAction(() => {
@@ -39,7 +39,7 @@ export class SadbPageSubstateMachine extends PageSubstateMachine<SadbPageSubstat
 
     event.stopPropagation();
     this.debouncedAction(() => {
-      this.transitionTo(SadbPageSubstate.IdlePanel);
+      this.transitionTo(SadbPageSubstate.Idle);
     });
   }
 }
