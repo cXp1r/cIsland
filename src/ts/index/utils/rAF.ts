@@ -31,7 +31,7 @@ let fromW = Math.round(rect.width);
 let fromH = Math.round(rect.height);
 
 
-port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number; gen: number; smaller: boolean }>) => {
+port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number; gen: number; smaller: boolean; re: number }>) => {
   if (data.t >= 1) {
     void invoke("end_raf", { gen: data.gen ?? 1 });
     return;
@@ -42,7 +42,7 @@ port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t:
     height: data.h + 10,
     lwidth: data.lw,
     ewidth: targetW,
-    reposition: 1,
+    reposition: data.re,
     smaller: data.smaller,
     t: data.t,
   });
@@ -75,7 +75,7 @@ export function animateCapsule(toW: number, toH: number): void {
 
     capsule.style.width = `${w}px`;
     capsule.style.height = `${h}px`;
-    port2.postMessage({ w, h, lw, t, e, gen, smaller });
+    port2.postMessage({ w, h, lw, t, e, gen, smaller, re: 1 });
 
     if (t < 1) {
       raf = requestAnimationFrame(frame);
@@ -111,7 +111,7 @@ export function animateHeight(toH: number): void {
     const h = (Math.round(startH + (toH - startH) * e) + 1) & ~1;
 
     capsule.style.height = `${h}px`;
-    port2.postMessage({ w: startW, h, lw: startW, t, e, gen, smaller });
+    port2.postMessage({ w: startW, h, lw: startW, t, e, gen, smaller, re: 1 });
 
     if (t < 1) {
       raf = requestAnimationFrame(frame);
@@ -121,3 +121,40 @@ export function animateHeight(toH: number): void {
   raf = requestAnimationFrame(frame);
 }
 
+export function resizeCapsule(toW: number, toH: number): void {
+  if (toW === targetW && toH === targetH) return;
+  void invoke("set_capsule_target_rect", { height: toH, width: toW });
+  let gen = 0;
+  invoke<number>("start_raf").then((u: number) => {
+    gen = u;
+  });
+
+  targetW = toW;
+  targetH = toH;
+
+  cancelAnimationFrame(raf);
+
+  const startW = parseFloat(capsule.style.width) || fromW;
+  const startH = parseFloat(capsule.style.height) || fromH;
+  const smaller = startH > toH;
+  const start = performance.now();
+  let lw = startW;
+
+  function frame(now: number): void {
+    const t = Math.min((now - start) / 300, 1);
+    const e = easing(t);
+    const w = (Math.round(startW + (toW - startW) * e) + 1) & ~1;
+    const h = (Math.round(startH + (toH - startH) * e) + 1) & ~1;
+
+    capsule.style.width = `${w}px`;
+    capsule.style.height = `${h}px`;
+    port2.postMessage({ w, h, lw, t, e, gen, smaller, re: 2 });
+
+    if (t < 1) {
+      raf = requestAnimationFrame(frame);
+    }
+    lw = w;
+  }
+
+  raf = requestAnimationFrame(frame);
+}
