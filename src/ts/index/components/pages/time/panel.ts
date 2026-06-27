@@ -1,4 +1,4 @@
-export * from "../../../renders/pages/time/expanded";
+export * from "../../../renderers/pages/time/expanded";
 interface TodoItem {
   id: number;
   text: string;

@@ -1,1 +1,1 @@
-export * from "../../../renders/pages/email/email-view";
+export * from "../../../renderers/pages/email/email-view";

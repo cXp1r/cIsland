@@ -1,5 +1,5 @@
 import { DispatchAction, PageState } from "./page";
-import { setView } from "../../renders/pages";
+import { setView } from "../../renderers/pages";
 import { logi } from "../../../utils/logger";
 import { listen } from "@tauri-apps/api/event";
 

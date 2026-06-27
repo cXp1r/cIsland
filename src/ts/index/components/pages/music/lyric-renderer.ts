@@ -3,4 +3,4 @@ export {
   resetIslandLyricScroll,
   resetMpLyricFlipState,
   stopLyricTokenAnimationLoop,
-} from "../../../renders/pages/music/lyric-renderer";
+} from "../../../renderers/pages/music/lyric-renderer";
