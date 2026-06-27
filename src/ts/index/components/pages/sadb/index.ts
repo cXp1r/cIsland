@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { pageStateMachine } from "../../../states";
 import { sadbBtnScan, sadbBtnStart, sadbBtnStop, sadbCanvas, sadbDeviceWrapper, sadbStatus } from "../../../doms";
-import { sadbchannel } from "../../../renders/pages/sadb/render";
+import { sadbchannel } from "../../../renders/pages/sadb/canvas-renderer";
 
 const machine = pageStateMachine.sadb;
 
