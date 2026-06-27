@@ -12,6 +12,7 @@ import { animateCapsule } from "../../utils/rAF";
 import { initMusic, musicList } from "./music";
 import { agentList } from "./agent";
 import { sadbList } from "./sadb";
+import { emailList } from "./email";
 
 // 页面子状态尺寸/样式配置。
 type MaybeFn<T> = [T, T] | (() => [T, T]);
@@ -44,6 +45,7 @@ function initPageSubstateRenders(): void {
   handlers["music"] = musicList;
   handlers["agent"] = agentList;
   handlers["sadb"] = sadbList;
+  handlers["email"] = emailList;
   Object.values(pageStateMachine.substates).forEach((machine) => {
     machine.onTransition = (_from: string, to: string) => {
       capsule.className = "";

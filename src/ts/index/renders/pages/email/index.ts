@@ -1,6 +1,6 @@
 import { sc } from "..";
 
-export const musicList: Record<string, sc> = {
+export const emailList: Record<string, sc> = {
   "collapsed": {
     classList: null,
     size: [140, 50],
