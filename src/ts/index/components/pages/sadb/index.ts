@@ -2,9 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { pageStateMachine } from "../../../states";
 import { sadbBtnScan, sadbBtnStart, sadbBtnStop, sadbCanvas, sadbDeviceWrapper, sadbStatus } from "../../../doms";
-import { sadbchannel } from "../../../renderers/pages/sadb/canvas-renderer";
+import { createSadbChannel, invalidateSadbSession } from "../../../renderers/pages/sadb/canvas-renderer";
 
 const machine = pageStateMachine.sadb;
+let sadbchannel = createSadbChannel();
 
 type AdbDevice = {
   name: string;
@@ -20,6 +21,16 @@ function isMirroring(): boolean {
 function setStatus(text: string, isError = false) {
   sadbStatus.textContent = text;
   sadbStatus.style.color = isError ? "#ff6f7f" : "#39d98a";
+}
+
+function resetSadbFrontendState() {
+  machine.mouseButtons = 0;
+  machine.deviceW = 0;
+  machine.lastSyncedText = null;
+  machine.pcClipboard = null;
+  machine.phoneClipboard = null;
+  machine.currentSerial = null;
+  machine.drawRect = { x: 0, y: 0, w: 0, h: 0 };
 }
 
 function calcDrawRect() {
@@ -91,6 +102,9 @@ async function startStream() {
   } catch {
     /* ignore */
   }
+  invalidateSadbSession();
+  resetSadbFrontendState();
+  sadbchannel = createSadbChannel();
 
   sadbBtnStart.disabled = true;
   sadbBtnStop.disabled = false;
@@ -112,6 +126,7 @@ async function startStream() {
     setStatus(`Connecting WiFi device ${selectIp}...`);
     try {
       await invoke("sadb_connect_device", { serial: selectIp });
+      machine.currentSerial = selectIp;
     } catch (e) {
       setStatus(`WiFi connect failed: ${e}`, true);
       sadbBtnStart.disabled = false;
@@ -121,7 +136,7 @@ async function startStream() {
 
     try {
       await invoke("sadb_start_mirroring", {
-        sadbchannel,
+        channel: sadbchannel,
         bitrate: 4_000_000,
         serial: selectIp,
       });
@@ -138,22 +153,26 @@ async function startStream() {
   }
 }
 
-function stopStream() {
+async function stopStream() {
   sadbBtnStart.disabled = false;
   sadbBtnStop.disabled = true;
-  machine.mouseButtons = 0;
-  machine.deviceW = 0;
+  const serial = machine.currentSerial;
+  invalidateSadbSession();
+  resetSadbFrontendState();
+  pageStateMachine.substates["sadb"].dispatch({
+    tag: "core",
+    event: "stop",
+  });
 
+  try {
+    await invoke("sadb_stop_mirroring");
+  } catch {
+    /* ignore */
+  }
 
-  // TODO: dispatch the SADB state machine back to idle/collapsed here.
-  invoke("sadb_stop_mirroring")
-    .catch(() => {})
-    .finally(() => {
-      if (machine.currentSerial) {
-        invoke("sadb_disconnect_device", { serial: machine.currentSerial }).catch(() => {});
-        machine.currentSerial = null;
-      }
-    });
+  if (serial) {
+    invoke("sadb_disconnect_device", { serial }).catch(() => {});
+  }
 }
 
 
@@ -316,7 +335,7 @@ export function initSadb() {
   sadbBtnStart.addEventListener("click", startStream);
   sadbBtnStop.addEventListener("click", () => {
     setStatus("Stopping...");
-    stopStream();
+    void stopStream();
   });
   sadbBtnScan.addEventListener("click", () => {
     setStatus("Scanning...");

@@ -9,7 +9,7 @@ function setStatus(text: string, isError = false) {
   sadbStatus.style.color = isError ? "#ff6f7f" : "#39d98a";
 }
 
-
+const machine = pageStateMachine.sadb;
 
 export type PacketEvent =
   | { type: "meta"; device_name: string; codec: string; width: number; height: number }
@@ -45,6 +45,7 @@ declare const EncodedAudioChunk: {
 
 const SADB_CAPSULE_CHROME_HEIGHT = 54;
 const SADB_CAPSULE_MAX_EDGE = 560;
+let activeSadbSessionId = 0;
 
 function fitWithinMaxEdge(width: number, height: number, maxEdge: number): [number, number] {
   const edge = Math.max(width, height);
@@ -200,6 +201,10 @@ function drawIdleScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
   ctx.fillText("No device connected. Please scan or connect a device first.", canvas.width / 2, phoneY + phoneH + 58);
 }
 
+export function invalidateSadbSession() {
+  activeSadbSessionId++;
+}
+
   const ctx = sadbCanvas.getContext("2d")!;
 
   let decoder: VideoDecoder | null = null;
@@ -342,6 +347,8 @@ function drawIdleScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
 
   function handleMeta(evt: Extract<PacketEvent, { type: "meta" }>) {
     sadbDeviceName.textContent = evt.device_name;
+    machine.deviceW = evt.width;
+    machine.mouseButtons = 0;
     initDecoder(evt.codec, evt.width, evt.height);
     setStatus("Mirroring...");
     pageStateMachine.substates["sadb"].dispatch({
@@ -453,11 +460,20 @@ function drawIdleScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
     audioBasePts = 0;
     frameCounter = 0;
     lastFpsTick = performance.now();
+    machine.deviceW = 0;
+    machine.mouseButtons = 0;
   }
 
   drawIdleScreen(sadbCanvas, ctx);
 
 
 
-export const sadbchannel = new Channel<PacketEvent>();
-sadbchannel.onmessage = handleEvent;
+export function createSadbChannel() {
+  const sessionId = ++activeSadbSessionId;
+  const channel = new Channel<PacketEvent>();
+  channel.onmessage = (evt) => {
+    if (sessionId !== activeSadbSessionId) return;
+    handleEvent(evt);
+  };
+  return channel;
+}
