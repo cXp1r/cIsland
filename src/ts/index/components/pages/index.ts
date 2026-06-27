@@ -3,6 +3,8 @@ import { capsule, viewSwitcher } from "../../doms";
 import { PageState } from "../../states/pages/page";
 import { pageStateMachine } from "../../states";
 import { listen } from "@tauri-apps/api/event";
+import { initSadb } from "./sadb";
+import { initTime } from "./time/panel";
 
 
 export function initPagesComponents(){
@@ -71,4 +73,6 @@ export function initPagesComponents(){
             event: event.payload,
         });
     });
+    initTime()
+    initSadb();
 }
