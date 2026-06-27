@@ -6,7 +6,7 @@ export const emailList: Record<string, sc> = {
     size: [140, 50],
   },
   "expanded": {
-    classList: ["expanded"],
+    classList: ["email-expanded"],
     size: () => {
         const style = getComputedStyle(document.documentElement);
         return [parseInt(style.getPropertyValue('--email-view-w')), parseInt(style.getPropertyValue('--email-view-h'))]
