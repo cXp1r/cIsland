@@ -181,6 +181,9 @@
     background:
         linear-gradient(135deg, transparent 0%, transparent 45%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.3) 54%, transparent 54%),
         linear-gradient(135deg, transparent 0%, transparent 58%, rgba(255,255,255,0.18) 58%, rgba(255,255,255,0.18) 67%, transparent 67%);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #sadb-resize-handle:hover {
@@ -271,4 +274,3 @@
 #island-capsule.sadb-idle #sadb-resize-handle {
     display: none;
 }
-
