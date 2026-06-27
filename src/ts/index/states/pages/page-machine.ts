@@ -10,7 +10,14 @@ import { agentPageSubstateMachine } from "./page-substates/agent";
 import { sadbPageSubstateMachine } from "./page-substates/sadb";
 import { emailPageSubstateMachine } from "./page-substates/email";
 import { downloaderPageSubstateMachine } from "./page-substates/downloader";
+import { invoke } from "@tauri-apps/api/core";
 
+interface cInfo {
+  agent: boolean,
+  sadb: boolean,
+  email: boolean,
+  downloader: boolean,
+}
 
 export class PageStateMachine {
   state: PageState = PageState.Time;
@@ -58,6 +65,13 @@ export class PageStateMachine {
         }
       }, 250);
     });
+    invoke<cInfo>("get_configured").then((e) => {
+      this.agent.isConfigured = e.agent;
+      this.sadb.isConfigured = e.sadb;
+      this.email.isConfigured = e.email;
+      this.downloader.isConfigured = e.downloader;
+      console.log(e);
+    })
   }
 
   
