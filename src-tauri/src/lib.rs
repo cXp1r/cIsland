@@ -88,6 +88,17 @@ fn get_exe_dir() -> String {
         .to_string() 
 }
 
+#[tauri::command]
+fn get_configured(state: tauri::State<'_, IslandState>) -> serde_json::Value {
+    // TODO 待重构lib.rs后改成检查子线程是否存活作为判断email是否配置成功
+    serde_json::json!({
+        "agent": false,
+        "sadb": !state.adb_path.lock().unwrap().is_empty(),
+        "email": !state.email_config.lock().unwrap().auth.is_empty(),
+        "downloader": state.aria2c_process.lock().unwrap().is_some(),
+    })
+}
+
 /// 全局复用的 HTTP client，天气处调用
 pub(crate) fn shared_http_client() -> &'static reqwest::blocking::Client {
     static CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
@@ -289,7 +300,7 @@ pub fn run() {
             sadb::sadb_send_keycode, sadb::sadb_inject_text,
             sadb::sadb_set_clipboard, sadb::scan_adb_devices,
             sadb::sadb_connect_device, sadb::sadb_disconnect_device,
-            get_config_dir, get_user_dir, get_exe_dir,
+            get_config_dir, get_user_dir, get_exe_dir, get_configured,
             tools::tools_downloader, tools::find_path_by_where, tools::aria2c_rpc_download, tools::aria2c_rpc_remove, //两个通用函数
             tools::check, tools::test, tools::open_path, tools::select_folder, tools::custom_caller,
             email::is_email_configured, email::fetch_emails, email::refresh_emails, email::get_email_cache_dir, email::diagnose_email_cache, email::clear_email_cache,
