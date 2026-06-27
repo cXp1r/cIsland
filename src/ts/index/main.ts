@@ -3,7 +3,7 @@ import { initPageRenders } from "./renders/pages";
 import { initPageStateMachine } from "./states";
 import { initComponents } from "./components";
 
-initPageRenders();
 initPageStateMachine();
+initPageRenders();
 initComponents();
 invoke('set_capsule_current_rect', {width: 140, height: 50})
