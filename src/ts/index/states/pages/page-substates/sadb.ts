@@ -15,32 +15,59 @@ export class SadbPageSubstateMachine extends PageSubstateMachine<SadbPageSubstat
     super(PageState.Sadb, SadbPageSubstate.Collapsed);
   }
 
+  selectIp: string | null = null;
+  mouseButtons = 0;
+  drawRect = { x: 0, y: 0, w: 0, h: 0 };
+  deviceW = 0;
+  clipboardPollInterval: ReturnType<typeof setInterval> | null = null;
+  currentSerial: string | null = null;
+  //粘贴板滚core去呆着
+  pcClipboard: { text: string; timestamp: number } | null = null;
+  phoneClipboard: { text: string; timestamp: number } | null = null;
+  lastSyncedText: string | null = null;
+
   dispatch(action: DispatchAction): void {
-    if ( action.tag != "click" ) return;
-    const { target, event } = action;
+    if ( action.tag == "click" ) {
+      const { target, event } = action;
 
-    const sadbState = this.state;
+      const sadbState = this.state;
+      
+      if (sadbState === SadbPageSubstate.Mirroring) return;
+      if (sadbState === SadbPageSubstate.Idle) {
+        if (!target.closest("#sadb-status-bar")) return;
+        event.stopPropagation();
+        this.debouncedAction(() => {
+          this.transitionTo(SadbPageSubstate.Collapsed);
+        });
+        return;
+      }
 
-    if (sadbState === SadbPageSubstate.Mirroring) return;
-    if (sadbState === SadbPageSubstate.Idle) {
-      if (!target.closest("#sadb-status-bar")) return;
+      if (
+        target.closest("#sadb-btn-start")
+        || target.closest("#sadb-btn-stop")
+        || target.closest("#sadb-canvas")
+      ) return;
+
       event.stopPropagation();
       this.debouncedAction(() => {
-        this.transitionTo(SadbPageSubstate.Collapsed);
+        this.transitionTo(SadbPageSubstate.Idle);
       });
-      return;
+    } else if (action.tag == "core") {
+      switch (action.event) {
+        case "start":
+          this.transitionTo(SadbPageSubstate.Mirroring);
+          break;
+          
+        case "stop":
+          this.transitionTo(SadbPageSubstate.Idle);
+          break;
+
+        default:
+          break;
+      }
     }
 
-    if (
-      target.closest("#sadb-btn-start")
-      || target.closest("#sadb-btn-stop")
-      || target.closest("#sadb-canvas")
-    ) return;
-
-    event.stopPropagation();
-    this.debouncedAction(() => {
-      this.transitionTo(SadbPageSubstate.Idle);
-    });
+    
   }
 }
 
