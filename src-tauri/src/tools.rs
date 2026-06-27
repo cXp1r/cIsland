@@ -571,7 +571,7 @@ impl Aria2cRpc {
             .json()
             .await
             .map_err(|e| e.to_string())?;
-
+        logger::debug("Aria2cRpc", &format!("{:?}", value));
         Ok(value["result"].as_str().unwrap_or("").to_string())
     }
 
@@ -691,6 +691,7 @@ impl Aria2cRpc {
                                     "ok": false,
                                     "uuid": &uuid,
                                 }));
+                                logger::debug("Aria2cRpc", &format!("{:?}", v));
                                 break;
                             }
                         }
