@@ -76,7 +76,7 @@ async function startStream() {
   try {
     console.log(1);
     await invoke("sadb_start_mirroring", {
-      sadbchannel,
+      channel: sadbchannel,
       bitrate: 4_000_000,
       serial: null,
     });
