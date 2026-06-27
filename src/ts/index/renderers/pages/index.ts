@@ -38,7 +38,10 @@ function renderByState(page: string, state: string): void {
     capsule.classList.add(...classlist);
   }
   const [w, h] = r(list.size);
-  animateCapsule(w, h);
+  if (w != -1) {
+    animateCapsule(w, h);
+  }
+  
 }
 
 function initPageSubstateRenders(): void {
