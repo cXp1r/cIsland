@@ -32,6 +32,7 @@ export function initPagesComponents(){
             || target.closest("#sadb-btn-start")
             || target.closest("#sadb-btn-stop")
             || target.closest("#sadb-canvas")
+            || target.closest("#sadb-resize-handle")
             || target.closest(".downloader-btn")
             ) {
             return;
