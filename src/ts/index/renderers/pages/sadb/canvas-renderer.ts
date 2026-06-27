@@ -1,6 +1,7 @@
 import { loge, logi, logw } from "../../../../utils/logger";
 import { sadbCanvas, sadbDeviceName, sadbFps, sadbResolution, sadbStatus } from "../../../doms";
 import { pageStateMachine } from "../../../states";
+import { animateCapsule } from "../../../utils/rAF";
 import { Channel } from "@tauri-apps/api/core";
 
 function setStatus(text: string, isError = false) {
@@ -41,6 +42,20 @@ declare const AudioDecoder: {
 declare const EncodedAudioChunk: {
   new(init: { type: "key" | "delta"; timestamp: number; data: ArrayBufferView | ArrayBuffer }): unknown;
 };
+
+const SADB_CAPSULE_CHROME_HEIGHT = 54;
+const SADB_CAPSULE_MAX_EDGE = 560;
+
+function fitWithinMaxEdge(width: number, height: number, maxEdge: number): [number, number] {
+  const edge = Math.max(width, height);
+  if (!edge || !maxEdge) return [width, height];
+
+  const scale = Math.min(1, maxEdge / edge);
+  return [
+    Math.max(1, Math.round(width * scale)),
+    Math.max(1, Math.round(height * scale)),
+  ];
+}
 
 
 function updateDrawRect() {
@@ -333,7 +348,8 @@ function drawIdleScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
       tag: "core",
       event: "start",
     });
-    //渲染基本信息的
+    const [capsuleW, capsuleH] = fitWithinMaxEdge(evt.width, evt.height, SADB_CAPSULE_MAX_EDGE);
+    animateCapsule(capsuleW, capsuleH + SADB_CAPSULE_CHROME_HEIGHT);
   }
 
   function handlePacket(evt: Extract<PacketEvent, { type: "packet" }>) {
@@ -373,7 +389,7 @@ function drawIdleScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
       event: "stop",
     });
     reset()
-    // todo 结束
+    // todo 缁撴潫
   }
 
   function handleClosed() {
@@ -383,7 +399,7 @@ function drawIdleScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
       event: "stop",
     });
     reset()
-    // todo 结束
+    // todo 缁撴潫
   }
 
   function handleEvent(evt: PacketEvent) {
