@@ -29,7 +29,8 @@ export class PageStateMachine {
   
 
   constructor() {
-    this.order.splice(1, 1);
+    //agent已经4个版本没修过了, 需要一个强大的帮手来帮助我
+    this.order.splice(1, 2);
     listen<boolean>("music-page", (event) => {
       const visible: boolean = event.payload;
       const index = this.order.indexOf(PageState.Music);
