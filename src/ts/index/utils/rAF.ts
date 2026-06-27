@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { capsule } from "../doms";
 
-
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
   const calcX = (t: number) => 3 * p1x * t * (1 - t) ** 2 + 3 * p2x * t ** 2 * (1 - t) + t ** 3;
   const calcY = (t: number) => 3 * p1y * t * (1 - t) ** 2 + 3 * p2y * t ** 2 * (1 - t) + t ** 3;
@@ -23,13 +22,12 @@ const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
 const easing = ease(0.25, 1, 0.5, 1);
 const { port1, port2 } = new MessageChannel();
 
-let raf: number;
+let raf = 0;
 let targetW = 0;
 let targetH = 0;
 let rect = capsule.getBoundingClientRect();
 let fromW = Math.round(rect.width);
 let fromH = Math.round(rect.height);
-
 
 port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t: number; e: number; gen: number; smaller: boolean; re: number }>) => {
   if (data.t >= 1) {
@@ -39,7 +37,7 @@ port1.onmessage = ({ data }: MessageEvent<{ w: number; h: number; lw: number; t:
 
   void invoke("resize_raf", {
     width: data.w,
-    height: data.h + 10,
+    height: data.h,
     lwidth: data.lw,
     ewidth: targetW,
     reposition: data.re,
@@ -123,38 +121,14 @@ export function animateHeight(toH: number): void {
 
 export function resizeCapsule(toW: number, toH: number): void {
   if (toW === targetW && toH === targetH) return;
-  void invoke("set_capsule_target_rect", { height: toH, width: toW });
-  let gen = 0;
-  invoke<number>("start_raf").then((u: number) => {
-    gen = u;
-  });
+  
+  cancelAnimationFrame(raf);
 
   targetW = toW;
   targetH = toH;
 
-  cancelAnimationFrame(raf);
-
-  const startW = parseFloat(capsule.style.width) || fromW;
-  const startH = parseFloat(capsule.style.height) || fromH;
-  const smaller = startH > toH;
-  const start = performance.now();
-  let lw = startW;
-
-  function frame(now: number): void {
-    const t = Math.min((now - start) / 300, 1);
-    const e = easing(t);
-    const w = (Math.round(startW + (toW - startW) * e) + 1) & ~1;
-    const h = (Math.round(startH + (toH - startH) * e) + 1) & ~1;
-
-    capsule.style.width = `${w}px`;
-    capsule.style.height = `${h}px`;
-    port2.postMessage({ w, h, lw, t, e, gen, smaller, re: 2 });
-
-    if (t < 1) {
-      raf = requestAnimationFrame(frame);
-    }
-    lw = w;
-  }
-
-  raf = requestAnimationFrame(frame);
+  capsule.style.width = `${toW}px`;
+  capsule.style.height = `${toH}px`;
+  void invoke("set_capsule_target_rect", { width: toW, height: toH });
+  void invoke("sync_window_size", { width: toW, height: toH });
 }
