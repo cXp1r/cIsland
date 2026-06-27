@@ -6,6 +6,7 @@ export function initMusic() {
   initMediaRenderer();
   initLyricRenderer();
 }
+
 export const musicList: Record<string, sc> = {
   "collapsed": {
     classList: ["lyric-collapsed"],
