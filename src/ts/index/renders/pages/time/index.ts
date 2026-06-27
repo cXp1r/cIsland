@@ -9,7 +9,7 @@ export function initTimeRenders() {
 
 export const timeList: Record<string, sc> = {
   "collapsed": {
-    classList: [],
+    classList: null,
     size: [140, 50],
   },
   "expanded": {

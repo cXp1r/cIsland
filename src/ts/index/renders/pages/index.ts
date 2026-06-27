@@ -10,13 +10,14 @@ import { pageStateMachine } from "../../states";
 import { initTimeRenders, timeList } from "./time";
 import { animateCapsule } from "../../utils/rAF";
 import { initMusic, musicList } from "./music";
+import { agentList } from "./agent";
 
 // 页面子状态尺寸/样式配置。
 type MaybeFn<T> = T | (() => T);
 export type Size = [MaybeFn<number>, MaybeFn<number>];
 
 export type sc = {
-  classList: string[];
+  classList: string[] | null;
   size: Size;
 };
 
@@ -30,6 +31,7 @@ function renderByState(page: string, state: string): void {
 
   const classlist = list.classList;
   if (classlist) {
+    console.log(classlist);
     capsule.classList.add(...classlist);
   }
   const [w, h] = [r(list.size[0]), r(list.size[1])];
@@ -39,6 +41,7 @@ function renderByState(page: string, state: string): void {
 function initPageSubstateRenders(): void {
   handlers["time"] = timeList;
   handlers["music"] = musicList;
+  handlers["agent"] = agentList;
   Object.values(pageStateMachine.substates).forEach((machine) => {
     machine.onTransition = (_from: string, to: string) => {
       capsule.className = "";

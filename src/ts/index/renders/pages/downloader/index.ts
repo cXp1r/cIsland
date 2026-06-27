@@ -2,7 +2,7 @@ import { sc } from "..";
 
 export const musicList: Record<string, sc> = {
   "collapsed": {
-    classList: [""],
+    classList: null,
     size: [380, 50],
   },
   "expanded": {

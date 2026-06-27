@@ -1,8 +1,8 @@
 import { sc } from "..";
 
-export const musicList: Record<string, sc> = {
+export const agentList: Record<string, sc> = {
   "collapsed": {
-    classList: [""],
+    classList: null,
     size: [140, 50],
   },
   "expanded": {
