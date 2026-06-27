@@ -22,9 +22,32 @@ function setStatus(text: string, isError = false) {
   sadbStatus.style.color = isError ? "#ff6f7f" : "#39d98a";
 }
 
-function toDeviceCoords(e: MouseEvent): [number, number] {
-  const drawRect = pageStateMachine.substates["sadb"].drawRect;
+function calcDrawRect() {
+  const cw = sadbCanvas.width;
+  const ch = sadbCanvas.height;
   const rect = sadbCanvas.getBoundingClientRect();
+  if (!cw || !ch || !rect.width || !rect.height) {
+    return { x: 0, y: 0, w: 0, h: 0 };
+  }
+
+  const canvasAspect = cw / ch;
+  const rectAspect = rect.width / rect.height;
+  if (canvasAspect > rectAspect) {
+    const w = rect.width;
+    const h = rect.width / canvasAspect;
+    return { x: 0, y: (rect.height - h) / 2, w, h };
+  }
+
+  const h = rect.height;
+  const w = rect.height * canvasAspect;
+  return { x: (rect.width - w) / 2, y: 0, w, h };
+}
+
+function toDeviceCoords(e: MouseEvent): [number, number] {
+  const rect = sadbCanvas.getBoundingClientRect();
+  const drawRect = calcDrawRect();
+  pageStateMachine.substates["sadb"].drawRect = drawRect;
+  if (!drawRect.w || !drawRect.h) return [0, 0];
   const rx = (e.clientX - rect.left - drawRect.x) / drawRect.w;
   const ry = (e.clientY - rect.top - drawRect.y) / drawRect.h;
   return [
