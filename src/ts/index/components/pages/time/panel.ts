@@ -57,7 +57,7 @@ function renderTodos(listEl: HTMLUListElement): void {
   });
 }
 
-export function initTodo(): void {
+export function initTime(): void {
   const input = document.getElementById('todoInput') as HTMLInputElement;
   const btn   = document.getElementById('todoAdd')   as HTMLButtonElement;
   const list  = document.getElementById('todoList')  as HTMLUListElement;
