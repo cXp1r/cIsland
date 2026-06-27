@@ -333,15 +333,18 @@ pub fn end_drag(window: tauri::WebviewWindow, state: tauri::State<'_, IslandStat
 //接管右下角拖动函数
 #[tauri::command]
 pub fn sync_window_size(
+    state: tauri::State<'_, IslandState>,
     window: tauri::WebviewWindow,
-    width: f64,
-    height: f64,
+    width: u64,
+    height: u64,
 ) {
-    let new_w = width + 20.0;
-    let new_h = height + 20.0;
+    let new_w = width as f64;
+    let new_h = height as f64 + 10.0;
     logger::debug(TAG, &format!(
         "sync_window_size: target=({new_w:.1}x{new_h:.1})",
     ));
+    state.capsule_w.store(width, Ordering::Relaxed);
+    state.capsule_h.store((height - 10).max(0) as u64, Ordering::Relaxed);
     let _ = window.set_size(LogicalSize::new(new_w, new_h));
 }
 
@@ -453,9 +456,8 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
     let pos_x = pos.x as f64 / scale;
     let pos_y = pos.y as f64 / scale;
 
-    let min_size = 640.0_f64;
-    let window_width = width.max(min_size);
-    let window_height = height.max(min_size);
+    let window_width = width;
+    let window_height = height + 10.0;
     let choice = reposition.unwrap_or(0);
 
     let offset_x = state.offset_x.load(Ordering::Relaxed) as f64;
@@ -493,7 +495,7 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
     let _ = window.set_size(tauri::LogicalSize::new(window_width, window_height));
     // 同步更新胶囊尺寸，避免监控线程读到新窗口位置+旧胶囊宽度的错位
     state.capsule_w.store(width as u64, Ordering::Relaxed);
-    state.capsule_h.store((height - 10.0).max(0.0) as u64, Ordering::Relaxed);
+    state.capsule_h.store(height as u64, Ordering::Relaxed);
     /*unsafe {
         let _ = SetWindowPos(
             window.hwnd().unwrap(),
