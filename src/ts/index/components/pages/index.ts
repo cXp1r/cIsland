@@ -6,6 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import { initSadb } from "./sadb";
 import { initTime } from "./time/panel";
 import { initDownloader } from "./downloader/downloader";
+import { initEmail } from "./email/email-resize";
 
 
 export function initPagesComponents(){
@@ -77,5 +78,6 @@ export function initPagesComponents(){
     });
     initTime()
     initSadb();
+    initEmail();
     initDownloader();
 }

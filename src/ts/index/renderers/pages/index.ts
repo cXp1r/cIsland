@@ -14,6 +14,7 @@ import { agentList } from "./agent";
 import { sadbList } from "./sadb";
 import { emailList } from "./email";
 import { downloaderList } from "./downloader";
+import { initEmail } from "./email/email-view";
 
 // 页面子状态尺寸/样式配置。
 type MaybeFn<T> = [T, T] | (() => [T, T]);
@@ -151,6 +152,7 @@ export function initPageRenders() {
   initPageSubstateRenders();
   initTimeRenders();
   initMusic();
+  initEmail();
 
   pageStateMachine.onTransition = (from: PageState, to: PageState) => {
     // 切换页面时清空旧样式，但保留 hover 态。

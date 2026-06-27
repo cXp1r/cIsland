@@ -8,7 +8,7 @@ import {
   emailRefreshBtn,
 } from "../../../doms";
 import { setEmailConfigure } from "../../../utils/state";
-import { logd, logi } from "../../../utils/logger";
+import { logd, logi } from "../../../../utils/logger";
 type EmailMeta = {
   uid: string;
   from: string;
@@ -222,12 +222,7 @@ export async function showEmbeddedEmailView() {
 }
 
 
-export function initEmailView() {
-  invoke<boolean>("is_email_configured").then(res => {
-    logi("Email",`is_configured: ${res}`);
-    setEmailConfigure(res);
-  })
-  
+export function initEmail() { 
   debugEmail("initEmailView");
   emailRefreshBtn.addEventListener("click", () => { void refreshMailbox(); });
   emailClearCacheBtn.addEventListener("click", () => { void clearCache(); });

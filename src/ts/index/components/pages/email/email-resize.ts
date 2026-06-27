@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { capsule, emailPanel, emailResizeHandle } from "../dom";
-import { PageState } from "../state-machines/page";
-import { pageStateMachine } from "../state-machines/page-machine";
+import { capsule, emailPanel, emailResizeHandle } from "../../../doms";
+import { pageStateMachine } from "../../../states";
+
 
 const EMAIL_DEFAULT_W = 820;
 const EMAIL_DEFAULT_H = 620;
@@ -41,7 +41,7 @@ export function applyEmailViewSize() {
 }
 
 export async function onEmailViewEntered() {
-  if (pageStateMachine.state !== PageState.Email) return;
+  if (pageStateMachine.state !== "email") return;
   applyEmailViewSize();
 }
 
@@ -52,7 +52,7 @@ function setEmailViewSize(width: number, height: number) {
   applyEmailViewSize();
 }
 
-export function initEmailResize() {
+export function initEmail() {
   applyEmailViewSize();
 
   let resizing = false;
@@ -63,7 +63,7 @@ export function initEmailResize() {
   let syncPending = false;
 
   emailResizeHandle.addEventListener("mousedown", (e) => {
-    if (pageStateMachine.state !== PageState.Email) return;
+    if (pageStateMachine.state !== "email") return;
     e.preventDefault();
     e.stopPropagation();
     resizing = true;
