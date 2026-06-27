@@ -1,12 +1,12 @@
 import { sc } from "..";
 
-export const musicList: Record<string, sc> = {
+export const downloaderList: Record<string, sc> = {
   "collapsed": {
     classList: null,
-    size: [380, 50],
+    size: [140, 50],
   },
   "expanded": {
-    classList: ["expanded"],
+    classList: ["downloader-expanded"],
     size: [400, 300],
   },
 };
