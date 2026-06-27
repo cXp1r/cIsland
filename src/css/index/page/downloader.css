@@ -1,15 +1,15 @@
 
-#island-capsule:not(.downloader-expanded) #downloader {
+#island-capsule:not(.downloader-expanded) #downloader-area {
     flex-direction: row;
     padding: 0 12px;
     gap: 6px;
 }
 
-#island-capsule:not(.downloader-expanded) #downloader > * {
+#island-capsule:not(.downloader-expanded) #downloader-area > * {
     display: none;
 }
 
-#island-capsule:not(.downloader-expanded) #downloader::before {
+#island-capsule:not(.downloader-expanded) #downloader-area::before {
     content: "downloader";
     font-size: 13px;
     font-weight: 700;
@@ -22,7 +22,7 @@
 #island-capsule.downloader-expanded {
     border-radius: 24px;
 }
-#island-capsule.downloader-expanded #downloader {
+#island-capsule.downloader-expanded #downloader-area {
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
@@ -32,7 +32,7 @@
     overflow: hidden;
 }
 
-#island-capsule.downloader-expanded #downloader::before {
+#island-capsule.downloader-expanded #downloader-area::before {
     display: none;
 }
 
@@ -40,7 +40,7 @@
 
 .downloader-input,
 .downloader-row,
-#downloader-save-dir {
+#downloader-area-save-dir {
     flex-shrink: 0;
 }
 
