@@ -53,14 +53,6 @@ function formatSpeed(bytesPerSec: number): string {
   return `${mb.toFixed(2)} MB/s`;
 }
 
-function truncate(str: string, max = 30): string {
-  if (!str) return "";
-  if (str.length <= max) return str;
-  const head = str.slice(0, Math.floor(max * 0.6));
-  const tail = str.slice(-Math.floor(max * 0.4));
-  return `${head}...${tail}`;
-}
-
 function createProgressItem(uuid: string): void {
   const wrapper = document.createElement("div");
   const header = document.createElement("div");
