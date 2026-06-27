@@ -49,8 +49,6 @@ export class AgentPageSubstateMachine extends PageSubstateMachine<AgentPageSubst
       if (this.state === AgentPageSubstate.Collapsed) {
         this.transitionTo(AgentPageSubstate.Expanded);
       } else {
-        const agentArea = document.getElementById("agent-area");
-        if (agentArea) agentArea.classList.add("collapsing");
         window.setTimeout(() => {
           this.transitionTo(AgentPageSubstate.Collapsed);
         }, 100);
