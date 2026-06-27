@@ -147,7 +147,7 @@ void listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
 
   if (item) {
     item.state.innerText = res.ok
-      ? `下载完成: ${truncate(res.filename, 25)}`
+      ? `下载完成`
       : wasRemoved
         ? "任务已移除"
         : "下载失败";
@@ -156,7 +156,7 @@ void listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
 
   showStatus(
     res.ok
-      ? `下载完成: ${truncate(res.filename, 25)}，路径: ${truncate(res.path, 40)}`
+      ? `下载完成`
       : wasRemoved
         ? "任务已移除"
         : "下载失败",
