@@ -86,6 +86,7 @@ export function initDragger() {
       || target.closest("#notice-area")
       || target.closest(".media-btn")
       || target.closest(".view-dot")
+      || target instanceof HTMLInputElement
     ) {
       return;
     }
