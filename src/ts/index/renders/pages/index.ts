@@ -14,8 +14,8 @@ import { agentList } from "./agent";
 import { sadbList } from "./sadb";
 
 // 页面子状态尺寸/样式配置。
-type MaybeFn<T> = T | (() => T);
-export type Size = [MaybeFn<number>, MaybeFn<number>];
+type MaybeFn<T> = [T, T] | (() => [T, T]);
+export type Size = MaybeFn<number>;
 
 export type sc = {
   classList: string[] | null;
@@ -35,7 +35,7 @@ function renderByState(page: string, state: string): void {
     console.log(classlist);
     capsule.classList.add(...classlist);
   }
-  const [w, h] = [r(list.size[0]), r(list.size[1])];
+  const [w, h] = r(list.size);
   animateCapsule(w, h);
 }
 
