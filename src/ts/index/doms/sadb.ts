@@ -9,3 +9,4 @@ export const sadbDeviceName = $<HTMLSpanElement>("sadb-device-name");
 export const sadbResolution = $<HTMLSpanElement>("sadb-resolution");
 export const sadbFps = $<HTMLSpanElement>("sadb-fps");
 export const sadbDeviceWrapper = $<HTMLDivElement>("sadb-devices-wrapper");
+export const resizeHandle = $<HTMLDivElement>("sadb-resize-handle");
