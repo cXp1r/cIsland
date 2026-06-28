@@ -7,11 +7,12 @@ import {
     createNotification,
     createQuestionCard,
     createStopCard,
-    syncAgentHandlerHeight,
 } from "./renderer";
 import { logi } from "../../shared/logger";
+import { animateCapsule } from "../../utils/rAF";
 
 const TAG = "AgentHandler";
+const AGENT_HANDLER_WIDTH = 550;
 
 
 const NEED_APPROVAL_TOOLS = [
@@ -121,7 +122,7 @@ function showCard(card: HTMLElement, request: HookRequest) {
     }
 
     const height = calculateHeight(request);
-    syncAgentHandlerHeight(height);
+    animateCapsule(AGENT_HANDLER_WIDTH, height);
 
     capsule.classList.add("agent-handler-active");
     agentHandler.classList.add("active");
