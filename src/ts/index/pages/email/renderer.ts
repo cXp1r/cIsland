@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { logd, logi } from "../../shared/logger";
-import { setEmailConfigure } from "../../utils/state";
+import { logd } from "../../shared/logger";
 import type { PageRenderSpec } from "../types";
 import {
   emailClearCacheBtn,
@@ -262,10 +261,6 @@ export function initEmailRenderers(): void {
     debugEmail("event:email-updated");
     initialized = false;
     await showEmbeddedEmailView();
-  });
-  void listen<boolean>("email-configured", (event) => {
-    logi(TAG, event.payload);
-    setEmailConfigure(event.payload);
   });
 }
 
