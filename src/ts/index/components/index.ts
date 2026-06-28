@@ -1,9 +1,9 @@
 import { initDragger } from "./drag";
-import { initOverlaysC } from "./overlays";
+import { initOverlaysComponents } from "./overlays";
 import { initPagesComponents } from "./pages";
 
 export function initComponents() {
     initPagesComponents()
-    initOverlaysC();
+    initOverlaysComponents();
     initDragger();
 }

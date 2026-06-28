@@ -52,7 +52,7 @@ function setEmailViewSize(width: number, height: number) {
   applyEmailViewSize();
 }
 
-export function initEmail() {
+export function initEmailComponents() {
   applyEmailViewSize();
 
   let resizing = false;

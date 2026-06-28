@@ -157,7 +157,7 @@ void listen<Aria2cRpcEnd>("aria2c-rpc-end", (event) => {
   );
 });
 
-export function initDownloader(): void {
+export function initDownloaderComponents(): void {
     invoke<string>('get_user_dir').then((r) => {
         saveDir.value = r + "\\downloads";
     })

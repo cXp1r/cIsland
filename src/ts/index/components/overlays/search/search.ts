@@ -274,7 +274,7 @@ export function dismissSearch() {
 
 
 
-export function initSearchC() {
+export function initSearchComponents() {
   
   searchInput.addEventListener("input", () => {
     doSearch(searchInput.value);

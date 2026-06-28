@@ -3,10 +3,10 @@ import { capsule, viewSwitcher } from "../../doms";
 import { PageState } from "../../states/pages/page";
 import { pageStateMachine } from "../../states";
 import { listen } from "@tauri-apps/api/event";
-import { initSadb } from "./sadb";
-import { initTime } from "./time/panel";
-import { initDownloader } from "./downloader/downloader";
-import { initEmail } from "./email/email-resize";
+import { initSadbComponents } from "./sadb";
+import { initTimeComponents } from "./time/panel";
+import { initDownloaderComponents } from "./downloader/downloader";
+import { initEmailComponents } from "./email/email-resize";
 import { logd } from "../../../utils/logger";
 
 
@@ -81,8 +81,8 @@ export function initPagesComponents(){
             event: event.payload,
         });
     });
-    initTime()
-    initSadb();
-    initEmail();
-    initDownloader();
+    initTimeComponents()
+    initSadbComponents();
+    initEmailComponents();
+    initDownloaderComponents();
 }

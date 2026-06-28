@@ -1,5 +1,5 @@
-import { initSearchC } from "./search/search";
+import { initSearchComponents } from "./search/search";
 
-export function initOverlaysC() {
-    initSearchC();
+export function initOverlaysComponents() {
+    initSearchComponents();
 }

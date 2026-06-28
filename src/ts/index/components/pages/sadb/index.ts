@@ -287,7 +287,7 @@ function onMdnsDone() {
   }
 }
 
-export function initSadb() {
+export function initSadbComponents() {
   let resizing = false;
   let resizePointerId = -1;
   let resizeStartX = 0;
