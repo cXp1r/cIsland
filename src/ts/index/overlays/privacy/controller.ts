@@ -1,10 +1,4 @@
 import { listen } from "@tauri-apps/api/event";
-import {
-  lastPrivacyUsage,
-  privacyPopupTimer,
-  setLastPrivacyUsage,
-  setPrivacyPopupTimer,
-} from "../../utils/state";
 import type { PrivacyUsagePayload } from "../../utils/types";
 import { overlayManager } from "../manager";
 import { OverlayPriority } from "../priority";
@@ -14,6 +8,12 @@ import {
   isPrivacyPopupVisible,
   renderPrivacyPopup,
 } from "./renderer";
+import {
+  lastPrivacyUsage,
+  privacyPopupTimer,
+  setLastPrivacyUsage,
+  setPrivacyPopupTimer,
+} from "./state";
 
 const PRIVACY_PRIORITY = OverlayPriority.Privacy;
 
