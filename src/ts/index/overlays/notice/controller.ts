@@ -1,6 +1,5 @@
 ﻿import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { setPendingUrls, isPageState, setUserChosenView, userChosenView } from "../../utils/state";
 import { OverlayPriority } from "../priority";
 import { stopOverlayPointerEvents } from "../events";
 import { overlayManager } from "../manager";
@@ -278,21 +277,6 @@ export function clearQueue(): void {
   finishAll();
 }
 
-export function dismissOverlays(): void {
-  clearNoticeView();
-}
-
-export function restoreUserView(): void {
-  dismissOverlays();
-
-  if (isPageState(userChosenView) && pageStateMachine.order.includes(userChosenView)) {
-    pageStateMachine.transitionTo(userChosenView);
-  } else {
-    setUserChosenView(PageState.Time);
-    pageStateMachine.transitionTo(PageState.Time);
-  }
-}
-
 // ===== 初始化 =====
 
 export function initNoticeQueue(): void {
@@ -330,7 +314,6 @@ export function initNoticeQueue(): void {
   listen<ClipboardUrlsPayload>("clipboard-urls", (event) => {
     const c = event.payload;
     if (!c.urls || c.urls.length === 0) return;
-    setPendingUrls(c.urls);
     const shortcut = "Alt+O";
     const msg = c.urls.length === 1
       ? `已复制链接，按下${shortcut} 或点击打开`
@@ -377,6 +360,6 @@ export function initNoticeQueue(): void {
 
 export function initNoticeUrl(): void {
   listen("reset-view", () => {
-    restoreUserView();
+    clearNoticeView();
   });
 }
