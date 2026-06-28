@@ -2,7 +2,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { agentHandler, capsule } from "./dom";
 import { HookRequest, HookAction } from "./model";
-import { createApprovalCard, createNotification, createQuestionCard, createStopCard } from "./renderer";
+import {
+    createApprovalCard,
+    createNotification,
+    createQuestionCard,
+    createStopCard,
+    syncAgentHandlerHeight,
+} from "./renderer";
 import { logi } from "../../shared/logger";
 
 const TAG = "AgentHandler";
@@ -42,13 +48,6 @@ function calculateHeight(request: HookRequest): number {
     return 400;
 }
 
-
-function updateContainerSize(height: number) {
-    const rounded = height;
-    const root = document.documentElement;
-    root.style.setProperty('--agent-handler-h', `${rounded}px`);
-    logi(TAG, `更新高度: ${height}px → ${rounded}px`);
-}
 
 export function initAgentHandler() {
     logi(TAG, "初始化 Agent Handler");
@@ -122,7 +121,7 @@ function showCard(card: HTMLElement, request: HookRequest) {
     }
 
     const height = calculateHeight(request);
-    updateContainerSize(height);
+    syncAgentHandlerHeight(height);
 
     capsule.classList.add("agent-handler-active");
     agentHandler.classList.add("active");
