@@ -5,6 +5,7 @@ import { OverlayPriority } from "../priority";
 import { stopOverlayPointerEvents } from "../events";
 import { overlayManager } from "../manager";
 import { logi } from "../../shared/logger";
+import { animateCapsule } from "../../utils/rAF";
 import type { ClipboardUrlsPayload } from "../../utils/types";
 import { url } from "../../pages/downloader";
 import { PageState } from "../../pages/types";
@@ -22,10 +23,12 @@ import {
 
 const TAG: string = "NoticeQueue";
 
-const MAX_DURATION = 30000;
+const NOTICE_CAPSULE_WIDTH = 400;
+const NOTICE_CAPSULE_HEIGHT = 70;
+const MAX_DURATION = 5000;
 const NOTICE_PRIORITY = OverlayPriority.Notice;
 
-// ===== 内部状�?=====
+// ===== 内部状态 =====
 
 const queue: NoticeItem[] = [];
 let activeItem: NoticeItem | null = null;
@@ -174,6 +177,7 @@ function showNext(): void {
   activeItem = queue.shift()!;
   logi(TAG, `showNext: ${describeNotice(activeItem)} remaining=${queue.length}`);
   overlayManager.request("notice", OverlayPriority.Notice);
+  animateCapsule(NOTICE_CAPSULE_WIDTH, NOTICE_CAPSULE_HEIGHT);
   renderMessage(activeItem, {
     onMainClick: handleRenderedMainClick,
     onDismiss: handleDismissClick,
@@ -195,7 +199,7 @@ function showNext(): void {
   }, activeItem.duration);
 }
 
-// ===== 状态管�?=====
+// ===== 状态管理 =====
 
 function completeActiveNotice(shouldClearTimer = true, reason = "complete"): void {
   logi(TAG, `complete: reason=${reason} active=${describeNotice_safe(activeItem)} queued=${queue.length} clearTimer=${shouldClearTimer}`);
@@ -289,19 +293,18 @@ export function restoreUserView(): void {
   }
 }
 
-// ===== 初始�?=====
+// ===== 初始化 =====
 
 export function initNoticeQueue(): void {
   stopOverlayPointerEvents(noticeArea);
 
-  // 更高优先级弹层抢占时，通知自动让位；更高优先级结束后恢�?
+  // 更高优先级弹层抢占时，通知自动让位；更高优先级结束后恢复
   document.addEventListener("overlay-changed", ((e: CustomEvent) => {
     const newPriority = e.detail.priority as number;
-    // 更高优先级抢�?�?通知让位
+    // 更高优先级抢占通知让位
     if (activeItem && newPriority > NOTICE_PRIORITY) {
       logi(TAG, `overlay-changed-yield: newPriority=${newPriority} > NOTICE_PRIORITY active=${describeNotice(activeItem)} queued=${queue.length}`);
       clearTimer();
-      // 把当�?item 放回队首
       queue.unshift(activeItem);
       activeItem = null;
       urlListMode = false;
@@ -310,27 +313,27 @@ export function initNoticeQueue(): void {
       clearNoticeView();
       return;
     }
-    // 更高优先级消�?�?如果有排队通知则恢�?
+    // 如果有排队通知则恢复显示
     if (newPriority < NOTICE_PRIORITY && queue.length > 0 && !activeItem && !urlListMode) {
       logi(TAG, `overlay-changed-resume: newPriority=${newPriority} queued=${queue.length}`);
       showNext();
     }
   }) as EventListener);
 
-  // 点击 notice-area 空白�?
+  // 点击 notice-area 空白处行为
   noticeArea.addEventListener("click", (e: MouseEvent) => {
     e.stopPropagation();
     handleAreaClick();
   });
 
-  // 剪贴板链�?
+  // 剪贴板连接处理
   listen<ClipboardUrlsPayload>("clipboard-urls", (event) => {
     const c = event.payload;
     if (!c.urls || c.urls.length === 0) return;
     setPendingUrls(c.urls);
     const shortcut = "Alt+O";
     const msg = c.urls.length === 1
-      ? `已复制链接，�?${shortcut} 或点击打开`
+      ? `已复制链接，按下${shortcut} 或点击打开`
       : `检测到 ${c.urls.length} 个链接，点击查看`;
 
 
