@@ -13,12 +13,13 @@ export class OverlayStateMachine {
   private priority: number = -1;
   
   set(p: number, s: OverlayState): boolean {
+    //取较大的
     if (this.check(p)) {
-      return false;
-    } else {
       this.priority = p;
       this.state = s;
       return true;
+    } else {
+      return false;
     }
   }
 
