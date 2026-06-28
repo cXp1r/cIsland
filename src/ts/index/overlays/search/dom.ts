@@ -1,5 +1,6 @@
 import { $ } from "../../../utils/shared";
 
+export const searchArea = $<HTMLDivElement>("search-area");
 export const searchInput = $<HTMLInputElement>("search-input");
 export const searchResults = $<HTMLDivElement>("search-results");
 export const searchPrevBtn = $<HTMLButtonElement>("search-prev-btn");

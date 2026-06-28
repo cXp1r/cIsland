@@ -1,5 +1,5 @@
 import { capsule } from "../../shell/dom";
-import { animateHeight } from "../../utils/rAF";
+import { animateCapsule } from "../../utils/rAF";
 import {
   searchNextBtn,
   searchPageLabel,
@@ -18,16 +18,21 @@ export interface SearchResult {
   action: string;
 }
 
-export function syncSearchWindowHeight(): void {
+function cssPx(name: string, fallback: number): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name);
+  return parseFloat(raw) || fallback;
+}
+
+export function syncSearchWindowSize(): void {
   requestAnimationFrame(() => {
+    const w = cssPx("--search-w", capsule.offsetWidth || 420);
     let h: number;
     if (capsule.classList.contains("search-expanded")) {
-      const raw = getComputedStyle(document.documentElement).getPropertyValue("--search-expanded-h");
-      h = parseFloat(raw) || capsule.offsetHeight;
+      h = cssPx("--search-expanded-h", capsule.offsetHeight || 430);
     } else {
-      h = capsule.offsetHeight;
+      h = cssPx("--search-h", capsule.offsetHeight || 50);
     }
-    animateHeight(h + BODY_PAD + 2);
+    animateCapsule(w, h + BODY_PAD + 2);
   });
 }
 
@@ -56,7 +61,7 @@ export function renderSearchResults(
   if (items.length === 0) {
     capsule.classList.remove("search-expanded");
     capsule.classList.add("search-active");
-    syncSearchWindowHeight();
+    syncSearchWindowSize();
     return;
   }
 
@@ -95,7 +100,7 @@ export function renderSearchResults(
     searchResults.appendChild(el);
   });
 
-  syncSearchWindowHeight();
+  syncSearchWindowSize();
 }
 
 export function renderSearchError(msg: string): void {
@@ -111,7 +116,7 @@ export function renderSearchError(msg: string): void {
   el.className = "search-error-hint";
   el.textContent = msg;
   searchResults.appendChild(el);
-  syncSearchWindowHeight();
+  syncSearchWindowSize();
 }
 
 export function updateSearchActiveHighlight(activeIndex: number): void {
