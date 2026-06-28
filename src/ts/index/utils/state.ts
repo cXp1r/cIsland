@@ -1,4 +1,14 @@
 
+import { pageStateMachine } from "../pages/machine";
+import { PageState } from "../pages/types";
+import type { PrivacyUsagePayload } from "./types";
+
+export type ViewMode = PageState | "search";
+
+export function isPageState(value: ViewMode): value is PageState {
+  return Object.values(PageState).includes(value as PageState);
+}
+
 
 // --- 弹层优先级：-1 无弹层，数值越大优先级越高 ---
 // 后续改成设置可调

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { capsule } from "../doms";
+import { capsule } from "../shell/dom";
 
 const ease = (p1x: number, p1y: number, p2x: number, p2y: number) => {
   const calcX = (t: number) => 3 * p1x * t * (1 - t) ** 2 + 3 * p2x * t ** 2 * (1 - t) + t ** 3;

@@ -1,0 +1,30 @@
+import { $ } from "../../shared/dom";
+
+export const lyricArea = $<HTMLDivElement>("lyric-area");
+export const lyricText = $<HTMLDivElement>("lyric-text");
+export const lyricTextInner = $<HTMLSpanElement>("lyric-text-inner");
+export const lyricMeta = $<HTMLDivElement>("lyric-meta");
+export const vinylDisc = $<HTMLDivElement>("vinyl-disc");
+export const vinylCover = $<HTMLDivElement>("vinyl-cover");
+export const progressBar = $<HTMLDivElement>("progress-bar");
+export const progressFill = $<HTMLDivElement>("progress-fill");
+export const progressThumb = $<HTMLDivElement>("progress-thumb");
+
+export const musicPanelCoverImg = $<HTMLDivElement>("music-panel-cover-img");
+export const musicPanelSong = $<HTMLDivElement>("music-panel-song");
+export const musicPanelArtist = $<HTMLDivElement>("music-panel-artist");
+export const mpProgressBar = $<HTMLDivElement>("mp-progress-bar");
+export const mpProgressFill = $<HTMLDivElement>("mp-progress-fill");
+export const mpProgressThumb = $<HTMLDivElement>("mp-progress-thumb");
+export const mpTimeCurrent = $<HTMLSpanElement>("mp-time-current");
+export const mpTimeTotal = $<HTMLSpanElement>("mp-time-total");
+export const mpPrev = $<HTMLButtonElement>("mp-prev");
+export const mpPlay = $<HTMLButtonElement>("mp-play");
+export const mpNext = $<HTMLButtonElement>("mp-next");
+export const mpIconPlay = mpPlay.querySelector(".mp-icon-play") as SVGElement;
+export const mpIconPause = mpPlay.querySelector(".mp-icon-pause") as SVGElement;
+export const mpVolumeBar = $<HTMLDivElement>("mp-volume-bar");
+export const mpVolumeFill = $<HTMLDivElement>("mp-volume-fill");
+export const mpVolumeThumb = $<HTMLDivElement>("mp-volume-thumb");
+export const mpLyricText = $<HTMLDivElement>("mp-lyric-text");
+
