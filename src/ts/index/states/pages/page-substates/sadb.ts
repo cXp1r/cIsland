@@ -34,7 +34,7 @@ export class SadbPageSubstateMachine extends PageSubstateMachine<SadbPageSubstat
       
       if (sadbState === SadbPageSubstate.Mirroring) return;
       if (sadbState === SadbPageSubstate.Idle) {
-        if (!target.closest("#sadb-status-bar")) return;
+        if (!target.closest("#sadb-status-bar") && target.id != "sadb-area") return;
         event.stopPropagation();
         this.debouncedAction(() => {
           this.transitionTo(SadbPageSubstate.Collapsed);
