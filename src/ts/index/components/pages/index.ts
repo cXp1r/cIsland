@@ -7,6 +7,7 @@ import { initSadb } from "./sadb";
 import { initTime } from "./time/panel";
 import { initDownloader } from "./downloader/downloader";
 import { initEmail } from "./email/email-resize";
+import { logd } from "../../../utils/logger";
 
 
 export function initPagesComponents(){
@@ -14,10 +15,14 @@ export function initPagesComponents(){
         if (pageStateMachine.isDragging) {
             return;
         }
+        const target = event.target instanceof HTMLElement ? event.target : capsule;
+        if (event instanceof HTMLButtonElement || event instanceof HTMLInputElement){
+            logd("Components", "skip dispatch", target)
+        }
         pageStateMachine.dispatch({
             tag: "click",
-            target: event.target instanceof HTMLElement ? event.target : capsule,
-            event: event,
+            target,
+            event,
         });
     });
     capsule.addEventListener("dblclick", (event: MouseEvent) => {
