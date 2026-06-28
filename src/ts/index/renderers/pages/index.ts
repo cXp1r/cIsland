@@ -56,6 +56,9 @@ function initPageSubstateRenders(): void {
     machine.onTransition = (_from: string, to: string) => {
       capsule.className = "";
       renderByState(machine.page, to);
+      if (!machine.isConfigured) {
+        capsule.classList.add("unconfigured");
+      }
     };
   });
 }
