@@ -4,27 +4,24 @@ import { loge } from "../../../utils/logger";
 import { capsule } from "../../shell/dom";
 import { overlayManager } from "../manager";
 import { OverlayPriority } from "../priority";
-import { animateHeight } from "../../utils/rAF";
 import {
   searchInput,
   searchNextBtn,
-  searchPageLabel,
   searchPrevBtn,
   searchResults,
 } from "./dom";
+import {
+  renderSearchError,
+  renderSearchResults,
+  syncSearchWindowHeight,
+  type SearchResult,
+  updateSearchActiveHighlight,
+  updateSearchPagination,
+} from "./renderer";
 
 const TAG = "Search";
 const DEBOUNCE_MS = 400;
 const PAGE_SIZE = 10;
-const BODY_PAD = 5;
-
-interface SearchResult {
-  id: string;
-  title: string;
-  desc: string;
-  icon: string;
-  action: string;
-}
 
 interface SearchQueryResponse {
   items: SearchResult[];
@@ -40,27 +37,8 @@ let currentOffset = 0;
 let hasNextPage = false;
 let searchRequestId = 0;
 
-function syncSearchWindowHeight() {
-  requestAnimationFrame(() => {
-    let h: number;
-    if (capsule.classList.contains("search-expanded")) {
-      const raw = getComputedStyle(document.documentElement).getPropertyValue("--search-expanded-h");
-      h = parseFloat(raw) || capsule.offsetHeight;
-    } else {
-      h = capsule.offsetHeight;
-    }
-    animateHeight(h + BODY_PAD + 2);
-  });
-}
-
 function updatePagination() {
-  const visible = currentQuery.length > 0 && (results.length > 0 || currentOffset > 0);
-  searchPrevBtn.hidden = !visible;
-  searchNextBtn.hidden = !visible;
-  searchPageLabel.hidden = !visible;
-  searchPageLabel.textContent = `Page ${Math.floor(currentOffset / PAGE_SIZE) + 1}`;
-  searchPrevBtn.disabled = currentOffset === 0;
-  searchNextBtn.disabled = !hasNextPage;
+  updateSearchPagination(currentQuery, results.length, currentOffset, hasNextPage);
 }
 
 function resetSearchPagination() {
@@ -111,70 +89,15 @@ function renderResults(items: SearchResult[], offset = 0, nextPageAvailable = fa
   activeIndex = items.length > 0 ? 0 : -1;
   currentOffset = offset;
   hasNextPage = nextPageAvailable;
-  searchResults.innerHTML = "";
   updatePagination();
-
-  if (items.length === 0) {
-    capsule.classList.remove("search-expanded");
-    capsule.classList.add("search-active");
-    syncSearchWindowHeight();
-    return;
-  }
-
-  capsule.classList.remove("search-active");
-  capsule.classList.add("search-expanded");
-
-  items.forEach((item, i) => {
-    const el = document.createElement("div");
-    el.className = "search-result-item" + (i === 0 ? " active" : "") + (item.desc ? " has-desc" : "");
-
-    const icon = document.createElement("div");
-    icon.className = "search-result-icon";
-    icon.textContent = item.icon || "*";
-
-    const text = document.createElement("div");
-    text.className = "search-result-text";
-
-    const title = document.createElement("div");
-    title.className = "search-result-title";
-    title.textContent = item.title;
-    text.appendChild(title);
-
-    if (item.desc) {
-      const desc = document.createElement("div");
-      desc.className = "search-result-desc";
-      desc.textContent = item.desc;
-      text.appendChild(desc);
-    }
-
-    el.appendChild(icon);
-    el.appendChild(text);
-    el.addEventListener("click", (e) => {
-      e.stopPropagation();
-      selectResult(i);
-    });
-    searchResults.appendChild(el);
-  });
-  syncSearchWindowHeight();
+  renderSearchResults(items, activeIndex, selectResult);
 }
 
 function renderError(msg: string) {
   results = [];
   activeIndex = -1;
   hasNextPage = false;
-  searchResults.innerHTML = "";
-  searchPrevBtn.hidden = true;
-  searchNextBtn.hidden = true;
-  searchPageLabel.hidden = true;
-
-  capsule.classList.remove("search-active");
-  capsule.classList.add("search-expanded");
-
-  const el = document.createElement("div");
-  el.className = "search-error-hint";
-  el.textContent = msg;
-  searchResults.appendChild(el);
-  syncSearchWindowHeight();
+  renderSearchError(msg);
 }
 
 function selectResult(index: number) {
@@ -185,12 +108,7 @@ function selectResult(index: number) {
 }
 
 function updateActiveHighlight() {
-  const items = searchResults.querySelectorAll(".search-result-item");
-  items.forEach((el, i) => {
-    el.classList.toggle("active", i === activeIndex);
-  });
-  const activeEl = items[activeIndex] as HTMLElement | undefined;
-  activeEl?.scrollIntoView({ block: "nearest" });
+  updateSearchActiveHighlight(activeIndex);
 }
 
 function doSearch(query: string) {
