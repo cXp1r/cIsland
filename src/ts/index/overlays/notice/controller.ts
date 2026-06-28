@@ -1,51 +1,28 @@
 ﻿import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { capsule, noticeArea } from "../../shell/dom";
-import { isAria2c, setPendingUrls } from "../../utils/state";
+import { setPendingUrls, isPageState, setUserChosenView, userChosenView } from "../../utils/state";
 import { OverlayPriority } from "../priority";
 import { overlayManager } from "../manager";
-import { truncateUrl } from "../../utils/utils";
 import { logi } from "../../shared/logger";
 import type { ClipboardUrlsPayload } from "../../utils/types";
 import { url } from "../../pages/downloader";
 import { PageState } from "../../pages/types";
 import { pageStateMachine } from "../../pages/machine";
 import { DownloaderPageSubstate } from "../../pages/downloader/machine";
+import { capsule, noticeArea } from "./dom";
+import type { ClipboardPayload, NoticeItem } from "./model";
+import {
+  clearNoticeView,
+  renderMessage,
+  renderUrlList,
+  showNoticeView,
+} from "./renderer";
 
 
 const TAG: string = "NoticeQueue";
 
-// ===== 通知类型 =====
-
-export type NoticeType = "clipboard" | "email" | "generic";
-
 const MAX_DURATION = 30000;
 const NOTICE_PRIORITY = OverlayPriority.Notice;
-
-// ===== 通知队列�?=====
-
-export interface NoticeItem {
-  id: string;
-  uuid?: string;
-  type: NoticeType;
-  message: string;
-  duration: number;
-  payload: unknown;
-  timestamp: number;
-}
-
-// ===== 图标常量 =====
-
-const ICON_INFO = `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M512 426.688a42.688 42.688 0 0 0-42.688 42.688v298.688a42.688 42.688 0 0 0 85.376 0V469.376A42.688 42.688 0 0 0 512 426.688zM507.776 213.376a59.776 59.776 0 1 0 0 119.552 59.776 59.776 0 0 0 0-119.552z" fill="#ffffff"/><path d="M512 0a512 512 0 1 0 0 1024 512 512 0 0 0 0-1024z m0 938.688a426.624 426.624 0 0 1-426.688-426.688c0-235.648 190.976-426.688 426.688-426.688s426.688 190.976 426.688 426.688-190.976 426.688-426.688 426.688z" fill="#ffffff"/></svg>`;
-const ICON_EMAIL = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#fff" stroke-width="1.6"/><polyline points="22,6 12,13 2,6" stroke="#fff" stroke-width="1.6"/></svg>`;
-const ICON_LINK = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-// ===== Clipboard payload 类型 =====
-
-interface ClipboardPayload {
-  urls: string[];
-  downloadable: boolean;
-}
 
 // ===== 内部状�?=====
 
@@ -56,10 +33,6 @@ let noticeIdCounter = 0;
 let urlListMode = false;
 
 // ===== 工具函数 =====
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 function createNoticeUuid(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -72,112 +45,45 @@ function describeNotice(item: NoticeItem): string {
   return `id=${item.id} uuid=${item.uuid || "none"} type=${item.type} msg="${item.message}"`;
 }
 
-function iconForType(type: NoticeType): string {
-  switch (type) {
-    case "clipboard": return ICON_LINK;
-    case "email":     return ICON_EMAIL;
-    default:          return ICON_INFO;
-  }
-}
-
-// ===== 通用 HTML 模板（所有类型共用，保持原有结构不变�?====
-
-function baseNoticeHtml(item: NoticeItem): string {
-  const uuid = item.uuid || item.id;
-  const shortUuid = uuid.replace(/-/g, "").slice(0, 8);
-
-  // clipboard 类型�?downloadable=true 时插入下载按�?
-  const p = item.payload as ClipboardUrlsPayload;
-  const downloadBtn = (item.type === "clipboard" && p.urls.length === 1 && p.downloadables[0])
-    ? isAria2c ? `<button class="notice-button" id="notice-download" type="button">下载</button>` : ""
-    : "";
-
-  return `
-  <div class="notice-content">
-    <div class="notice-main">
-    <div class="icon-box">${iconForType(item.type)}</div>
-    <div class="notice-text">
-      <div class="notice-msg">${escapeHtml(item.message)}</div>
-      <div class="notice-uuid" title="${escapeHtml(uuid)}">
-        #${escapeHtml(shortUuid)}</div>
-      </div>
-    </div>
-    ${downloadBtn}
-    <button class="notice-button" id="notice-dismiss" type="button">忽略</button>
-  </div>`;
-}
-
 function describeNotice_safe(item: NoticeItem | null): string {
   return item ? describeNotice(item) : "none";
 }
 
-// ===== 渲染 URL 列表（clipboard 多链接时使用，结构与原来一致）=====
-
-function renderUrlList(urls: string[]): void {
-  logi(TAG, `renderUrlList: count=${urls.length} active=${describeNotice_safe(activeItem)}`);
-  noticeArea.classList.add("notice-urllist");
-  noticeArea.innerHTML = "";
-  urls.forEach((url) => {
-    const el = document.createElement("div");
-    el.className = "url-item";
-    el.textContent = truncateUrl(url, 50);
-    el.title = url;
-    el.addEventListener("click", (e) => {
-      e.stopPropagation();
-      logi(TAG, `url-click: url=${url}`);
-      void invoke("open_link_with_handler", { url });
-      void invoke("set_interacting", { active: false });
-      exitUrlListMode();
-    });
-    noticeArea.appendChild(el);
-  });
+function handleUrlClick(clickedUrl: string): void {
+  logi(TAG, `url-click: url=${clickedUrl}`);
+  void invoke("open_link_with_handler", { url: clickedUrl });
+  void invoke("set_interacting", { active: false });
+  exitUrlListMode();
 }
 
-// ===== 渲染通知消息（所有类型统一�?baseNoticeHtml�?====
+function handleDownloadClick(item: NoticeItem): void {
+  if (activeItem?.id !== item.id) return;
+  const p = item.payload as ClipboardPayload;
+  logi(TAG, `download-click: ${describeNotice(item)} urls=${p.urls}`);
+  url.value = p.urls[0];
+  pageStateMachine.transitionTo(PageState.Downloader);
+  pageStateMachine.substates[PageState.Downloader].transitionTo(DownloaderPageSubstate.Expanded);
+  void invoke("set_expanded", { expanded: true });
+  console.log("[NoticeQueue] download clicked, urls:", p.urls);
+  completeActiveNotice(true, "download");
+}
 
-function renderMessage(item: NoticeItem): void {
-  logi(TAG, `renderMessage: ${describeNotice(item)}`);
-  noticeArea.classList.remove("notice-urllist");
-  noticeArea.innerHTML = baseNoticeHtml(item);
-
-  // 绑定 .notice-main 点击 �?各类型自己的 action
-  const main = noticeArea.querySelector<HTMLElement>(".notice-main");
-  const dismiss = noticeArea.querySelector<HTMLButtonElement>("#notice-dismiss");
-  const download = noticeArea.querySelector<HTMLButtonElement>("#notice-download");
-  if (download) {
-    download.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (activeItem?.id !== item.id) return;
-      const p = item.payload as ClipboardPayload;
-      logi(TAG, `download-click: ${describeNotice(item)} urls=${p.urls}`);
-      url.value = p.urls[0];
-      pageStateMachine.transitionTo(PageState.Downloader);
-      pageStateMachine.substates[PageState.Downloader].transitionTo(DownloaderPageSubstate.Expanded);
-      void invoke("set_expanded", { expanded: true });
-      console.log("[NoticeQueue] download clicked, urls:", p.urls);
-      completeActiveNotice(true, "download");
-    });
+function handleRenderedMainClick(item: NoticeItem): void {
+  if (activeItem?.id !== item.id) {
+    logi(TAG, `main-click-ignored: clicked=${item.id} active=${activeItem?.id || "none"}`);
+    return;
   }
+  logi(TAG, `main-click: ${describeNotice(item)}`);
+  handleMainClick(item);
+}
 
-  main?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (activeItem?.id !== item.id) {
-      logi(TAG, `main-click-ignored: clicked=${item.id} active=${activeItem?.id || "none"}`);
-      return;
-    }
-    logi(TAG, `main-click: ${describeNotice(item)}`);
-    handleMainClick(item);
-  });
-
-  dismiss?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (activeItem?.id !== item.id) {
-      logi(TAG, `dismiss-ignored: clicked=${item.id} active=${activeItem?.id || "none"}`);
-      return;
-    }
-    logi(TAG, `dismiss: ${describeNotice(item)} queued=${queue.length}`);
-    completeActiveNotice(true, "dismiss");
-  });
+function handleDismissClick(item: NoticeItem): void {
+  if (activeItem?.id !== item.id) {
+    logi(TAG, `dismiss-ignored: clicked=${item.id} active=${activeItem?.id || "none"}`);
+    return;
+  }
+  logi(TAG, `dismiss: ${describeNotice(item)} queued=${queue.length}`);
+  completeActiveNotice(true, "dismiss");
 }
 
 // ===== 各类型的 .notice-main 点击行为 =====
@@ -208,7 +114,7 @@ function handleClipboardNotice(item: NoticeItem): void {
     logi(TAG, `clipboard-open-list: id=${item.id} count=${p.urls.length}`);
     urlListMode = true;
     void invoke("set_interacting", { active: true });
-    renderUrlList(p.urls);
+    renderUrlList(p.urls, handleUrlClick);
   }
 }
 
@@ -267,9 +173,13 @@ function showNext(): void {
   activeItem = queue.shift()!;
   logi(TAG, `showNext: ${describeNotice(activeItem)} remaining=${queue.length}`);
   overlayManager.request("notice", OverlayPriority.Notice);
-  renderMessage(activeItem);
+  renderMessage(activeItem, {
+    onMainClick: handleRenderedMainClick,
+    onDismiss: handleDismissClick,
+    onDownload: handleDownloadClick,
+  });
   capsule.classList.add("notice-active");
-  noticeArea.classList.add("active");
+  showNoticeView();
 
   displayTimer = window.setTimeout(() => {
     const expired = activeItem;
@@ -324,8 +234,7 @@ function finishAll(): void {
   logi(TAG, `finishAll: queue empty, collapsing`);
   capsule.classList.remove("expanded");
   capsule.classList.remove("notice-active");
-  noticeArea.classList.remove("active", "notice-urllist");
-  noticeArea.innerHTML = "";
+  clearNoticeView();
   void invoke("dismiss_island");
   overlayManager.release("notice");
 }
@@ -364,6 +273,21 @@ export function clearQueue(): void {
   finishAll();
 }
 
+export function dismissOverlays(): void {
+  clearNoticeView();
+}
+
+export function restoreUserView(): void {
+  dismissOverlays();
+
+  if (isPageState(userChosenView) && pageStateMachine.order.includes(userChosenView)) {
+    pageStateMachine.transitionTo(userChosenView);
+  } else {
+    setUserChosenView(PageState.Time);
+    pageStateMachine.transitionTo(PageState.Time);
+  }
+}
+
 // ===== 初始�?=====
 
 export function initNoticeQueue(): void {
@@ -380,8 +304,7 @@ export function initNoticeQueue(): void {
       urlListMode = false;
       void invoke("set_interacting", { active: false });
       capsule.classList.remove("notice-active");
-      noticeArea.classList.remove("active", "notice-urllist");
-      noticeArea.innerHTML = "";
+      clearNoticeView();
       return;
     }
     // 更高优先级消�?�?如果有排队通知则恢�?
@@ -446,3 +369,8 @@ export function initNoticeQueue(): void {
   });
 }
 
+export function initNoticeUrl(): void {
+  listen("reset-view", () => {
+    restoreUserView();
+  });
+}
