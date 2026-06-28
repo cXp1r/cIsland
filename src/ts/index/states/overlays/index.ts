@@ -14,7 +14,9 @@ export const OverlayState = {
 export type OverlayState = (typeof OverlayState)[keyof typeof OverlayState];
 
 export type OverlayPriority = number;
-class OverlayStateMachine {
+
+
+export class OverlayStateMachine {
   state: OverlayState = OverlayState.Idle;
   private priority: number = -1;
   
@@ -41,5 +43,3 @@ class OverlayStateMachine {
     }
   }
 }
-
-export const overlayStateMachine = new OverlayStateMachine();
