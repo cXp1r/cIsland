@@ -1,4 +1,5 @@
 ## TODO (按照优先级降序)
+- [ ] setting.rs在工具配置好后emit通知前端
 - [ ] 移除无用的capsule_th
 - [ ] 封面压缩到约 256KB，避免 IPC 因大 base64 卡住
 - [ ] 重构music模块(通报就给我好好的分开呀)
