@@ -69,6 +69,10 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
+#island-capsule.email-expanded.unconfigured #email-area > * {
+    filter: blur(8px);
+}
+
 #email-panel {
 
     width: 100%;
