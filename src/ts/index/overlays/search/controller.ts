@@ -4,7 +4,9 @@ import { loge } from "../../../utils/logger";
 import { capsule } from "../../shell/dom";
 import { overlayManager } from "../manager";
 import { OverlayPriority } from "../priority";
+import { stopOverlayPointerEvents } from "../events";
 import {
+  searchArea,
   searchInput,
   searchNextBtn,
   searchPrevBtn,
@@ -13,7 +15,7 @@ import {
 import {
   renderSearchError,
   renderSearchResults,
-  syncSearchWindowHeight,
+  syncSearchWindowSize,
   type SearchResult,
   updateSearchActiveHighlight,
   updateSearchPagination,
@@ -31,7 +33,6 @@ interface SearchQueryResponse {
 let activeIndex = -1;
 let results: SearchResult[] = [];
 let debounceTimer: number | null = null;
-let dismissSyncTimer: number | null = null;
 let currentQuery = "";
 let currentOffset = 0;
 let hasNextPage = false;
@@ -127,10 +128,13 @@ function doSearch(query: string) {
 }
 
 export function activateSearch() {
-  overlayManager.request("search", OverlayPriority.Search);
+  if (!overlayManager.request("search", OverlayPriority.Search)) {
+    return;
+  }
 
   capsule.classList.remove("expanded", "lyric-collapsed", "agent-expanded", "music-expanded", "search-expanded", "email-expanded");
   capsule.classList.add("search-active");
+  syncSearchWindowSize();
 
   searchRequestId += 1;
   if (debounceTimer !== null) {
@@ -148,7 +152,6 @@ export function activateSearch() {
 }
 
 export function dismissSearch() {
-  overlayManager.release("search");
   searchRequestId += 1;
   if (debounceTimer !== null) {
     clearTimeout(debounceTimer);
@@ -161,15 +164,12 @@ export function dismissSearch() {
   activeIndex = -1;
   resetSearchPagination();
   capsule.classList.remove("search-active", "search-expanded");
-
-  if (dismissSyncTimer !== null) clearTimeout(dismissSyncTimer);
-  dismissSyncTimer = window.setTimeout(() => {
-    dismissSyncTimer = null;
-    syncSearchWindowHeight();
-  }, 360);
+  overlayManager.release("search");
 }
 
 export function initSearchComponents() {
+  stopOverlayPointerEvents(searchArea);
+
   searchInput.addEventListener("input", () => {
     doSearch(searchInput.value);
   });
@@ -241,8 +241,11 @@ export function initSearchComponents() {
     }
   });
 
-  document.addEventListener("overlay-changed", ((_e: CustomEvent) => {
-    if (overlayManager.state == "search") {
+  document.addEventListener("overlay-changed", ((e: CustomEvent) => {
+    if (
+      e.detail.state !== "search"
+      && (capsule.classList.contains("search-active") || capsule.classList.contains("search-expanded"))
+    ) {
       dismissSearch();
       capsule.classList.remove("search");
     }

@@ -10,6 +10,7 @@ import {
 } from "./renderer";
 import { logi } from "../../shared/logger";
 import { animateCapsule } from "../../utils/rAF";
+import { stopOverlayPointerEvents } from "../events";
 import { overlayManager } from "../manager";
 import { OverlayPriority } from "../priority";
 
@@ -69,9 +70,7 @@ export function initAgentHandler() {
         await handleHookRequest(request);
     });
 
-    agentHandler.addEventListener("click", (e) => {
-        e.stopPropagation();
-    });
+    stopOverlayPointerEvents(agentHandler);
 }
 
 async function handleHookRequest(request: HookRequest) {

@@ -2,6 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { setPendingUrls, isPageState, setUserChosenView, userChosenView } from "../../utils/state";
 import { OverlayPriority } from "../priority";
+import { stopOverlayPointerEvents } from "../events";
 import { overlayManager } from "../manager";
 import { logi } from "../../shared/logger";
 import type { ClipboardUrlsPayload } from "../../utils/types";
@@ -291,6 +292,8 @@ export function restoreUserView(): void {
 // ===== 初始�?=====
 
 export function initNoticeQueue(): void {
+  stopOverlayPointerEvents(noticeArea);
+
   // 更高优先级弹层抢占时，通知自动让位；更高优先级结束后恢�?
   document.addEventListener("overlay-changed", ((e: CustomEvent) => {
     const newPriority = e.detail.priority as number;
