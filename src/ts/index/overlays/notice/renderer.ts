@@ -1,4 +1,3 @@
-import { isAria2c } from "../../utils/state";
 import type { ClipboardUrlsPayload } from "../../utils/types";
 import { truncateUrl } from "../../utils/utils";
 import { noticeArea } from "./dom";
@@ -31,9 +30,10 @@ function baseNoticeHtml(item: NoticeItem): string {
   const shortUuid = uuid.replace(/-/g, "").slice(0, 8);
   const p = item.payload as ClipboardUrlsPayload;
   const downloadBtn = (item.type === "clipboard" && p.urls.length === 1 && p.downloadables[0])
-    ? isAria2c ? `<button class="notice-button" id="notice-download" type="button">下载</button>` : ""
+    ?  `<button class="notice-button" id="notice-download" type="button">下载</button>`
     : "";
 
+  
   return `
   <div class="notice-content">
     <div class="notice-main">
