@@ -10,9 +10,12 @@ import {
 } from "./renderer";
 import { logi } from "../../shared/logger";
 import { animateCapsule } from "../../utils/rAF";
+import { overlayManager } from "../manager";
+import { OverlayPriority } from "../priority";
 
 const TAG = "AgentHandler";
 const AGENT_HANDLER_WIDTH = 550;
+const AGENT_HANDLER_PRIORITY = OverlayPriority.AgentHandler;
 
 
 const NEED_APPROVAL_TOOLS = [
@@ -56,6 +59,13 @@ export function initAgentHandler() {
     listen<HookRequest>("hook_request", async (event) => {
         const request = event.payload;
         logi(TAG, `收到请求: uuid=${request.uuid} event=${request.hook_event} tool=${request.tool_name}`);
+        if (!overlayManager.canEnter(AGENT_HANDLER_PRIORITY)) {
+            logi(TAG, `请求被阻止: overlayPriority=${overlayManager.priority} > AGENT_HANDLER_PRIORITY=${AGENT_HANDLER_PRIORITY}`);
+            // TODO: 抢占失败后直接静默响应空 hook 结果，避免后端请求挂起。
+            return;
+        }
+
+        overlayManager.request("agent-handler", AGENT_HANDLER_PRIORITY);
         await handleHookRequest(request);
     });
 
@@ -140,6 +150,7 @@ function hideCard() {
     agentHandler.innerHTML = "";
     agentHandler.classList.remove("active");
     capsule.classList.remove("agent-handler-active");
+    overlayManager.release("agent-handler");
 
     logi(TAG, "隐藏卡片");
 }

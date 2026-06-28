@@ -46,6 +46,16 @@ function renderByState(page: string, state: string): void {
   
 }
 
+function renderCurrentPageState(): void {
+  const page = pageStateMachine.state;
+  const substate = pageStateMachine.substates[page];
+  capsule.className = pageStateMachine.isHover ? "hover" : "";
+  renderByState(page, substate.state);
+  if (!substate.isConfigured) {
+    capsule.classList.add("unconfigured");
+  }
+}
+
 function initPageSubstateRenderers(): void {
   handlers["time"] = timeList;
   handlers["music"] = musicList;
@@ -176,4 +186,9 @@ export function initPagesRenderer() {
       renderByState(page, pageStateMachine.substates[page].state);
     }
   };
+
+  document.addEventListener("overlay-changed", ((e: CustomEvent) => {
+    if (e.detail.state !== "idle") return;
+    renderCurrentPageState();
+  }) as EventListener);
 }
