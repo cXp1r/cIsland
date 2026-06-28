@@ -19,9 +19,8 @@ import {
   setCurrentDurationMs,
   setCurrentSongTitle,
   setCurrentThumbnailUrl,
-  setIsMusicPlaying,
   setIsSeekable,
-} from "../../utils/state";
+} from "./state";
 import { formatTime } from "../../utils/utils";
 import { logi } from "../../shared/logger";
 import { resetMpLyricFlipState } from "./lyric-renderer";
@@ -89,7 +88,6 @@ export function initMediaRenderer() {
   listen<MediaChangedPayload>("media-changed", (event) => {
     const { title, artist, genre, thumbnail, duration_ms, seekable } = event.payload;
 
-    setIsMusicPlaying(true);
     setCurrentSongTitle(title);
     setCurrentArtistName(artist);
     setIsSeekable(seekable ?? true);

@@ -1,5 +1,3 @@
-
-import { pageStateMachine } from "../pages/machine";
 import { PageState } from "../pages/types";
 import type { PrivacyUsagePayload } from "./types";
 
@@ -9,17 +7,8 @@ export function isPageState(value: ViewMode): value is PageState {
   return Object.values(PageState).includes(value as PageState);
 }
 
-
-// --- 弹层优先级：-1 无弹层，数值越大优先级越高 ---
-// 后续改成设置可调
-// search = 1, notice = 2
-
-
-// 大面板panel
-export let panelClickTimer: number | null = null; // 面板单击延时
+export let panelClickTimer: number | null = null;
 export function setPanelClickTimer(v: number | null) { panelClickTimer = v; }
-
-// --- 通知 / URL ---
 
 export let noticeTimer: number | null = null;
 export function setNoticeTimer(v: number | null) { noticeTimer = v; }
@@ -30,46 +19,6 @@ export function setPendingUrls(v: string[]) { pendingUrls = v; }
 export let isShowingUrlList = false;
 export function setIsShowingUrlList(v: boolean) { isShowingUrlList = v; }
 
-// --- 音乐 / 播放 ---
-
-export let isMusicPlaying = false;
-export function setIsMusicPlaying(v: boolean) { isMusicPlaying = v; }
-
-export let isPlaying = false;
-export function setIsPlaying(v: boolean) { isPlaying = v; }
-
-export let lyricMode = "lyric"; // "off" | "info" | "lyric"
-export function setLyricMode(v: string) { lyricMode = v; }
-
-export let currentDurationMs = 0; // 歌曲总时长
-export function setCurrentDurationMs(v: number) { currentDurationMs = v; }
-
-export let isSeeking = false; // 是否正在拖动进度条
-export function setIsSeeking(v: boolean) { isSeeking = v; }
-
-export let isMpSeeking = false; // 面板进度条拖动
-export function setIsMpSeeking(v: boolean) { isMpSeeking = v; }
-
-export let isMpVolSeeking = false; // 面板音量条拖动
-export function setIsMpVolSeeking(v: boolean) { isMpVolSeeking = v; }
-
-export let isSeekable = true; // 当前播放器是否支持 seek
-export function setIsSeekable(v: boolean) { isSeekable = v; }
-
-export let musicClickTimer: number | null = null; // 音乐单击延时
-export function setMusicClickTimer(v: number | null) { musicClickTimer = v; }
-
-export let currentSongTitle = "";
-export function setCurrentSongTitle(v: string) { currentSongTitle = v; }
-
-export let currentArtistName = "";
-export function setCurrentArtistName(v: string) { currentArtistName = v; }
-
-export let currentThumbnailUrl = "";
-export function setCurrentThumbnailUrl(v: string) { currentThumbnailUrl = v; }
-
-// --- 隐私 ---
-
 export let privacyPopupTimer: number | null = null;
 export function setPrivacyPopupTimer(v: number | null) { privacyPopupTimer = v; }
 
@@ -77,26 +26,16 @@ export let privacyPulseCleanupTimer: number | null = null;
 export function setPrivacyPulseCleanupTimer(v: number | null) { privacyPulseCleanupTimer = v; }
 
 export let lastPrivacyUsage: PrivacyUsagePayload = {
-
   microphone: false,
-
   camera: false,
-
 };
 export function setLastPrivacyUsage(v: PrivacyUsagePayload) { lastPrivacyUsage = v; }
 
-// --- 最小化 / 展开动画 ---
-
-export let isExpandAnimating = false; // 展开/收起动画进行中，防止重复触发
+export let isExpandAnimating = false;
 export function setIsExpandAnimating(v: boolean) { isExpandAnimating = v; }
-
-
-// --- 展开态多行歌词的 FLIP 过渡状态：key（文本+重复序号）→ 行 DOM ---
 
 export let prevLineMap: Map<string, HTMLElement> = new Map();
 export function setPrevLineMap(v: Map<string, HTMLElement>) { prevLineMap = v; }
-
-// --- AI Agent 相关状态 ---
 
 export let aiEnabled = false;
 export function setAiEnabled(v: boolean) { aiEnabled = v; }
@@ -119,81 +58,20 @@ export function setThinkingStartTime(v: number) { thinkingStartTime = v; }
 export let thinkingTimer: number | null = null;
 export function setThinkingTimer(v: number | null) { thinkingTimer = v; }
 
-// --- 视图 ---
-
-// currentView 保留 ViewMode（含 "search"），但手动页面的权威来源是状态机
 export let currentView: ViewMode = "time";
-export function setCurrentView(v: ViewMode) {
-  currentView = v;
-  // 同步到状态机的顶层分页状态（search 不属于手动页面，跳过）
-  if (isPageState(v)) {
-    pageStateMachine.state = v;
-  }
-}
+export function setCurrentView(v: ViewMode) { currentView = v; }
 
 export let userChosenView: ViewMode = "time";
 export function setUserChosenView(v: ViewMode) { userChosenView = v; }
 
-// --- 歌词 token / 动画相关 ---
-
-// Cache for token spans to optimize animation performance
-export let tokenSpans: HTMLSpanElement[] = [];
-export function setTokenSpans(v: HTMLSpanElement[]) { tokenSpans = v; }
-
-export let currentLyricTokenKey = "";
-export function setCurrentLyricTokenKey(v: string) { currentLyricTokenKey = v; }
-
-export let activeLyricTokens: Array<{text: string; start_ms: number; end_ms: number}> | null = null;
-export function setActiveLyricTokens(v: Array<{text: string; start_ms: number; end_ms: number}> | null) { activeLyricTokens = v; }
-
-export let activeLyricBasePositionMs = 0;
-export function setActiveLyricBasePositionMs(v: number) { activeLyricBasePositionMs = v; }
-
-export let activeLyricBasePerfMs = 0;
-export function setActiveLyricBasePerfMs(v: number) { activeLyricBasePerfMs = v; }
-
-export let lyricScrollLineStartMs: number | null = null;
-export function setLyricScrollLineStartMs(v: number | null) { lyricScrollLineStartMs = v; }
-
-export let lyricScrollNextLineTimeMs: number | null = null;
-export function setLyricScrollNextLineTimeMs(v: number | null) { lyricScrollNextLineTimeMs = v; }
-
-export let lyricScrollLastX = 0;
-export function setLyricScrollLastX(v: number) { lyricScrollLastX = v; }
-
-export let mpCurrentLyricInner: HTMLSpanElement | null = null;
-export function setMpCurrentLyricInner(v: HTMLSpanElement | null) { mpCurrentLyricInner = v; }
-
-export let mpCurrentLyricOuter: HTMLElement | null = null;
-export function setMpCurrentLyricOuter(v: HTMLElement | null) { mpCurrentLyricOuter = v; }
-
-export let mpTokenSpans: HTMLSpanElement[] = [];
-export function setMpTokenSpans(v: HTMLSpanElement[]) { mpTokenSpans = v; }
-
-export let currentMpLyricTokenKey = '';
-export function setCurrentMpLyricTokenKey(v: string) { currentMpLyricTokenKey = v; }
-
-export let lyricFpsWindowStartMs = 0;
-export function setLyricFpsWindowStartMs(v: number) { lyricFpsWindowStartMs = v; }
-
-export let lyricFpsFrameCount = 0;
-export function setLyricFpsFrameCount(v: number) { lyricFpsFrameCount = v; }
-
-// Animation frame ID for token highlighting
-export let tokenAnimationId: number | null = null;
-export function setTokenAnimationId(v: number | null) { tokenAnimationId = v; }
-
-
-//邮件相关
 export let emailConfigure = false;
 export function setEmailConfigure(v: boolean) { emailConfigure = v; }
-export let emailClickTimer: number | null = null; // 音乐单击延时
-export function setEmailClickTimer(v: number | null) { emailClickTimer = v; }
 
+export let emailClickTimer: number | null = null;
+export function setEmailClickTimer(v: number | null) { emailClickTimer = v; }
 
 export let cAFTimer: number | null = null;
 export function setcAFTimer(v: number | null) { cAFTimer = v; }
-// --- 拖拽状态 ---
 
 export let isDragging = false;
 export function setIsDragging(v: boolean) { isDragging = v; }
@@ -213,9 +91,7 @@ export function setMouseDownX(v: number) { mouseDownX = v; }
 export let mouseDownY = 0;
 export function setMouseDownY(v: number) { mouseDownY = v; }
 
-export const DRAG_THRESHOLD = 5; // 像素，超过此距离才算拖动
-
-// --- 其他散落状态 ---
+export const DRAG_THRESHOLD = 5;
 
 export let skipResizeSync = false;
 export function setSkipResizeSync(v: boolean) { skipResizeSync = v; }
@@ -232,8 +108,7 @@ export function setVolThrottleTimer(v: number | null) { volThrottleTimer = v; }
 export let currentAssistantContainer: HTMLDivElement | null = null;
 export function setCurrentAssistantContainer(v: HTMLDivElement | null) { currentAssistantContainer = v; }
 
-
-export let isAria2c: boolean = false;
+export let isAria2c = false;
 export function setIsAria2c(v: boolean) { isAria2c = v; }
 
 export let downloaderClickTimer: number | null = null;

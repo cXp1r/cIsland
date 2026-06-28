@@ -3,27 +3,24 @@ import {
   lyricText, lyricTextInner,
   mpLyricText,
 } from "./dom";
-
-
 import {
-  isPlaying, setIsPlaying,
-  tokenSpans, setTokenSpans,
-  currentLyricTokenKey, setCurrentLyricTokenKey,
-  activeLyricTokens, setActiveLyricTokens,
-  activeLyricBasePositionMs, setActiveLyricBasePositionMs,
-  activeLyricBasePerfMs, setActiveLyricBasePerfMs,
-  lyricScrollLineStartMs, setLyricScrollLineStartMs,
-  lyricScrollNextLineTimeMs, setLyricScrollNextLineTimeMs,
-  lyricScrollLastX, setLyricScrollLastX,
-  mpCurrentLyricInner, setMpCurrentLyricInner,
-  mpCurrentLyricOuter, setMpCurrentLyricOuter,
-  mpTokenSpans, setMpTokenSpans,
-  currentMpLyricTokenKey, setCurrentMpLyricTokenKey,
-  lyricFpsWindowStartMs, setLyricFpsWindowStartMs,
-  lyricFpsFrameCount, setLyricFpsFrameCount,
-  tokenAnimationId, setTokenAnimationId,
-  prevLineMap, setPrevLineMap,
-} from "../../utils/state";
+  activeLyricBasePerfMs, activeLyricBasePositionMs,
+  activeLyricTokens, currentLyricTokenKey,
+  currentMpLyricTokenKey, isPlaying,
+  lyricFpsFrameCount, lyricFpsWindowStartMs,
+  lyricScrollLastX, lyricScrollLineStartMs,
+  lyricScrollNextLineTimeMs, mpCurrentLyricInner,
+  mpCurrentLyricOuter, mpTokenSpans, prevLineMap,
+  setActiveLyricBasePerfMs, setActiveLyricBasePositionMs,
+  setActiveLyricTokens, setCurrentLyricTokenKey,
+  setCurrentMpLyricTokenKey, setIsPlaying,
+  setLyricFpsFrameCount, setLyricFpsWindowStartMs,
+  setLyricScrollLastX, setLyricScrollLineStartMs,
+  setLyricScrollNextLineTimeMs, setMpCurrentLyricInner,
+  setMpCurrentLyricOuter, setMpTokenSpans,
+  setPrevLineMap, setTokenAnimationId,
+  setTokenSpans, tokenAnimationId, tokenSpans,
+} from "./state";
 import { logd } from "../../shared/logger";
 
 
