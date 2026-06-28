@@ -205,16 +205,6 @@
     display: none;
 }
 
-#island-capsule:not(.sadb-expanded) #sadb-area::before {
-    display: block;
-    content: "sadb";
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
-    line-height: 1;
-}
-
 #island-capsule.sadb-expanded {
     border-radius: 24px;
     flex-shrink: 0;
@@ -227,10 +217,6 @@
     gap: 4px;
 }
 
-#island-capsule.sadb-expanded #sadb-area::before {
-    display: none;
-}
-
 #island-capsule.sadb-expanded #sadb-canvas {
     display: block;
     border-radius: 12px;
@@ -241,6 +227,45 @@
     display: flex;
 }
 
+#sadb-area::before {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+    pointer-events: auto;
+    user-select: none;
+    white-space: nowrap;
+}
+
+#island-capsule.sadb-expanded #sadb-area::before {
+    display: none;
+}
+
+#island-capsule:not(.sadb-idle) #sadb-area::before {
+    content: "sadb";
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+#island-capsule.sadb-idle.unconfigured #sadb-area::before {
+    content: "请移步设置配置adb";
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.96);
+    background: rgba(10, 10, 10, 0.18);
+    backdrop-filter: blur(12px) saturate(0.85);
+    -webkit-backdrop-filter: blur(12px) saturate(0.85);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
 
 #island-capsule.sadb-idle {
     width: 380px;
@@ -265,10 +290,6 @@
     min-height: 0;
     display: block;
     border-radius: 12px;
-}
-
-#island-capsule.sadb-idle #sadb-area::before {
-    display: none;
 }
 
 #island-capsule.sadb-idle #sadb-resize-handle {

@@ -9,15 +9,41 @@
     display: none;
 }
 
+#downloader-area::before {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+    pointer-events: auto;
+    user-select: none;
+    white-space: nowrap;
+}
+
 #island-capsule:not(.downloader-expanded) #downloader-area::before {
     content: "downloader";
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.5px;
-    flex-shrink: 0;
     line-height: 1;
 }
 
+#island-capsule.downloader-expanded.unconfigured #downloader-area::before {
+    content: "请移步设置配置aria2c";
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.96);
+    background: rgba(10, 10, 10, 0.18);
+    backdrop-filter: blur(12px) saturate(0.85);
+    -webkit-backdrop-filter: blur(12px) saturate(0.85);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
 
 #island-capsule.downloader-expanded {
     border-radius: 24px;
@@ -31,12 +57,6 @@
     height: 100%;
     overflow: hidden;
 }
-
-#island-capsule.downloader-expanded #downloader-area::before {
-    display: none;
-}
-
-
 
 .downloader-input,
 .downloader-row,

@@ -1,9 +1,11 @@
 #island-capsule:not(.email-expanded) #email-drag-handle {
     display: none;
 }
+
 #island-capsule:not(.email-expanded) #email-panel {
     display: none;
 }
+
 #island-capsule:not(.email-expanded) #email-content {
     display: none;
 }
@@ -31,6 +33,42 @@
 
     position: relative;
 
+}
+
+#email-area::before {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+    pointer-events: auto;
+    user-select: none;
+    white-space: nowrap;
+}
+
+#island-capsule:not(.email-expanded) #email-area::before {
+    content: "email";
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+#island-capsule.email-expanded.unconfigured #email-area::before {
+    content: "请移步设置配置email";
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.96);
+    background: rgba(10, 10, 10, 0.18);
+    backdrop-filter: blur(12px) saturate(0.85);
+    -webkit-backdrop-filter: blur(12px) saturate(0.85);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 #email-panel {
