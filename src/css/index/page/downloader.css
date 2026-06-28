@@ -40,9 +40,11 @@
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.96);
     background: rgba(10, 10, 10, 0.18);
-    backdrop-filter: blur(12px) saturate(0.85);
-    -webkit-backdrop-filter: blur(12px) saturate(0.85);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+#island-capsule.downloader-expanded.unconfigured #downloader-area > * {
+    filter: blur(8px);
 }
 
 #island-capsule.downloader-expanded {
@@ -56,6 +58,7 @@
     gap: clamp(4px, 2.5%, 10px);
     height: 100%;
     overflow: hidden;
+    isolation: isolate;
 }
 
 .downloader-input,
