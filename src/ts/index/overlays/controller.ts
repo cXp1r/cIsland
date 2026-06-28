@@ -1,5 +1,6 @@
 import { initAgentHandler } from "./agent-handler";
 import { initNoticeQueue, initNoticeUrl } from "./notice";
+import { initPrivacy } from "./privacy";
 import { initSearchComponents } from "./search";
 
 export function initOverlaysController(): void {
@@ -7,4 +8,5 @@ export function initOverlaysController(): void {
   initAgentHandler();
   initNoticeQueue();
   initNoticeUrl();
+  initPrivacy();
 }
