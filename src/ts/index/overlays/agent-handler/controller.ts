@@ -1,8 +1,8 @@
 ﻿import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { capsule, agentHandler } from "../../shell/dom";
+import { agentHandler, capsule } from "./dom";
 import { HookRequest, HookAction } from "./model";
-import { createApprovalCard, createNotification, createQuestionCard, createStopCard } from "./views";
+import { createApprovalCard, createNotification, createQuestionCard, createStopCard } from "./renderer";
 import { logi } from "../../shared/logger";
 
 const TAG = "AgentHandler";

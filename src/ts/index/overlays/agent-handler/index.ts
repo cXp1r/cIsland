@@ -1,13 +1,13 @@
 import { OverlayPriority } from "../priority";
 import type { OverlayRequest } from "../types";
 
-export { initAgentHandler, respondToHook, hideAllCards } from "./handler";
+export { initAgentHandler, respondToHook, hideAllCards } from "./controller";
 export {
   createApprovalCard,
   createNotification,
   createQuestionCard,
   createStopCard,
-} from "./views";
+} from "./renderer";
 
 export type {
   CcDirective,

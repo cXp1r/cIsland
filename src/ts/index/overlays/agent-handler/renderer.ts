@@ -1,5 +1,5 @@
 ﻿import { HookRequest } from "./model";
-import { respondToHook } from "./handler";
+import { respondToHook } from "./controller";
 import { renderMarkdown, bindMarkdownButtons } from "../../utils/md";
 
 const AGENT_ICONS: Record<string, string> = {
