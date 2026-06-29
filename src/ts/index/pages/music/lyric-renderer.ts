@@ -28,7 +28,7 @@ import { logd } from "../../shared/logger";
 const TAG: string = "Lyrics"
 
 type LyricUpdatePayload = {
-  text: string | null;
+  text?: string | null;
   position_ms?: number;
   is_playing?: boolean;
   nearby_lyrics?: Array<{ text: string; is_current: boolean }>;
@@ -425,6 +425,14 @@ export function initLyricRenderer() {
       setIsPlaying(event.payload.is_playing);
       updateVinylPlaybackState(event.payload.is_playing);
     }
+
+    const hasRenderableLyricPayload =
+      "text" in event.payload ||
+      event.payload.nearby_lyrics !== undefined ||
+      event.payload.tokens !== undefined ||
+      event.payload.line_start_ms !== undefined ||
+      event.payload.next_line_time_ms !== undefined;
+    if (!hasRenderableLyricPayload) return;
 
     if (text === null) {
       resetIslandLyricScroll();

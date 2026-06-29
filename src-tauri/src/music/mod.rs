@@ -231,15 +231,9 @@ pub(crate) fn spawn_music_monitor(
                 if is_playing {
                     let _ = window.emit("music-page", true);
                 } else {
-                    let paused_text = if last_lyric_text.trim().is_empty() {
-                        serde_json::json!(null)
-                    } else {
-                        serde_json::json!(last_lyric_text)
-                    };
                     let _ = window.emit(
                         "lyric-update",
                         serde_json::json!({
-                            "text": paused_text,
                             "position_ms": position_ms,
                             "is_playing": false
                         }),
