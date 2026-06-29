@@ -9,6 +9,9 @@ export const vinylCover = $<HTMLDivElement>("vinyl-cover");
 export const progressBar = $<HTMLDivElement>("progress-bar");
 export const progressFill = $<HTMLDivElement>("progress-fill");
 export const progressThumb = $<HTMLDivElement>("progress-thumb");
+export const btnPrev = $<HTMLButtonElement>("btn-prev");
+export const btnPlay = $<HTMLButtonElement>("btn-play");
+export const btnNext = $<HTMLButtonElement>("btn-next");
 
 export const musicPanelCoverImg = $<HTMLDivElement>("music-panel-cover-img");
 export const musicPanelSong = $<HTMLDivElement>("music-panel-song");
@@ -27,4 +30,3 @@ export const mpVolumeBar = $<HTMLDivElement>("mp-volume-bar");
 export const mpVolumeFill = $<HTMLDivElement>("mp-volume-fill");
 export const mpVolumeThumb = $<HTMLDivElement>("mp-volume-thumb");
 export const mpLyricText = $<HTMLDivElement>("mp-lyric-text");
-

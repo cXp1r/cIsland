@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { emailDragHandle } from "../pages/email/dom";
 import { pageStateMachine } from "../pages/machine";
 import { capsule } from "./dom";
+import { MUSIC_INTERACTIVE_SELECTOR } from "../pages/music/selectors";
 
 export function showContextMenu(): void {
   void invoke("show_context_menu");
@@ -80,13 +81,7 @@ export function initShellDrag(): void {
       || target.closest("#sadb-resize-handle")
       || target.closest(".url-item")
       || target.closest("#notice-area")
-      || target.closest(".media-btn")
-      || target.closest("#music-panel-controls")
-      || target.closest("#music-panel-progress")
-      || target.closest("#music-panel-volume")
-      || target.closest(".mp-btn")
-      || target.closest(".mp-progress-bar")
-      || target.closest(".mp-volume-bar")
+      || target.closest(MUSIC_INTERACTIVE_SELECTOR)
       || target.closest(".view-dot")
       || target instanceof HTMLInputElement
     ) {

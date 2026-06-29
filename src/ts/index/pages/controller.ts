@@ -4,29 +4,12 @@ import { PageState } from "./types";
 import { pageStateMachine } from "./machine";
 import { listen } from "@tauri-apps/api/event";
 import { initSadbComponents } from "./sadb";
+import { initMusicController } from "./music";
 import { initTimeController } from "./time";
 import { initDownloaderController } from "./downloader";
 import { initEmailController } from "./email";
 import { logd } from "../../utils/logger";
-
-const INTERACTIVE_DISPATCH_SELECTOR = [
-    "button",
-    "input",
-    "textarea",
-    "select",
-    "a",
-    "[role='button']",
-    ".media-btn",
-    ".progress-bar",
-    ".vol-btn",
-    "#music-panel-header",
-    "#music-panel-controls",
-    "#music-panel-progress",
-    "#music-panel-volume",
-    ".mp-btn",
-    ".mp-progress-bar",
-    ".mp-volume-bar",
-].join(",");
+import { MUSIC_INTERACTIVE_SELECTOR } from "./music/selectors";
 
 
 export function initPagesController(){
@@ -35,7 +18,15 @@ export function initPagesController(){
             return;
         }
         const target = event.target instanceof Element ? event.target : capsule;
-        if (target.closest(INTERACTIVE_DISPATCH_SELECTOR)){
+        if (
+            target.closest("button")
+            || target.closest("input")
+            || target.closest("textarea")
+            || target.closest("select")
+            || target.closest("a")
+            || target.closest("[role='button']")
+            || target.closest(MUSIC_INTERACTIVE_SELECTOR)
+        ){
             logd("Components", "skip dispatch", target);
             return;
         }
@@ -50,14 +41,7 @@ export function initPagesController(){
         if (
             target.closest(".url-item")
             || target.closest("#notice-area")
-            || target.closest(".media-btn")
-            || target.closest("#music-panel-header")
-            || target.closest("#music-panel-controls")
-            || target.closest("#music-panel-progress")
-            || target.closest("#music-panel-volume")
-            || target.closest(".mp-btn")
-            || target.closest(".mp-progress-bar")
-            || target.closest(".mp-volume-bar")
+            || target.closest(MUSIC_INTERACTIVE_SELECTOR)
             || target.closest(".view-dot")
             || target.closest("#agent-input")
             || target.closest("#agent-send-btn")
@@ -109,6 +93,7 @@ export function initPagesController(){
         });
     });
     initTimeController()
+    initMusicController();
     initSadbComponents();
     initEmailController();
     initDownloaderController();

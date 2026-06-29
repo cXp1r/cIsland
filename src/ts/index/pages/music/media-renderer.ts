@@ -19,11 +19,11 @@ import {
   setCurrentDurationMs,
   setCurrentSongTitle,
   setCurrentThumbnailUrl,
-  setIsSeekable,
 } from "./state";
 import { formatTime } from "../../utils/utils";
 import { logi } from "../../shared/logger";
 import { resetMpLyricFlipState } from "./lyric-renderer";
+import { updateSeekable } from "./controller";
 
 type MediaChangedPayload = {
   title: string;
@@ -90,7 +90,7 @@ export function initMediaRenderer() {
 
     setCurrentSongTitle(title);
     setCurrentArtistName(artist);
-    setIsSeekable(seekable ?? true);
+    updateSeekable(seekable ?? true);
 
     logi("SMTC", `genre='${genre ?? ""}' title='${title}' artist='${artist}'`);
 
