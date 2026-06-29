@@ -486,7 +486,8 @@ export function initLyricRenderer() {
     if (nearby && nearby.length > 0) {
       renderNearbyLyricsFlip(nearby, mpTokens, mpCurrentTimeMs);
     } else if (text !== undefined) {
-      if (mpLyricText.children.length === 0 || mpLyricText.textContent !== displayText) {
+      const hasNearbyLines = mpLyricText.querySelector(".mp-lyric-line") !== null;
+      if (text === null || !hasNearbyLines) {
         mpLyricText.textContent = displayText;
         resetMpLyricFlipState();
       }
