@@ -10,6 +10,21 @@ export const LyricPageSubstate = {
 export type LyricPageSubstate =
   (typeof LyricPageSubstate)[keyof typeof LyricPageSubstate];
 
+function isMusicControlTarget(target: HTMLElement): boolean {
+  return !!target.closest([
+    ".media-btn",
+    ".progress-bar",
+    ".vol-btn",
+    "#music-panel-header",
+    "#music-panel-controls",
+    "#music-panel-progress",
+    "#music-panel-volume",
+    ".mp-btn",
+    ".mp-progress-bar",
+    ".mp-volume-bar",
+  ].join(","));
+}
+
 export class LyricPageSubstateMachine
   extends PageSubstateMachine<LyricPageSubstate> {
   constructor() {
@@ -20,11 +35,7 @@ export class LyricPageSubstateMachine
     if (action.tag !== "click") return;
     const { target, event } = action;
 
-    if (this.state !== LyricPageSubstate.Expanded && (
-      target.closest(".media-btn")
-      || target.closest(".progress-bar")
-      || target.closest(".vol-btn")
-    )) {
+    if (isMusicControlTarget(target)) {
       return;
     }
 

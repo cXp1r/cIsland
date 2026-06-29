@@ -81,6 +81,12 @@ export function initShellDrag(): void {
       || target.closest(".url-item")
       || target.closest("#notice-area")
       || target.closest(".media-btn")
+      || target.closest("#music-panel-controls")
+      || target.closest("#music-panel-progress")
+      || target.closest("#music-panel-volume")
+      || target.closest(".mp-btn")
+      || target.closest(".mp-progress-bar")
+      || target.closest(".mp-volume-bar")
       || target.closest(".view-dot")
       || target instanceof HTMLInputElement
     ) {

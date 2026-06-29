@@ -9,28 +9,55 @@ import { initDownloaderController } from "./downloader";
 import { initEmailController } from "./email";
 import { logd } from "../../utils/logger";
 
+const INTERACTIVE_DISPATCH_SELECTOR = [
+    "button",
+    "input",
+    "textarea",
+    "select",
+    "a",
+    "[role='button']",
+    ".media-btn",
+    ".progress-bar",
+    ".vol-btn",
+    "#music-panel-header",
+    "#music-panel-controls",
+    "#music-panel-progress",
+    "#music-panel-volume",
+    ".mp-btn",
+    ".mp-progress-bar",
+    ".mp-volume-bar",
+].join(",");
+
 
 export function initPagesController(){
     capsule.addEventListener("click", (event: MouseEvent) => {
         if (pageStateMachine.isDragging) {
             return;
         }
-        const target = event.target instanceof HTMLElement ? event.target : capsule;
-        if (event instanceof HTMLButtonElement || event instanceof HTMLInputElement){
-            logd("Components", "skip dispatch", target)
+        const target = event.target instanceof Element ? event.target : capsule;
+        if (target.closest(INTERACTIVE_DISPATCH_SELECTOR)){
+            logd("Components", "skip dispatch", target);
+            return;
         }
         pageStateMachine.dispatch({
             tag: "click",
-            target,
+            target: target instanceof HTMLElement ? target : capsule,
             event,
         });
     });
     capsule.addEventListener("dblclick", (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
+        const target = event.target instanceof Element ? event.target : capsule;
         if (
             target.closest(".url-item")
             || target.closest("#notice-area")
             || target.closest(".media-btn")
+            || target.closest("#music-panel-header")
+            || target.closest("#music-panel-controls")
+            || target.closest("#music-panel-progress")
+            || target.closest("#music-panel-volume")
+            || target.closest(".mp-btn")
+            || target.closest(".mp-progress-bar")
+            || target.closest(".mp-volume-bar")
             || target.closest(".view-dot")
             || target.closest("#agent-input")
             || target.closest("#agent-send-btn")
@@ -47,7 +74,7 @@ export function initPagesController(){
         event.stopPropagation();
         pageStateMachine.dispatch({
             tag: "dbclick",
-            target: event.target instanceof HTMLElement ? event.target : capsule,
+            target: target instanceof HTMLElement ? target : capsule,
             event: event,
         });
     });
