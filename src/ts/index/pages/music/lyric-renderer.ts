@@ -2,6 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import {
   lyricText, lyricTextInner,
   mpLyricText,
+  vinylDisc,
 } from "./dom";
 import {
   activeLyricBasePerfMs, activeLyricBasePositionMs,
@@ -37,6 +38,11 @@ type LyricUpdatePayload = {
 };
 
 const EMPTY_LYRIC_PLACEHOLDER = "♪";
+
+
+function updateVinylPlaybackState(playing: boolean) {
+  vinylDisc.classList.toggle("paused", !playing);
+}
 
 
 function buildTokensKey(tokens: Array<{ text: string; start_ms: number; end_ms: number }>): string {
@@ -404,6 +410,8 @@ export function initLyricRenderer() {
       renderLyricPlainText(lyricTextInner, "");
       mpLyricText.textContent = "";
       resetMpLyricFlipState();
+      setIsPlaying(false);
+      updateVinylPlaybackState(false);
       return;
     }
 
@@ -415,6 +423,7 @@ export function initLyricRenderer() {
     }
     if (event.payload.is_playing !== undefined) {
       setIsPlaying(event.payload.is_playing);
+      updateVinylPlaybackState(event.payload.is_playing);
     }
 
     if (text === null) {
