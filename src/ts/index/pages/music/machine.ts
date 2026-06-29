@@ -1,6 +1,7 @@
 import { PageState } from "../types";
 import { PageSubstateMachine } from "../substate-machine";
 import type { DispatchAction } from "../types";
+import { MUSIC_INTERACTIVE_SELECTOR } from "./selectors";
 
 export const LyricPageSubstate = {
   Collapsed: "collapsed",
@@ -11,18 +12,7 @@ export type LyricPageSubstate =
   (typeof LyricPageSubstate)[keyof typeof LyricPageSubstate];
 
 function isMusicControlTarget(target: HTMLElement): boolean {
-  return !!target.closest([
-    ".media-btn",
-    ".progress-bar",
-    ".vol-btn",
-    "#music-panel-header",
-    "#music-panel-controls",
-    "#music-panel-progress",
-    "#music-panel-volume",
-    ".mp-btn",
-    ".mp-progress-bar",
-    ".mp-volume-bar",
-  ].join(","));
+  return !!target.closest(MUSIC_INTERACTIVE_SELECTOR);
 }
 
 export class LyricPageSubstateMachine
