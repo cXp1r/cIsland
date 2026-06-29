@@ -31,10 +31,10 @@ const r = (v: MaybeFn<number>) => typeof v === "function" ? v() : v;
 const handlers: Record<string, Record<string, sc>> = {};
 
 function renderByState(page: string, to: string): void {
-  capsule.className = "";
   const list = handlers[page]?.[to];
   if (!list) return;
 
+  capsule.className = "";
   const classlist = list.classList;
   if (classlist) {
     console.log(classlist);
