@@ -12,6 +12,62 @@ use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 use crate::{logger, settings, IslandState};
 
+fn is_same_thumbnail(a: Option<&String>, b: Option<&String>) -> bool {
+    matches!((a, b), (Some(a), Some(b)) if a == b)
+}
+
+fn thumbnail_album_key(media_info: &media::MediaInfo) -> Option<String> {
+    let album_title = media_info.album_title.trim();
+    let album_artist = media_info.album_artist.trim();
+    if album_title.is_empty() && album_artist.is_empty() {
+        None
+    } else {
+        Some(format!("{}\n{}", album_artist, album_title))
+    }
+}
+
+fn read_track_thumbnail_with_grace(
+    app_id: &str,
+    media_info: &media::MediaInfo,
+    previous_thumbnail: Option<&String>,
+    allow_same_as_previous: bool,
+) -> Option<String> {
+    let mut thumbnail =
+        media::get_smtc_thumbnail_for_track(app_id, &media_info.title, &media_info.artist);
+    if thumbnail.is_some()
+        && (allow_same_as_previous || !is_same_thumbnail(thumbnail.as_ref(), previous_thumbnail))
+    {
+        return thumbnail;
+    }
+
+    let retry_delays_ms: &[u64] = if thumbnail.is_none() {
+        &[80, 120]
+    } else {
+        &[80, 120, 160, 200]
+    };
+
+    for delay_ms in retry_delays_ms {
+        thread::sleep(Duration::from_millis(*delay_ms));
+        let next_thumbnail =
+            media::get_smtc_thumbnail_for_track(app_id, &media_info.title, &media_info.artist);
+        if next_thumbnail.is_some() {
+            thumbnail = next_thumbnail;
+        }
+        if thumbnail.is_some()
+            && (allow_same_as_previous
+                || !is_same_thumbnail(thumbnail.as_ref(), previous_thumbnail))
+        {
+            break;
+        }
+    }
+
+    if !allow_same_as_previous && is_same_thumbnail(thumbnail.as_ref(), previous_thumbnail) {
+        return None;
+    }
+
+    thumbnail
+}
+
 pub(crate) fn spawn_music_monitor(
     window: WebviewWindow,
     lyric_mode: Arc<Mutex<String>>,
@@ -30,6 +86,8 @@ pub(crate) fn spawn_music_monitor(
     thread::spawn(move || {
         let mut current_lyrics: Vec<lyrics::LyricLine> = Vec::new();
         let mut current_track = String::new();
+        let mut last_thumbnail: Option<String> = None;
+        let mut last_thumbnail_album_key: Option<String> = None;
         let mut last_lyric_text = String::new();
         let mut last_info_track = String::new();
         let mut was_playing = false;
@@ -69,7 +127,7 @@ pub(crate) fn spawn_music_monitor(
 
             // 读取当前 SMTC 会话；短暂丢会话时给播放器切歌留宽限期。
             let info = media::get_smtc_media_info();
-            let (status, media_info, position_ms_raw, is_playing, raw_app_id, thumbnail) =
+            let (status, media_info, position_ms_raw, is_playing, raw_app_id) =
                 match info {
                     Some(v) => {
                         no_session_count = 0;
@@ -170,22 +228,28 @@ pub(crate) fn spawn_music_monitor(
                         position_ms
                     ),
                 );
-                let _ = window.emit("music-page", is_playing);
+                if is_playing {
+                    let _ = window.emit("music-page", true);
+                } else {
+                    let paused_text = if last_lyric_text.trim().is_empty() {
+                        serde_json::json!(null)
+                    } else {
+                        serde_json::json!(last_lyric_text)
+                    };
+                    let _ = window.emit(
+                        "lyric-update",
+                        serde_json::json!({
+                            "text": paused_text,
+                            "position_ms": position_ms,
+                            "is_playing": false
+                        }),
+                    );
+                }
             }
 
             is_music.store(true, Ordering::Relaxed);
 
             if !is_playing {
-                if was_playing {
-                    was_playing = false;
-                    logger::info(
-                        "Lyrics",
-                        &format!(
-                            "playback paused title='{}' artist='{}'",
-                            media_info.title, media_info.artist
-                        ),
-                    );
-                }
                 continue;
             }
 
@@ -215,6 +279,18 @@ pub(crate) fn spawn_music_monitor(
 
                 current_gen = lyrics_generation.fetch_add(1, Ordering::Relaxed) + 1;
                 fetch_pending = false;
+                let album_key = thumbnail_album_key(&media_info);
+                let allow_same_thumbnail = album_key.is_some() && album_key == last_thumbnail_album_key;
+                let thumbnail = read_track_thumbnail_with_grace(
+                    &raw_app_id,
+                    &media_info,
+                    last_thumbnail.as_ref(),
+                    allow_same_thumbnail,
+                );
+                if thumbnail.is_some() {
+                    last_thumbnail = thumbnail.clone();
+                    last_thumbnail_album_key = album_key;
+                }
 
                 logger::info(
                     "SMTC",

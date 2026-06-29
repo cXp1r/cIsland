@@ -687,7 +687,7 @@ pub fn media_seek(position_ms: i64) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn get_smtc_media_info() -> Option<(u8, MediaInfo, i64, bool, String, Option<String>)> {
+pub(crate) fn get_smtc_media_info() -> Option<(u8, MediaInfo, i64, bool, String)> {
     if let Some((session, media, position_ms, is_playing, app_id)) = select_best_smtc_session() {
         let status = session
             .GetPlaybackInfo()
@@ -705,17 +705,40 @@ pub(crate) fn get_smtc_media_info() -> Option<(u8, MediaInfo, i64, bool, String,
         //println!("app_id: {} position_ms: {}", app_id, position_ms);
         let is_preferred = is_preferred_music_app(&app_id);
         if is_preferred {
-            let thumbnail = session
-                .TryGetMediaPropertiesAsync()
-                .ok()
-                .and_then(|op| op.get().ok())
-                .and_then(|props| extract_thumbnail(&props));
-            return Some((status?, media, position_ms, is_playing, app_id, thumbnail));
+            return Some((status?, media, position_ms, is_playing, app_id));
         }
         return None;
     }
 
     None
+}
+
+pub(crate) fn get_smtc_thumbnail_for_track(
+    app_id: &str,
+    title: &str,
+    artist: &str,
+) -> Option<String> {
+    let (session, media, _, _, selected_app_id) = select_best_smtc_session()?;
+    if selected_app_id != app_id || media.title != title || media.artist != artist {
+        return None;
+    }
+
+    let props = session.TryGetMediaPropertiesAsync().ok()?.get().ok()?;
+    let prop_title = props
+        .Title()
+        .ok()
+        .map(|v| v.to_string_lossy())
+        .unwrap_or_default();
+    let prop_artist = props
+        .Artist()
+        .ok()
+        .map(|v| v.to_string_lossy())
+        .unwrap_or_default();
+    if prop_title != title || prop_artist != artist {
+        return None;
+    }
+
+    extract_thumbnail(&props)
 }
 
 /// 获取系统默认音频输出设备的音量 (0.0 ~ 1.0)
