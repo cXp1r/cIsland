@@ -12,4 +12,5 @@ export const musicPageModule: PageModule = {
 export { initMusicController } from "./controller";
 export { resetMpLyricFlipState } from "./lyric-renderer";
 export { lyricPageSubstateMachine } from "./machine";
+export { updatePlayIcon } from "./playback-ui";
 export { initMusicRenderers, musicList } from "./renderer";

@@ -2,7 +2,6 @@ import { listen } from "@tauri-apps/api/event";
 import {
   lyricText, lyricTextInner,
   mpLyricText,
-  vinylDisc,
 } from "./dom";
 import {
   activeLyricBasePerfMs, activeLyricBasePositionMs,
@@ -23,6 +22,7 @@ import {
   setTokenSpans, tokenAnimationId, tokenSpans,
 } from "./state";
 import { logd } from "../../shared/logger";
+import { syncProgressUI, updatePlayIcon } from "./playback-ui";
 
 
 const TAG: string = "Lyrics"
@@ -38,11 +38,6 @@ type LyricUpdatePayload = {
 };
 
 const EMPTY_LYRIC_PLACEHOLDER = "♪";
-
-
-function updateVinylPlaybackState(playing: boolean) {
-  vinylDisc.classList.toggle("paused", !playing);
-}
 
 
 function buildTokensKey(tokens: Array<{ text: string; start_ms: number; end_ms: number }>): string {
@@ -411,7 +406,8 @@ export function initLyricRenderer() {
       mpLyricText.textContent = "";
       resetMpLyricFlipState();
       setIsPlaying(false);
-      updateVinylPlaybackState(false);
+      updatePlayIcon();
+      syncProgressUI();
       return;
     }
 
@@ -420,10 +416,15 @@ export function initLyricRenderer() {
     if (position_ms !== undefined) {
       setActiveLyricBasePositionMs(position_ms);
       setActiveLyricBasePerfMs(performance.now());
+      syncProgressUI();
     }
     if (event.payload.is_playing !== undefined) {
       setIsPlaying(event.payload.is_playing);
-      updateVinylPlaybackState(event.payload.is_playing);
+      if (event.payload.is_playing) {
+        setActiveLyricBasePerfMs(performance.now());
+      }
+      updatePlayIcon();
+      syncProgressUI();
     }
 
     const hasRenderableLyricPayload =

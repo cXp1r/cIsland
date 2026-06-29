@@ -15,15 +15,18 @@ import {
   vinylCover,
 } from "./dom";
 import {
+  setActiveLyricBasePerfMs,
   setCurrentArtistName,
   setCurrentDurationMs,
   setCurrentSongTitle,
   setCurrentThumbnailUrl,
+  setIsPlaying,
 } from "./state";
 import { formatTime } from "../../utils/utils";
 import { logi } from "../../shared/logger";
 import { resetMpLyricFlipState } from "./lyric-renderer";
 import { updateSeekable } from "./controller";
+import { syncProgressUI, updatePlayIcon } from "./playback-ui";
 
 type MediaChangedPayload = {
   title: string;
@@ -85,6 +88,15 @@ function resetProgress(durationMs?: number) {
 }
 
 export function initMediaRenderer() {
+  listen<boolean>("playback-state", (event) => {
+    setIsPlaying(event.payload);
+    if (event.payload) {
+      setActiveLyricBasePerfMs(performance.now());
+    }
+    updatePlayIcon();
+    syncProgressUI();
+  });
+
   listen<MediaChangedPayload>("media-changed", (event) => {
     const { title, artist, genre, thumbnail, duration_ms, seekable } = event.payload;
 
@@ -105,5 +117,6 @@ export function initMediaRenderer() {
     musicPanelArtist.textContent = artist;
     updateCover(thumbnail);
     resetProgress(duration_ms);
+    syncProgressUI();
   });
 }

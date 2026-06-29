@@ -12,6 +12,8 @@ export const progressThumb = $<HTMLDivElement>("progress-thumb");
 export const btnPrev = $<HTMLButtonElement>("btn-prev");
 export const btnPlay = $<HTMLButtonElement>("btn-play");
 export const btnNext = $<HTMLButtonElement>("btn-next");
+export const iconPlay = btnPlay.querySelector("#icon-play") as SVGElement;
+export const iconPause = btnPlay.querySelector("#icon-pause") as SVGElement;
 
 export const musicPanelCoverImg = $<HTMLDivElement>("music-panel-cover-img");
 export const musicPanelSong = $<HTMLDivElement>("music-panel-song");
