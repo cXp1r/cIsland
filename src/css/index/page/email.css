@@ -73,6 +73,16 @@
     filter: blur(8px);
 }
 
+#island-capsule.email-expanded {
+
+    width: var(--email-view-w);
+
+    height: var(--email-view-h);
+
+    border-radius: 28px;
+
+}
+
 #email-panel {
 
     width: 100%;

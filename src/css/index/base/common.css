@@ -173,46 +173,12 @@ body {
 
 #island-capsule:active { cursor: grabbing; }
 
-
-
-#island-capsule.lyric-collapsed {
-
-    width: var(--lyric-collapsed-w);
-
-}
-
-
-
 #island-capsule.hover {
     border-radius: 28px;
 }
 
-
-
-#island-capsule.hover.notice-active {
-
-    height: var(--notice-expanded-h);
-
-    width: var(--notice-expanded-w);
-
-}
-
-#island-capsule.email-expanded {
-
-    width: var(--email-view-w);
-
-    height: var(--email-view-h);
-
-    border-radius: 24px;
-
-}
-
-
-
 #island-capsule.switch-pulse {
-
     animation: switch-pulse 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
-
 }
 
 
