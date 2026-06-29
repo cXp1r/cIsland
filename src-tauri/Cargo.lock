@@ -2471,6 +2471,8 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 [[package]]
 name = "lyrix"
 version = "26.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "459978d0ce015f595c9a348c67ea900c59444232b06b912a420dd64625b1d1a7"
 dependencies = [
  "aes",
  "async-trait",
