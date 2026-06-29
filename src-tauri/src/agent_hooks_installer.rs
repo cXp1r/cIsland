@@ -61,8 +61,14 @@ fn backup_if_exists(path: &Path) -> Result<(), String> {
         _ => path.with_extension("bak"),
     };
 
-    fs::copy(path, &backup)
-        .map_err(|e| format!("failed to create backup {} -> {}: {}", path.display(), backup.display(), e))?;
+    fs::copy(path, &backup).map_err(|e| {
+        format!(
+            "failed to create backup {} -> {}: {}",
+            path.display(),
+            backup.display(),
+            e
+        )
+    })?;
 
     println!("Backup created at: {}", backup.display());
     Ok(())
@@ -287,7 +293,10 @@ pub fn install_agent_hooks(
     }
 
     if !ipc_helper.is_file() {
-        return Err(format!("IPC helper is not a file: {}", ipc_helper.display()));
+        return Err(format!(
+            "IPC helper is not a file: {}",
+            ipc_helper.display()
+        ));
     }
 
     let mut results = Vec::new();
@@ -312,6 +321,6 @@ pub fn install_agent_hooks(
             }
         }
     }
-    
+
     Ok(results)
 }

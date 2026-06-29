@@ -1,50 +1,49 @@
-pub mod logger;
-pub mod sadb_core;
-mod privacy;
-mod clipboard;
-mod betterncm;
-pub mod link_handler;
-pub(crate) mod music;
-pub mod settings;
-pub mod ai;
-mod window;
-mod updater;
-mod ceverything;
-mod sadb;
-mod email;
 mod agent_hooks;
 mod agent_hooks_installer;
-mod tools;
+pub mod ai;
+mod betterncm;
+mod ceverything;
+mod clipboard;
+mod email;
+pub mod link_handler;
+pub mod logger;
 mod model;
-use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU64, AtomicU32, AtomicI32, Ordering};
+pub(crate) mod music;
+mod privacy;
+mod sadb;
+pub mod sadb_core;
+pub mod settings;
+mod tools;
+mod updater;
+mod window;
+use std::os::windows::process::CommandExt;
+use std::sync::atomic::{
+    AtomicBool, AtomicI32, AtomicU16, AtomicU32, AtomicU64, AtomicU8, Ordering,
+};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
-use std::os::windows::process::CommandExt;
-
 
 use lyrix::Lyrix;
-use tauri::{Emitter, Manager};
 use std::path::PathBuf;
+use tauri::{Emitter, Manager};
 
+use tauri::image::Image;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::image::Image;
 use windows::Win32::Foundation::HWND;
 
+use crate::tools::Aria2cRpc;
+use crate::window::MonitorInfo;
 use ai::ChatMessage;
 use email::Email;
 use link_handler::LinkHandler;
 use std::process::{Child, Command};
-use crate::tools::Aria2cRpc;
-use crate::window::MonitorInfo;
-
 
 pub(crate) const WIN_W: f64 = 140.0;
 pub(crate) const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-pub(crate) const WIN_H_DEFAULT: f64 = 84.0;        // CAPSULE_EXPANDED_H + padding
-
+pub(crate) const WIN_H_DEFAULT: f64 = 84.0; // CAPSULE_EXPANDED_H + padding
 
 pub(crate) const SNAP_DURATION_MS: f64 = 300.0;
 pub(crate) const SNAP_FRAME_MS: u64 = 16;
@@ -70,10 +69,7 @@ pub(crate) fn get_config_path() -> PathBuf {
 
 #[tauri::command]
 fn get_config_dir() -> String {
-    config_dir()
-        .join("cisland")
-        .to_string_lossy()
-        .to_string()
+    config_dir().join("cisland").to_string_lossy().to_string()
 }
 #[tauri::command]
 fn get_user_dir() -> String {
@@ -83,9 +79,7 @@ fn get_user_dir() -> String {
 }
 #[tauri::command]
 fn get_exe_dir() -> String {
-    get_exe_path()
-        .to_string_lossy()
-        .to_string() 
+    get_exe_path().to_string_lossy().to_string()
 }
 
 #[tauri::command]
@@ -112,7 +106,6 @@ pub(crate) fn shared_http_client() -> &'static reqwest::blocking::Client {
     })
 }
 
-
 /// 位置信息
 #[derive(Debug, Clone, serde::Serialize)]
 struct LocationInfo {
@@ -122,17 +115,11 @@ struct LocationInfo {
     city: Option<String>,
 }
 
-
-
-
 #[tauri::command]
 fn get_location() -> Option<LocationInfo> {
     let url = "http://ip-api.com/json?fields=status,lat,lon,city&lang=zh-CN";
 
-    let resp = shared_http_client()
-        .get(url)
-        .send()
-        .ok()?;
+    let resp = shared_http_client().get(url).send().ok()?;
 
     if !resp.status().is_success() {
         logger::warn("init", "location failed");
@@ -192,14 +179,15 @@ fn fetch_weather_internal(
     manual_lat: f64,
     manual_lon: f64,
 ) -> Result<WeatherResult, String> {
-    let (lat, lon, city_name) = if !manual_city.is_empty() && (manual_lat != 0.0 || manual_lon != 0.0) {
-        println!("[Weather] 使用手动设置城市: {}", manual_city);
-        (manual_lat, manual_lon, manual_city.to_string())
-    } else {
-        let loc = get_location().ok_or("failed to get location information".to_string())?;
-        let city = loc.city.clone().unwrap_or_default();
-        (loc.latitude, loc.longitude, city)
-    };
+    let (lat, lon, city_name) =
+        if !manual_city.is_empty() && (manual_lat != 0.0 || manual_lon != 0.0) {
+            println!("[Weather] 使用手动设置城市: {}", manual_city);
+            (manual_lat, manual_lon, manual_city.to_string())
+        } else {
+            let loc = get_location().ok_or("failed to get location information".to_string())?;
+            let city = loc.city.clone().unwrap_or_default();
+            (loc.latitude, loc.longitude, city)
+        };
 
     let url = format!(
         "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&current=temperature_2m,weather_code&timezone=auto",
@@ -221,13 +209,21 @@ fn fetch_weather_internal(
     let temp = current["temperature_2m"].as_f64().unwrap_or(0.0).round() as i64;
     let desc = weather_code_to_cn(weather_code).to_string();
 
-    Ok(WeatherResult { desc, temp, city: city_name })
+    Ok(WeatherResult {
+        desc,
+        temp,
+        city: city_name,
+    })
 }
 
 #[tauri::command]
 fn get_weather(state: tauri::State<'_, IslandState>) -> Result<WeatherResult, String> {
     // 仅读取缓存，零阻塞
-    state.weather_cache.lock().unwrap().clone()
+    state
+        .weather_cache
+        .lock()
+        .unwrap()
+        .clone()
         .ok_or_else(|| "weather cache not found".to_string())
 }
 
@@ -237,7 +233,13 @@ fn refresh_weather(state: tauri::State<'_, IslandState>) {
 }
 
 #[tauri::command]
-fn save_weather_city(app: tauri::AppHandle, state: tauri::State<'_, IslandState>, city: String, lat: f64, lon: f64) {
+fn save_weather_city(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, IslandState>,
+    city: String,
+    lat: f64,
+    lon: f64,
+) {
     *state.weather_city.lock().unwrap() = city;
     *state.weather_lat.lock().unwrap() = lat;
     *state.weather_lon.lock().unwrap() = lon;
@@ -349,7 +351,6 @@ pub fn run() {
             let is_interacting = Arc::new(AtomicBool::new(false));
 
             // 从文件加载设置
-            
             logger::set_level(&settings.log_level);
             logger::set_filter(settings.log_filter_tags.clone(), settings.log_filter_invert);
             let clipboard_enabled = Arc::new(AtomicBool::new(settings.clipboard_enabled));
@@ -376,7 +377,7 @@ pub fn run() {
             ));
             let ai_generating = Arc::new(AtomicBool::new(false));
             let ai_history: Arc<Mutex<Vec<ChatMessage>>> = Arc::new(Mutex::new(Vec::new()));
-            
+
             //窗口态注册
             let email_expanded = Arc::new(AtomicBool::new(false));
             let agent_expanded = Arc::new(AtomicBool::new(false));
@@ -419,7 +420,7 @@ pub fn run() {
 
             let aria2c_thread = Arc::new(AtomicU8::new(settings.aria2c_thread));
             let aria2c_path = Arc::new(Mutex::new(settings.aria2c_path.clone()));
-            
+
             let aria2c_rpc_port = Arc::new(AtomicU16::new(settings.aria2c_rpc_port));
             let aria2c_rpc_client = reqwest::Client::new();
             let aria2c_rpc_secret = Arc::new(Mutex::new(settings.aria2c_rpc_secret.clone()));
@@ -868,7 +869,7 @@ pub fn run() {
                 let mut is_configured = false;
                 thread::sleep(Duration::from_secs(3));
                 loop {
-                    let interval = email_interval_t.load(Ordering::Relaxed).max(1); 
+                    let interval = email_interval_t.load(Ordering::Relaxed).max(1);
                     thread::sleep(Duration::from_secs(interval));
                     let config = email_config_t.lock().unwrap().clone();
                     if !config.is_configured() {
@@ -899,9 +900,6 @@ pub fn run() {
                         }
                         continue;
                     }
-                    
-
-
                     // 增量检查：对比服务器最新 UID 与本地已知 UID
                     let uid = tauri::async_runtime::block_on(config.get_latest_uid());
                     let Some(uid) = uid else { continue; };
@@ -1075,7 +1073,6 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-
 fn create_tray_icon() -> Vec<u8> {
     let (size, center, radius) = (32u32, 16.0, 12.0);
     let mut rgba = vec![0u8; (size * size * 4) as usize];
@@ -1084,8 +1081,15 @@ fn create_tray_icon() -> Vec<u8> {
             let dist = ((x as f64 - center).powi(2) + (y as f64 - center).powi(2)).sqrt();
             let idx = ((y * size + x) * 4) as usize;
             if dist <= radius {
-                let a = if dist > radius - 1.0 { ((radius - dist).max(0.0) * 255.0) as u8 } else { 255 };
-                rgba[idx] = 255; rgba[idx+1] = 255; rgba[idx+2] = 255; rgba[idx+3] = a;
+                let a = if dist > radius - 1.0 {
+                    ((radius - dist).max(0.0) * 255.0) as u8
+                } else {
+                    255
+                };
+                rgba[idx] = 255;
+                rgba[idx + 1] = 255;
+                rgba[idx + 2] = 255;
+                rgba[idx + 3] = a;
             }
         }
     }
@@ -1122,11 +1126,11 @@ pub struct IslandState {
     pub music_expanded: Arc<AtomicBool>,
     pub expand_anim_id: Arc<AtomicU64>,
     pub move_anim_id: Arc<AtomicU64>,
-    pub screen_w: Arc<AtomicU32>,// /100
+    pub screen_w: Arc<AtomicU32>, // /100
     pub screen_x: Arc<AtomicI32>,
     pub screen_y: Arc<AtomicI32>,
     pub hwnd: HWND,
-    pub scale: Arc<AtomicU32>,// /100
+    pub scale: Arc<AtomicU32>, // /100
     // AI Agent 相关字段
     pub ai_api_url: Arc<Mutex<String>>,
     pub ai_api_key: Arc<Mutex<String>>,
@@ -1178,7 +1182,7 @@ pub struct IslandState {
     pub sadb_mirroring: Arc<AtomicBool>,
 
     pub aria2c_path: Arc<Mutex<String>>,
-    pub aria2c_thread: Arc<AtomicU8>,//上限16,下限1
+    pub aria2c_thread: Arc<AtomicU8>, //上限16,下限1
     pub aria2c_process: Arc<Mutex<Option<Child>>>,
     pub aria2c_rpc_client: reqwest::Client,
     pub aria2c_rpc_secret: Arc<Mutex<String>>,

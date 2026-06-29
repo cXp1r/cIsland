@@ -1,3 +1,9 @@
+use crate::IslandState;
+use crate::{logger, CREATE_NO_WINDOW};
+use regex::Regex;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::fs::{self, File};
 use std::io::{self, Read};
 use std::os::windows::process::CommandExt;
@@ -5,21 +11,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
-use regex::Regex;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use zip::ZipArchive;
-use crate::IslandState;
-use crate::{CREATE_NO_WINDOW, logger};
 use tauri::Emitter;
+use zip::ZipArchive;
 
-const PLATFORM_TOOLS_URL: &str = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
+const PLATFORM_TOOLS_URL: &str =
+    "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
 const TAG: &str = "Tools";
 
-static RE0: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(aria2-[\d\.]+)-win-64bit[^\.]+.zip").unwrap()
-});
+static RE0: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(aria2-[\d\.]+)-win-64bit[^\.]+.zip").unwrap());
 
 #[derive(Debug, Serialize)]
 pub struct CheckResult {
@@ -114,10 +114,7 @@ fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
 
     logger::debug(
         TAG,
-        &format!(
-            "安装目录已存在，备份到 {}",
-            backup_path.display()
-        ),
+        &format!("安装目录已存在，备份到 {}", backup_path.display()),
     );
     fs::rename(install_dir_path, &backup_path).map_err(|e| {
         format!(
@@ -131,18 +128,18 @@ fn backup_install_dir_if_needed(install_dir_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-
 #[tauri::command]
 pub fn open_path(path: String, select: Option<bool>) {
     let _ = Command::new("explorer")
-    .arg(match select.unwrap_or(false) && Path::new(&path).is_file() {
-        true => {
-            format!(r#"/select,{}"#, &path)
-        }
-        false => {
-            path.clone()
-        }
-    }).spawn();
+        .arg(
+            match select.unwrap_or(false) && Path::new(&path).is_file() {
+                true => {
+                    format!(r#"/select,{}"#, &path)
+                }
+                false => path.clone(),
+            },
+        )
+        .spawn();
 }
 
 #[tauri::command]
@@ -170,16 +167,11 @@ pub fn check(path: &str, tag: &str) -> Result<CheckResult, String> {
         .args(&args)
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("failed to run {} {:?}: {}",path, args, e))?;
+        .map_err(|e| format!("failed to run {} {:?}: {}", path, args, e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-    let version = stdout
-        .lines()
-        .next()
-        .unwrap_or_default()
-        .trim()
-        .to_string();
+    let version = stdout.lines().next().unwrap_or_default().trim().to_string();
 
     Ok(CheckResult {
         ok: output.status.success(),
@@ -196,7 +188,7 @@ pub fn custom_caller(path: &str, args: Vec<&str>) -> Result<TestResult, String> 
             .args(&args)
             .creation_flags(CREATE_NO_WINDOW)
             .output()
-            .map_err(|e| format!("failed to run {} {:?}: {}",path, args, e))?;
+            .map_err(|e| format!("failed to run {} {:?}: {}", path, args, e))?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -209,25 +201,29 @@ pub fn custom_caller(path: &str, args: Vec<&str>) -> Result<TestResult, String> 
     } else {
         Err("Unauthorized command".into())
     }
-    
 }
 
 #[tauri::command]
 pub fn test(path: &str, tag: &str) -> Result<TestResult, String> {
     let args = match tag {
         "adb" => vec!["devices"],
-        "aria2c" => vec!["-x", "16", "-s", "16", "https://github.com/cXp1r/tauri-island/blob/main/README.md"],
+        "aria2c" => vec![
+            "-x",
+            "16",
+            "-s",
+            "16",
+            "https://github.com/cXp1r/tauri-island/blob/main/README.md",
+        ],
         _ => vec!["--version"],
     };
     let output = Command::new(path)
         .args(&args)
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("failed to run {} {:?}: {}",path, args, e))?;
+        .map_err(|e| format!("failed to run {} {:?}: {}", path, args, e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-
 
     Ok(TestResult {
         ok: output.status.success(),
@@ -236,41 +232,41 @@ pub fn test(path: &str, tag: &str) -> Result<TestResult, String> {
     })
 }
 
-
-
-
-fn extract_archive<R: io::Read + io::Seek>(archive: &mut ZipArchive<R>, install_dir: &Path) -> Result<(), String> {
+fn extract_archive<R: io::Read + io::Seek>(
+    archive: &mut ZipArchive<R>,
+    install_dir: &Path,
+) -> Result<(), String> {
     for i in 0..archive.len() {
-        let mut entry = archive.by_index(i).map_err(|e| format!("failed to read zip entry: {}", e))?;
+        let mut entry = archive
+            .by_index(i)
+            .map_err(|e| format!("failed to read zip entry: {}", e))?;
         let enclosed_name = entry
             .enclosed_name()
             .map(PathBuf::from)
             .ok_or_else(|| format!("unsafe zip entry path: {}", entry.name()))?;
 
-        let stripped: PathBuf = enclosed_name
-            .components()
-            .skip(1)
-            .collect();
+        let stripped: PathBuf = enclosed_name.components().skip(1).collect();
 
         let out_path = install_dir.join(stripped);
 
-
         if entry.is_dir() {
-            fs::create_dir_all(&out_path).map_err(|e| format!("failed to create dir {}: {}", out_path.display(), e))?;
+            fs::create_dir_all(&out_path)
+                .map_err(|e| format!("failed to create dir {}: {}", out_path.display(), e))?;
             continue;
         }
 
         if let Some(parent) = out_path.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("failed to create dir {}: {}", parent.display(), e))?;
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("failed to create dir {}: {}", parent.display(), e))?;
         }
 
-        let mut outfile = File::create(&out_path).map_err(|e| format!("failed to create file {}: {}", out_path.display(), e))?;
-        io::copy(&mut entry, &mut outfile).map_err(|e| format!("failed to extract file {}: {}", out_path.display(), e))?;
+        let mut outfile = File::create(&out_path)
+            .map_err(|e| format!("failed to create file {}: {}", out_path.display(), e))?;
+        io::copy(&mut entry, &mut outfile)
+            .map_err(|e| format!("failed to extract file {}: {}", out_path.display(), e))?;
     }
     Ok(())
 }
-
-
 
 #[tauri::command]
 pub fn find_path_by_where(name: &str) -> Result<String, String> {
@@ -297,14 +293,9 @@ pub fn find_path_by_where(name: &str) -> Result<String, String> {
         .to_string())
 }
 
-
-
 #[tauri::command]
 
-pub fn tools_download_and_install_adb(
-    install_dir: String
-) -> Result<InstallResult, String> {
-
+pub fn tools_download_and_install_adb(install_dir: String) -> Result<InstallResult, String> {
     let install_dir_path = Path::new(&install_dir);
 
     if install_dir_path.exists() {
@@ -328,7 +319,6 @@ pub fn tools_download_and_install_adb(
 
     fs::create_dir_all(install_dir_path)
         .map_err(|e| format!("failed to create install dir: {}", e))?;
-
 
     let mut resp = crate::shared_http_client()
         .get(PLATFORM_TOOLS_URL)
@@ -381,38 +371,36 @@ pub fn tools_download_and_install_adb(
 pub fn get_latest_release(url: &str, auth: Option<&str>) -> Result<GithubResult, String> {
     let client = crate::shared_http_client();
     let resp = match auth {
-        Some(a) => {
-            client
-                .get(url)
-                .header("User-Agent", "DynamicIsland-Updater")
-                .header("Accept", "application/vnd.github+json")
-                .header("Authorization", format!("Bearer {}", a))
-                .send()
-                .map_err(|e| {
-                    let msg = format!("请求失败: {}", e);
-                    crate::logger::warn(TAG, &msg);
-                    msg
-                })?
-        },
-        None => {
-            client
-                .get(url)
-                .header("User-Agent", "DynamicIsland-Updater")
-                .header("Accept", "application/vnd.github+json")
-                .send()
-                .map_err(|e| {
-                    let msg = format!("请求失败: {}", e);
-                    crate::logger::warn(TAG, &msg);
-                    msg
-                })?
-        }
+        Some(a) => client
+            .get(url)
+            .header("User-Agent", "DynamicIsland-Updater")
+            .header("Accept", "application/vnd.github+json")
+            .header("Authorization", format!("Bearer {}", a))
+            .send()
+            .map_err(|e| {
+                let msg = format!("请求失败: {}", e);
+                crate::logger::warn(TAG, &msg);
+                msg
+            })?,
+        None => client
+            .get(url)
+            .header("User-Agent", "DynamicIsland-Updater")
+            .header("Accept", "application/vnd.github+json")
+            .send()
+            .map_err(|e| {
+                let msg = format!("请求失败: {}", e);
+                crate::logger::warn(TAG, &msg);
+                msg
+            })?,
     };
 
     let status = resp.status();
     crate::logger::info(TAG, &format!("GitHub API 响应: {}", status));
 
     if !status.is_success() {
-        let body = resp.text().unwrap_or_else(|_| "<无法读取响应体>".to_string());
+        let body = resp
+            .text()
+            .unwrap_or_else(|_| "<无法读取响应体>".to_string());
         let msg = format!("GitHub API 返回错误: {} | body: {}", status, body);
         crate::logger::warn(TAG, &msg);
         let friendly = if status.as_u16() == 403 && body.contains("rate limit") {
@@ -437,7 +425,6 @@ fn accept_hook_asset(asset: &Asserts) -> bool {
     asset.name == "cc-hook-core.exe"
 }
 
-
 fn download_from_github_matching<F>(
     idir: &str,
     short_link: &str,
@@ -452,10 +439,15 @@ where
     fs::create_dir_all(install_dir_path)
         .map_err(|e| format!("failed to create install dir: {}", e))?;
     //先占位
-    let link = format!("https://api.github.com/repos/{}/releases/latest", short_link);
+    let link = format!(
+        "https://api.github.com/repos/{}/releases/latest",
+        short_link
+    );
     let gr = get_latest_release(&link, None)?;
     for a in &gr.assets {
-        if !accept(a) { continue; }
+        if !accept(a) {
+            continue;
+        }
 
         if is_aria2c_rpc {
             return Err("aria2c RPC 下载分支待实现".into());
@@ -471,13 +463,27 @@ where
             .map_err(|e| format!("failed to download {}: {}", a.name, e))?;
 
         if !resp.status().is_success() {
-            return Err(format!("{} download failed: HTTP {}", a.name, resp.status()));
+            return Err(format!(
+                "{} download failed: HTTP {}",
+                a.name,
+                resp.status()
+            ));
         }
 
-        let mut file = File::create(&file_path)
-            .map_err(|e| format!("failed to create download file {}: {}", file_path.display(), e))?;
-        io::copy(&mut resp, &mut file)
-            .map_err(|e| format!("failed to save download file {}: {}", file_path.display(), e))?;
+        let mut file = File::create(&file_path).map_err(|e| {
+            format!(
+                "failed to create download file {}: {}",
+                file_path.display(),
+                e
+            )
+        })?;
+        io::copy(&mut resp, &mut file).map_err(|e| {
+            format!(
+                "failed to save download file {}: {}",
+                file_path.display(),
+                e
+            )
+        })?;
 
         return Ok(file_path.to_string_lossy().to_string());
     }
@@ -485,9 +491,8 @@ where
     Err("候选项里没有预期程序(包)".into())
 }
 
-
 #[tauri::command]
-pub async fn tools_downloader(idir: String, name: String, ) -> Result<InstallResult, String> {
+pub async fn tools_downloader(idir: String, name: String) -> Result<InstallResult, String> {
     tauri::async_runtime::spawn_blocking(move || tools_downloader_blocking(idir, name))
         .await
         .map_err(|e| format!("tools_downloader 子线程执行失败: {}", e))?
@@ -495,12 +500,8 @@ pub async fn tools_downloader(idir: String, name: String, ) -> Result<InstallRes
 
 fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult, String> {
     let (exe, accept, short_link): (&str, fn(&Asserts) -> bool, &str) = match name.as_str() {
-        "aria2c" => {
-            ("aria2c.exe", accept_aria2_asset, "aria2/aria2")
-        },
-        "hook" => {
-            ("cc-hook-core.exe", accept_hook_asset, "cXp1r/cc-hook-core")
-        },
+        "aria2c" => ("aria2c.exe", accept_aria2_asset, "aria2/aria2"),
+        "hook" => ("cc-hook-core.exe", accept_hook_asset, "cXp1r/cc-hook-core"),
         "adb" => {
             return tools_download_and_install_adb(idir);
         }
@@ -508,14 +509,10 @@ fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult
     };
     let install_dir_path = Path::new(&idir);
     backup_install_dir_if_needed(install_dir_path)?;
-    fs::create_dir_all(install_dir_path).map_err(|e| format!("failed to create install dir: {}", e))?;
+    fs::create_dir_all(install_dir_path)
+        .map_err(|e| format!("failed to create install dir: {}", e))?;
 
-    let path = download_from_github_matching(
-        &idir,
-        short_link,
-        false,
-        accept,
-    )?;
+    let path = download_from_github_matching(&idir, short_link, false, accept)?;
     println!("{path}");
     if path.ends_with(".exe") {
         Ok(InstallResult {
@@ -525,21 +522,17 @@ fn tools_downloader_blocking(idir: String, name: String) -> Result<InstallResult
     } else if path.ends_with(".zip") {
         let file = File::open(&path)
             .map_err(|e| format!("failed to open downloaded zip {}: {}", path, e))?;
-        let mut archive = ZipArchive::new(file)
-            .map_err(|e| format!("failed to read {} zip: {}", name, e))?;
+        let mut archive =
+            ZipArchive::new(file).map_err(|e| format!("failed to read {} zip: {}", name, e))?;
         extract_archive(&mut archive, install_dir_path)?;
 
         Ok(InstallResult {
             install_dir: idir.clone(),
-            path: install_dir_path
-                .join(exe)
-                .to_string_lossy()
-                .to_string(),
+            path: install_dir_path.join(exe).to_string_lossy().to_string(),
         })
     } else {
         Err("Unknown content type".into())
     }
-    
 }
 
 impl Aria2cRpc {
@@ -567,10 +560,7 @@ impl Aria2cRpc {
             .await
             .map_err(|e| e.to_string())?;
 
-        let value: serde_json::Value = res
-            .json()
-            .await
-            .map_err(|e| e.to_string())?;
+        let value: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
         logger::debug("Aria2cRpc", &format!("{:?}", value));
         Ok(value["result"].as_str().unwrap_or("").to_string())
     }
@@ -591,14 +581,14 @@ impl Aria2cRpc {
 
     async fn force_remove(&self, gid: &str) -> Result<serde_json::Value, String> {
         let body = json!({
-                    "jsonrpc": "2.0",
-                    "id": "qwer",
-                    "method": "aria2.forceRemove",
-                    "params": [
-                        format!("token:{}", self.secret),
-                        gid
-                    ]
-                });
+            "jsonrpc": "2.0",
+            "id": "qwer",
+            "method": "aria2.forceRemove",
+            "params": [
+                format!("token:{}", self.secret),
+                gid
+            ]
+        });
         let res = self
             .client
             .post(format!("http://127.0.0.1:{}/jsonrpc", self.port))
@@ -612,7 +602,13 @@ impl Aria2cRpc {
             .map_err(|e| e.to_string())
     }
     //前端会生成一个唯一uuid给core,进度条会根据uuid来选择,然后结束后告诉前端uuid来重置
-    pub async fn new_task(&self, dir: &str, url: &str, uuid: &str, window: Option<tauri::WebviewWindow>) -> Result<(), String> {
+    pub async fn new_task(
+        &self,
+        dir: &str,
+        url: &str,
+        uuid: &str,
+        window: Option<tauri::WebviewWindow>,
+    ) -> Result<(), String> {
         let gid = self.add_uri(url, dir).await?;
 
         let rpc = self.clone();
@@ -626,7 +622,7 @@ impl Aria2cRpc {
                 gid
             ]
         });
-        
+
         match window {
             Some(win) => {
                 tokio::spawn(async move {
@@ -647,22 +643,21 @@ impl Aria2cRpc {
                                 .parse()
                                 .unwrap_or(1.0);
 
-                            let speed = result["downloadSpeed"]
-                                .as_str()
-                                .unwrap_or("0");
+                            let speed = result["downloadSpeed"].as_str().unwrap_or("0");
 
                             let progress = completed / total;
 
-                            let _ = win.emit("aria2c-rpc-progress", serde_json::json!({
-                                "gid": gid,
-                                "progress": progress,
-                                "speed": speed,
-                                "uuid": &uuid,
-                            }));
+                            let _ = win.emit(
+                                "aria2c-rpc-progress",
+                                serde_json::json!({
+                                    "gid": gid,
+                                    "progress": progress,
+                                    "speed": speed,
+                                    "uuid": &uuid,
+                                }),
+                            );
 
-                            let status_str = result["status"]
-                                .as_str()
-                                .unwrap_or("");
+                            let status_str = result["status"].as_str().unwrap_or("");
 
                             if status_str == "complete" {
                                 let path = result["files"]
@@ -676,32 +671,36 @@ impl Aria2cRpc {
                                     .and_then(|s| s.to_str())
                                     .unwrap_or("");
 
-                                let _ = win.emit("aria2c-rpc-end", serde_json::json!({
-                                    "ok": if filename.is_empty() { false } else {true},
-                                    "path": path,
-                                    "filename": filename,
-                                    "uuid": &uuid,
-                                }));
+                                let _ = win.emit(
+                                    "aria2c-rpc-end",
+                                    serde_json::json!({
+                                        "ok": if filename.is_empty() { false } else {true},
+                                        "path": path,
+                                        "filename": filename,
+                                        "uuid": &uuid,
+                                    }),
+                                );
 
                                 break;
                             }
 
                             if status_str == "error" || status_str == "removed" {
-                                let _ = win.emit("aria2c-rpc-end", serde_json::json!({
-                                    "ok": false,
-                                    "uuid": &uuid,
-                                }));
+                                let _ = win.emit(
+                                    "aria2c-rpc-end",
+                                    serde_json::json!({
+                                        "ok": false,
+                                        "uuid": &uuid,
+                                    }),
+                                );
                                 logger::debug("Aria2cRpc", &format!("{:?}", v));
                                 break;
                             }
                         }
 
-                        tokio::time::sleep(
-                            std::time::Duration::from_secs(1)
-                        ).await;
+                        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     }
                 });
-            },
+            }
             None => {
                 tokio::spawn(async move {
                     loop {
@@ -709,9 +708,7 @@ impl Aria2cRpc {
                         if let Ok(v) = status {
                             let result = &v["result"];
 
-                            let status_str = result["status"]
-                                .as_str()
-                                .unwrap_or("");
+                            let status_str = result["status"].as_str().unwrap_or("");
 
                             if status_str == "complete" {
                                 break;
@@ -721,21 +718,15 @@ impl Aria2cRpc {
                                 break;
                             }
                         }
-                        tokio::time::sleep(
-                            std::time::Duration::from_secs(1)
-                        ).await;
+                        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     }
                 });
-
             }
         }
         //这个地方ok没有任何意义的
         Ok(())
     }
 }
-
-
-
 
 #[tauri::command]
 pub async fn aria2c_rpc_download(
@@ -756,16 +747,18 @@ pub async fn aria2c_rpc_download(
     }
 }
 
-
 #[tauri::command]
-pub async fn aria2c_rpc_remove(state: tauri::State<'_, IslandState>, gid: &str) -> Result<(), String> {
+pub async fn aria2c_rpc_remove(
+    state: tauri::State<'_, IslandState>,
+    gid: &str,
+) -> Result<(), String> {
     let ar = state.aria2c_rpc.lock().unwrap().clone();
 
     match ar {
         Some(ar) => {
             logger::debug("Aria2cRpc", &format!("{:?}", ar.force_remove(gid).await?));
             Ok(())
-        },
+        }
         None => {
             logger::warn("Aria2cRpc", "Aria2c Rpc Server Not Found");
             Err("Aria2c Rpc Server Not Found".into())

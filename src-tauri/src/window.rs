@@ -1,14 +1,13 @@
+use crate::{logger, IslandState, SNAP_DURATION_MS, SNAP_FRAME_MS};
+use display_info::DisplayInfo;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{Emitter, LogicalSize, Manager};
-use serde::{Deserialize, Serialize};
 use windows::Win32::Foundation::HWND;
 use windows::Win32::UI::WindowsAndMessaging::*;
-use crate::{logger, IslandState, SNAP_DURATION_MS, SNAP_FRAME_MS};
-use display_info::DisplayInfo;
-
 
 const TAG: &str = "Window";
 
@@ -24,19 +23,30 @@ pub struct MonitorInfo {
 }
 
 pub(crate) fn get_foreground_process_name() -> Option<String> {
-    use windows::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION};
-    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
     use windows::core::PWSTR;
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
     unsafe {
         let fg = GetForegroundWindow();
-        if fg.0.is_null() { return None; }
+        if fg.0.is_null() {
+            return None;
+        }
         let mut pid: u32 = 0;
         windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(fg, Some(&mut pid));
-        if pid == 0 { return None; }
+        if pid == 0 {
+            return None;
+        }
         let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
         let mut buf = [0u16; 260];
         let mut len = buf.len() as u32;
-        let ok = QueryFullProcessImageNameW(handle, windows::Win32::System::Threading::PROCESS_NAME_WIN32, PWSTR(buf.as_mut_ptr()), &mut len);
+        let ok = QueryFullProcessImageNameW(
+            handle,
+            windows::Win32::System::Threading::PROCESS_NAME_WIN32,
+            PWSTR(buf.as_mut_ptr()),
+            &mut len,
+        );
         let _ = windows::Win32::Foundation::CloseHandle(handle);
         ok.ok()?;
         let path = String::from_utf16_lossy(&buf[..len as usize]);
@@ -46,11 +56,11 @@ pub(crate) fn get_foreground_process_name() -> Option<String> {
 
 /// 强制窗口成为前台窗口，绕过 Windows 前台锁（AttachThreadInput 技巧）
 pub(crate) fn force_foreground(hwnd: HWND) {
-    use windows::Win32::System::Threading::{GetCurrentThreadId, AttachThreadInput};
-    use windows::Win32::UI::WindowsAndMessaging::{
-        GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow, BringWindowToTop,
-    };
+    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
     use windows::Win32::UI::Input::KeyboardAndMouse::SetFocus;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
+    };
     unsafe {
         let fg = GetForegroundWindow();
         if fg.0.is_null() {
@@ -80,13 +90,17 @@ pub(crate) fn force_foreground(hwnd: HWND) {
     }
 }
 
-
 pub(crate) fn is_any_blacklisted_fullscreen(blacklist: &[String]) -> bool {
-    use windows::Win32::Foundation::{LPARAM, RECT};
     use windows::core::BOOL;
-    use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
-    use windows::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION};
     use windows::core::PWSTR;
+    use windows::Win32::Foundation::{LPARAM, RECT};
+    use windows::Win32::Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+    };
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
 
     struct Ctx<'a> {
         blacklist: &'a [String],
@@ -95,28 +109,40 @@ pub(crate) fn is_any_blacklisted_fullscreen(blacklist: &[String]) -> bool {
 
     unsafe extern "system" fn callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
         let ctx = &mut *(lparam.0 as *mut Ctx);
-        if ctx.found { return BOOL(0); }
+        if ctx.found {
+            return BOOL(0);
+        }
 
         if !IsWindowVisible(hwnd).as_bool() || IsIconic(hwnd).as_bool() {
             return BOOL(1);
         }
 
         let mut rect = RECT::default();
-        if GetWindowRect(hwnd, &mut rect).is_err() { return BOOL(1); }
+        if GetWindowRect(hwnd, &mut rect).is_err() {
+            return BOOL(1);
+        }
 
         let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         let mut mi: MONITORINFO = std::mem::zeroed();
         mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
-        if !GetMonitorInfoW(monitor, &mut mi).as_bool() { return BOOL(1); }
+        if !GetMonitorInfoW(monitor, &mut mi).as_bool() {
+            return BOOL(1);
+        }
 
         let mr = mi.rcMonitor;
-        if rect.left > mr.left || rect.top > mr.top || rect.right < mr.right || rect.bottom < mr.bottom {
+        if rect.left > mr.left
+            || rect.top > mr.top
+            || rect.right < mr.right
+            || rect.bottom < mr.bottom
+        {
             return BOOL(1);
         }
 
         let mut pid: u32 = 0;
         GetWindowThreadProcessId(hwnd, Some(&mut pid));
-        if pid == 0 { return BOOL(1); }
+        if pid == 0 {
+            return BOOL(1);
+        }
 
         let handle = match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
             Ok(h) => h,
@@ -124,12 +150,23 @@ pub(crate) fn is_any_blacklisted_fullscreen(blacklist: &[String]) -> bool {
         };
         let mut buf = [0u16; 260];
         let mut len = buf.len() as u32;
-        let ok = QueryFullProcessImageNameW(handle, PROCESS_NAME_WIN32, PWSTR(buf.as_mut_ptr()), &mut len);
+        let ok = QueryFullProcessImageNameW(
+            handle,
+            PROCESS_NAME_WIN32,
+            PWSTR(buf.as_mut_ptr()),
+            &mut len,
+        );
         let _ = windows::Win32::Foundation::CloseHandle(handle);
-        if ok.is_err() { return BOOL(1); }
+        if ok.is_err() {
+            return BOOL(1);
+        }
 
         let path = String::from_utf16_lossy(&buf[..len as usize]);
-        let name = path.rsplit('\\').next().map(|s| s.to_lowercase()).unwrap_or_default();
+        let name = path
+            .rsplit('\\')
+            .next()
+            .map(|s| s.to_lowercase())
+            .unwrap_or_default();
         if ctx.blacklist.iter().any(|b| *b == name) {
             ctx.found = true;
             return BOOL(0);
@@ -137,7 +174,10 @@ pub(crate) fn is_any_blacklisted_fullscreen(blacklist: &[String]) -> bool {
         BOOL(1)
     }
 
-    let mut ctx = Ctx { blacklist, found: false };
+    let mut ctx = Ctx {
+        blacklist,
+        found: false,
+    };
     unsafe {
         let _ = EnumWindows(Some(callback), LPARAM(&mut ctx as *mut _ as isize));
     }
@@ -153,12 +193,15 @@ pub(crate) fn anim_next_id(anim_id: &Arc<AtomicU64>, label: &str) -> u64 {
     let gen = anim_id.fetch_add(1, Ordering::Relaxed) + 1;
     let caller = std::panic::Location::caller();
     if !label.is_empty() {
-        logger::debug("WindowAnim", &format!(
-            "anim_next_id: label={label}, gen={gen}, caller={}:{}:{}",
-            caller.file(),
-            caller.line(),
-            caller.column(),
-        ));
+        logger::debug(
+            "WindowAnim",
+            &format!(
+                "anim_next_id: label={label}, gen={gen}, caller={}:{}:{}",
+                caller.file(),
+                caller.line(),
+                caller.column(),
+            ),
+        );
     }
     gen
 }
@@ -179,19 +222,21 @@ pub(crate) fn anim_is_current(anim_id: &Arc<AtomicU64>, my_gen: u64, label: &str
     true
 }
 
-
 #[track_caller]
 pub(crate) fn anim_finish_if_current(anim_id: &Arc<AtomicU64>, my_gen: u64, label: &str) -> bool {
-    let (res,r) = match anim_id.compare_exchange(my_gen, 0, Ordering::Relaxed, Ordering::Relaxed) {
+    let (res, r) = match anim_id.compare_exchange(my_gen, 0, Ordering::Relaxed, Ordering::Relaxed) {
         Ok(_) => {
             let caller = std::panic::Location::caller();
-            
-            (&format!(
-                "anim_idle: label={label}, gen={my_gen}, caller={}:{}:{}",
-                caller.file(),
-                caller.line(),
-                caller.column(),
-            ),true)
+
+            (
+                &format!(
+                    "anim_idle: label={label}, gen={my_gen}, caller={}:{}:{}",
+                    caller.file(),
+                    caller.line(),
+                    caller.column(),
+                ),
+                true,
+            )
         }
         Err(current_gen) => {
             let caller = std::panic::Location::caller();
@@ -212,25 +257,43 @@ pub(crate) fn anim_finish_if_current(anim_id: &Arc<AtomicU64>, my_gen: u64, labe
 pub(crate) fn get_cursor_pos() -> Option<(i32, i32)> {
     use windows::Win32::Foundation::POINT;
     let mut pt = POINT { x: 0, y: 0 };
-    unsafe { if GetCursorPos(&mut pt).is_ok() { Some((pt.x, pt.y)) } else { None } }
+    unsafe {
+        if GetCursorPos(&mut pt).is_ok() {
+            Some((pt.x, pt.y))
+        } else {
+            None
+        }
+    }
 }
 
 pub(crate) fn get_window_rect(hwnd: HWND) -> Option<windows::Win32::Foundation::RECT> {
     let mut rect = windows::Win32::Foundation::RECT::default();
     unsafe {
-        if GetWindowRect(hwnd, &mut rect).is_ok() { Some(rect) } else { None }
+        if GetWindowRect(hwnd, &mut rect).is_ok() {
+            Some(rect)
+        } else {
+            None
+        }
     }
 }
 
 #[tauri::command]
-pub(crate) fn set_capsule_current_rect(state: tauri::State<'_, IslandState>, width: u64, height: u64) {
+pub(crate) fn set_capsule_current_rect(
+    state: tauri::State<'_, IslandState>,
+    width: u64,
+    height: u64,
+) {
     state.capsule_w.store(width, Ordering::Relaxed);
     state.capsule_h.store(height, Ordering::Relaxed);
     //打日志吃io性能,不打了.有报错自己把这里去掉注释看
     //logger::debug(TAG,&format!("recieve size from webview, width: {}, height: {}", width, height));
 }
 #[tauri::command]
-pub(crate) fn set_capsule_target_rect(state: tauri::State<'_, IslandState>, width: u64, height: u64) {
+pub(crate) fn set_capsule_target_rect(
+    state: tauri::State<'_, IslandState>,
+    width: u64,
+    height: u64,
+) {
     state.capsule_tw.store(width, Ordering::Relaxed);
     state.capsule_th.store(height, Ordering::Relaxed);
     //打日志吃io性能,不打了.有报错自己把这里去掉注释看
@@ -242,7 +305,11 @@ pub(crate) fn set_click_through(hwnd: HWND, through: bool) {
         let ex = GetWindowLongW(hwnd, GWL_EXSTYLE);
         let has_transparent = (ex & WS_EX_TRANSPARENT.0 as i32) != 0;
         if through && !has_transparent {
-            SetWindowLongW(hwnd, GWL_EXSTYLE, ex | WS_EX_TRANSPARENT.0 as i32 | WS_EX_LAYERED.0 as i32);
+            SetWindowLongW(
+                hwnd,
+                GWL_EXSTYLE,
+                ex | WS_EX_TRANSPARENT.0 as i32 | WS_EX_LAYERED.0 as i32,
+            );
         } else if !through && has_transparent {
             SetWindowLongW(hwnd, GWL_EXSTYLE, ex & !(WS_EX_TRANSPARENT.0 as i32));
         }
@@ -250,7 +317,14 @@ pub(crate) fn set_click_through(hwnd: HWND, through: bool) {
 }
 
 #[track_caller]
-pub(crate) fn snap_back(window: &tauri::WebviewWindow, from_x: f64, from_y: f64, to_x: f64, to_y: f64, anim_id: Arc<AtomicU64>) -> bool {
+pub(crate) fn snap_back(
+    window: &tauri::WebviewWindow,
+    from_x: f64,
+    from_y: f64,
+    to_x: f64,
+    to_y: f64,
+    anim_id: Arc<AtomicU64>,
+) -> bool {
     let my_gen = anim_next_id(&anim_id, "snap_back");
     logger::debug("WindowAnim", &format!("snap_back start: gen={my_gen}, from=({from_x:.1},{from_y:.1}), to=({to_x:.1},{to_y:.1})"));
 
@@ -265,14 +339,16 @@ pub(crate) fn snap_back(window: &tauri::WebviewWindow, from_x: f64, from_y: f64,
 
         let t = ease_out_cubic(p);
         let _ = window.set_position(tauri::LogicalPosition::new(
-            from_x + (to_x - from_x) * t, from_y + (to_y - from_y) * t,
+            from_x + (to_x - from_x) * t,
+            from_y + (to_y - from_y) * t,
         ));
-        if p >= 1.0 { break; }
+        if p >= 1.0 {
+            break;
+        }
         thread::sleep(Duration::from_millis(SNAP_FRAME_MS));
     }
     anim_finish_if_current(&anim_id, my_gen, "snap_back")
 }
-
 
 #[tauri::command]
 pub fn start_drag(state: tauri::State<'_, IslandState>) {
@@ -282,7 +358,12 @@ pub fn start_drag(state: tauri::State<'_, IslandState>) {
 }
 
 #[tauri::command]
-pub fn drag_move(window: tauri::WebviewWindow, state: tauri::State<'_, IslandState>, dx: i32, dy: i32) {
+pub fn drag_move(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, IslandState>,
+    dx: i32,
+    dy: i32,
+) {
     let gen = anim_next_id(&state.move_anim_id, "");
     if let Ok(pos) = window.outer_position() {
         let scale = window.scale_factor().unwrap_or(1.0);
@@ -317,8 +398,11 @@ pub fn end_drag(window: tauri::WebviewWindow, state: tauri::State<'_, IslandStat
     // 按当前实际窗口宽度重算居中 X，避免 resize-handle 改过宽度后偏移
     let capsule_w = state.capsule_tw.load(Ordering::Relaxed) as f64;
     let capsule_h = state.capsule_th.load(Ordering::Relaxed) as f64;
-    let target_x = state.offset_x.load(Ordering::Relaxed) as f64 * scale + state.screen_x.load(Ordering::Relaxed) as f64 + (state.screen_w.load(Ordering::Relaxed) as f64 / scale - capsule_w) / 2.0;
-    let target_y = state.offset_y.load(Ordering::Relaxed) as f64 * scale + state.screen_y.load(Ordering::Relaxed) as f64;
+    let target_x = state.offset_x.load(Ordering::Relaxed) as f64 * scale
+        + state.screen_x.load(Ordering::Relaxed) as f64
+        + (state.screen_w.load(Ordering::Relaxed) as f64 / scale - capsule_w) / 2.0;
+    let target_y = state.offset_y.load(Ordering::Relaxed) as f64 * scale
+        + state.screen_y.load(Ordering::Relaxed) as f64;
     logger::debug(TAG, &format!("end_drag snap_back: capsule=({capsule_w:.1}x{capsule_h:.1}), target=({target_x:.1},{target_y:.1})"));
 
     if let Ok(pos) = window.outer_position() {
@@ -326,7 +410,9 @@ pub fn end_drag(window: tauri::WebviewWindow, state: tauri::State<'_, IslandStat
         let cy = pos.y as f64 / scale;
         let w = window.clone();
         let anim_id = state.move_anim_id.clone();
-        thread::spawn(move || { snap_back(&w, cx, cy, target_x, target_y, anim_id); });
+        thread::spawn(move || {
+            snap_back(&w, cx, cy, target_x, target_y, anim_id);
+        });
     }
 }
 
@@ -341,27 +427,30 @@ pub fn sync_window_size(
     let min_size = 640.0_f64;
     let new_w = width.max(min_size);
     let new_h = height.max(min_size);
-    logger::debug(TAG, &format!(
-        "sync_window_size: target=({new_w:.1}x{new_h:.1})",
-    ));
+    logger::debug(
+        TAG,
+        &format!("sync_window_size: target=({new_w:.1}x{new_h:.1})",),
+    );
     state.capsule_w.store(width as u64, Ordering::Relaxed);
     state.capsule_h.store(height as u64, Ordering::Relaxed);
     let _ = window.set_size(LogicalSize::new(new_w, new_h));
 }
 
-
-
 #[tauri::command]
 pub fn show_context_menu(app: tauri::AppHandle, window: tauri::WebviewWindow) {
     // 获取鼠标位置
-    let Some((x, y)) = get_cursor_pos() else { return };
+    let Some((x, y)) = get_cursor_pos() else {
+        return;
+    };
     let Ok(hwnd) = window.hwnd() else { return };
 
     let cmd_id: i32 = unsafe {
         let hwnd = HWND(hwnd.0);
 
         // 创建菜单
-        let Ok(h_menu) = CreatePopupMenu() else { return };
+        let Ok(h_menu) = CreatePopupMenu() else {
+            return;
+        };
 
         // 添加菜单项
         let _ = AppendMenuW(h_menu, MF_STRING, 1, windows::core::w!("设置"));
@@ -434,11 +523,10 @@ pub fn set_current_view(state: tauri::State<'_, IslandState>, view: String) {
         "email" => state.email_expanded.store(false, Ordering::Relaxed),
         _ => return,
     }
-    
 }
 
 #[tauri::command]
-pub fn start_raf(state: tauri::State<'_, IslandState>) -> u64{ 
+pub fn start_raf(state: tauri::State<'_, IslandState>) -> u64 {
     anim_next_id(&state.move_anim_id, "raf")
 }
 #[tauri::command]
@@ -446,7 +534,17 @@ pub fn end_raf(state: tauri::State<'_, IslandState>, gen: u64) -> bool {
     anim_finish_if_current(&state.move_anim_id, gen, "raf")
 }
 #[tauri::command]
-pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWindow, height: f64, width: f64, lwidth: f64, ewidth: f64, t: f64, smaller: bool, reposition: Option<u8>) {
+pub fn resize_raf(
+    state: tauri::State<'_, IslandState>,
+    window: tauri::WebviewWindow,
+    height: f64,
+    width: f64,
+    lwidth: f64,
+    ewidth: f64,
+    t: f64,
+    smaller: bool,
+    reposition: Option<u8>,
+) {
     let Ok(pos) = window.outer_position() else {
         logger::error(TAG, "set_expanded failed: outer_position unavailable");
         return;
@@ -485,14 +583,20 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
                     (x1, y1)
                 } else {
                     logger::debug("rAF", "snap-back: eased by t");
-                    (home_x + (pos_x - home_x) * (1.0 - t), home_y + (pos_y - home_y) * (1.0 - t))
+                    (
+                        home_x + (pos_x - home_x) * (1.0 - t),
+                        home_y + (pos_y - home_y) * (1.0 - t),
+                    )
                 }
             }
-        },
+        }
         _ => (pos_x, pos_y),
     };
 
-    logger::debug("rAF", &format!("({}, {}) -> ({}, {})", pos_x, pos_y, target_x, target_y));
+    logger::debug(
+        "rAF",
+        &format!("({}, {}) -> ({}, {})", pos_x, pos_y, target_x, target_y),
+    );
     let _ = window.set_position(tauri::LogicalPosition::new(target_x, target_y));
     let _ = window.set_size(tauri::LogicalSize::new(window_width, window_height));
     // 同步更新胶囊尺寸，避免监控线程读到新窗口位置+旧胶囊宽度的错位
@@ -509,24 +613,19 @@ pub fn resize_raf(state: tauri::State<'_, IslandState>, window: tauri::WebviewWi
             SWP_NOZORDER | SWP_NOACTIVATE,
         );
     }*/
-
-   
 }
 
 //统一封装函数之通用展开设置
 #[tauri::command]
-pub fn set_expanded(
-    state: tauri::State<'_, IslandState>,
-    expanded: bool,
-) {
+pub fn set_expanded(state: tauri::State<'_, IslandState>, expanded: bool) {
     state.is_expanded.store(expanded, Ordering::Relaxed);
     let v = state.current_view.lock().unwrap().as_str().to_string();
     let view_expanded = match v.as_str() {
         "lyric" => &state.music_expanded,
         "agent" => &state.agent_expanded,
-        "sadb"  => &state.sadb_expanded,
+        "sadb" => &state.sadb_expanded,
         "email" => &state.email_expanded,
-        _       => return,
+        _ => return,
     };
     view_expanded.store(expanded, Ordering::Relaxed);
 }
@@ -545,17 +644,14 @@ pub fn open_email_window(app: tauri::AppHandle, uid: Option<String>) {
         .as_ref()
         .map(|uid| format!("email.html?uid={uid}"))
         .unwrap_or_else(|| "email.html".to_string());
-    let builder = tauri::WebviewWindowBuilder::new(
-        &app,
-        "email",
-        tauri::WebviewUrl::App(url.into()),
-    )
-    .title("邮件")
-    .inner_size(960.0, 640.0)
-    .min_inner_size(720.0, 480.0)
-    .center()
-    .decorations(true)
-    .resizable(true);
+    let builder =
+        tauri::WebviewWindowBuilder::new(&app, "email", tauri::WebviewUrl::App(url.into()))
+            .title("邮件")
+            .inner_size(960.0, 640.0)
+            .min_inner_size(720.0, 480.0)
+            .center()
+            .decorations(true)
+            .resizable(true);
 
     match builder.build() {
         Ok(_) => logger::info(TAG, "open_email_window succeeded"),
@@ -565,8 +661,9 @@ pub fn open_email_window(app: tauri::AppHandle, uid: Option<String>) {
 
 pub fn get_primary_monitor_info() -> MonitorInfo {
     let displays = DisplayInfo::all().unwrap_or_default();
-    
-    let primary = displays.iter()
+
+    let primary = displays
+        .iter()
         .find(|d| d.is_primary)
         .or_else(|| displays.first()); // 找不到主屏就取第一个~
 
@@ -598,13 +695,16 @@ pub fn get_monitor_info() -> Vec<MonitorInfo> {
     // 不再需要传 EventLoop 进来了~
     let displays = DisplayInfo::all().unwrap_or_default();
 
-    displays.iter().map(|d| MonitorInfo {
-        name: d.name.clone(),
-        x: d.x,
-        y: d.y,
-        width: d.width,
-        height: d.height,
-        scale_factor: d.scale_factor as f64,
-        is_primary: d.is_primary,
-    }).collect()
+    displays
+        .iter()
+        .map(|d| MonitorInfo {
+            name: d.name.clone(),
+            x: d.x,
+            y: d.y,
+            width: d.width,
+            height: d.height,
+            scale_factor: d.scale_factor as f64,
+            is_primary: d.is_primary,
+        })
+        .collect()
 }

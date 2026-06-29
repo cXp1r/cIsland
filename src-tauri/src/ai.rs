@@ -1,10 +1,10 @@
+use crate::settings::{build_settings_data, save_settings_to_file};
+use crate::IslandState;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::Ordering;
 use std::thread;
 use std::time::Duration;
-use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
-use crate::IslandState;
-use crate::settings::{build_settings_data, save_settings_to_file};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
@@ -23,7 +23,7 @@ pub fn ai_get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Valu
 
     // 掩码 API Key，只显示前 4 位和后 4 位
     let masked_key = if api_key.len() > 8 {
-        format!("{}...{}", &api_key[..4], &api_key[api_key.len()-4..])
+        format!("{}...{}", &api_key[..4], &api_key[api_key.len() - 4..])
     } else if !api_key.is_empty() {
         "****".to_string()
     } else {
@@ -74,14 +74,19 @@ pub fn ai_save_settings(
 fn is_reasoning_model_by_name(model: &str) -> bool {
     let lower = model.to_lowercase();
     // DeepSeek R1 系列
-    if lower.contains("deepseek-r1") || lower.contains("deepseek_r1") || lower.contains("deepseek-reasoner") {
+    if lower.contains("deepseek-r1")
+        || lower.contains("deepseek_r1")
+        || lower.contains("deepseek-reasoner")
+    {
         return true;
     }
     // OpenAI o 系列
     if lower.contains("o1") || lower.contains("o3") || lower.contains("o4") {
         // 排除 "model-v01" 之类的误匹配
         for pat in ["o1-", "o1", "-o1", "o3-", "o3", "-o3", "o4-", "o4", "-o4"] {
-            if lower.contains(pat) { return true; }
+            if lower.contains(pat) {
+                return true;
+            }
         }
     }
     // QwQ 系列
@@ -146,18 +151,22 @@ pub fn ai_detect_model_type(
                 if !response.status().is_success() {
                     name_detected
                 } else {
-                    let response_json: serde_json::Value = response.json().unwrap_or(serde_json::Value::Null);
+                    let response_json: serde_json::Value =
+                        response.json().unwrap_or(serde_json::Value::Null);
                     let api_detected = response_json
                         .get("choices")
                         .and_then(|c| c.get(0))
                         .and_then(|c| c.get("message"))
                         .map(|m| {
-                            let has_reasoning = m.get("reasoning_content")
-                                .map(|v| !v.is_null() && v.as_str().map(|s| !s.is_empty()).unwrap_or(true))
+                            let has_reasoning = m
+                                .get("reasoning_content")
+                                .map(|v| {
+                                    !v.is_null()
+                                        && v.as_str().map(|s| !s.is_empty()).unwrap_or(true)
+                                })
                                 .unwrap_or(false);
-                            let has_thinking = m.get("thinking")
-                                .map(|v| !v.is_null())
-                                .unwrap_or(false);
+                            let has_thinking =
+                                m.get("thinking").map(|v| !v.is_null()).unwrap_or(false);
                             has_reasoning || has_thinking
                         })
                         .unwrap_or(false);
@@ -172,9 +181,12 @@ pub fn ai_detect_model_type(
 
         // 通过事件通知前端（settings 窗口）
         if let Some(win) = app.get_webview_window("settings") {
-            let _ = win.emit("ai-model-type-detected", serde_json::json!({
-                "is_reasoning_model": is_reasoning
-            }));
+            let _ = win.emit(
+                "ai-model-type-detected",
+                serde_json::json!({
+                    "is_reasoning_model": is_reasoning
+                }),
+            );
         }
 
         // 持久化（在线程内完成）
@@ -244,23 +256,29 @@ pub fn ai_send_message(
         };
 
         // 已知思考模型先进入 thinking，否则进入 generating（稍后流中自动检测）
-        let _ = window.emit("ai-status", serde_json::json!({
-            "status": if is_reasoning { "thinking" } else { "generating" }
-        }));
+        let _ = window.emit(
+            "ai-status",
+            serde_json::json!({
+                "status": if is_reasoning { "thinking" } else { "generating" }
+            }),
+        );
 
         // 构建请求
         let messages: Vec<serde_json::Value> = {
             let history = ai_history.lock().unwrap();
-            history.iter().map(|msg| {
-                let mut obj = serde_json::json!({
-                    "role": msg.role,
-                    "content": msg.content
-                });
-                if let Some(ref reasoning) = msg.reasoning_content {
-                    obj["reasoning_content"] = serde_json::Value::String(reasoning.clone());
-                }
-                obj
-            }).collect()
+            history
+                .iter()
+                .map(|msg| {
+                    let mut obj = serde_json::json!({
+                        "role": msg.role,
+                        "content": msg.content
+                    });
+                    if let Some(ref reasoning) = msg.reasoning_content {
+                        obj["reasoning_content"] = serde_json::Value::String(reasoning.clone());
+                    }
+                    obj
+                })
+                .collect()
         };
 
         let request_body = serde_json::json!({
@@ -299,10 +317,13 @@ pub fn ai_send_message(
             Ok(resp) => resp,
             Err(e) => {
                 println!("[AI] Request failed: {}", e);
-                let _ = window.emit("ai-status", serde_json::json!({
-                    "status": "error",
-                    "error": format!("请求失败: {}", e)
-                }));
+                let _ = window.emit(
+                    "ai-status",
+                    serde_json::json!({
+                        "status": "error",
+                        "error": format!("请求失败: {}", e)
+                    }),
+                );
                 ai_generating.store(false, Ordering::Relaxed);
                 return;
             }
@@ -314,10 +335,13 @@ pub fn ai_send_message(
             let status = response.status();
             let error_text = response.text().unwrap_or_default();
             println!("[AI] API error {}: {}", status, error_text);
-            let _ = window.emit("ai-status", serde_json::json!({
-                "status": "error",
-                "error": format!("API 返回错误 {}: {}", status, error_text)
-            }));
+            let _ = window.emit(
+                "ai-status",
+                serde_json::json!({
+                    "status": "error",
+                    "error": format!("API 返回错误 {}: {}", status, error_text)
+                }),
+            );
             ai_generating.store(false, Ordering::Relaxed);
             return;
         }
@@ -340,10 +364,13 @@ pub fn ai_send_message(
             let line = match line {
                 Ok(l) => l,
                 Err(e) => {
-                    let _ = window.emit("ai-status", serde_json::json!({
-                        "status": "error",
-                        "error": format!("读取响应失败: {}", e)
-                    }));
+                    let _ = window.emit(
+                        "ai-status",
+                        serde_json::json!({
+                            "status": "error",
+                            "error": format!("读取响应失败: {}", e)
+                        }),
+                    );
                     break;
                 }
             };
@@ -368,20 +395,28 @@ pub fn ai_send_message(
                 if let Some(choice) = choices.get(0) {
                     if let Some(delta) = choice.get("delta") {
                         // 检查思考内容
-                        if let Some(reasoning) = delta.get("reasoning_content").and_then(|r| r.as_str()) {
+                        if let Some(reasoning) =
+                            delta.get("reasoning_content").and_then(|r| r.as_str())
+                        {
                             if !reasoning.is_empty() {
                                 // 自动检测：首次收到 reasoning_content 时，切换到 thinking 状态
                                 if !ever_had_reasoning {
                                     ever_had_reasoning = true;
                                     in_thinking_phase = true;
-                                    let _ = window.emit("ai-status", serde_json::json!({
-                                        "status": "thinking"
-                                    }));
+                                    let _ = window.emit(
+                                        "ai-status",
+                                        serde_json::json!({
+                                            "status": "thinking"
+                                        }),
+                                    );
                                 }
                                 reasoning_content.push_str(reasoning);
-                                let _ = window.emit("ai-thinking-token", serde_json::json!({
-                                    "text": reasoning
-                                }));
+                                let _ = window.emit(
+                                    "ai-thinking-token",
+                                    serde_json::json!({
+                                        "text": reasoning
+                                    }),
+                                );
                             }
                         }
 
@@ -390,15 +425,21 @@ pub fn ai_send_message(
                             // 如果之前在思考阶段，现在切换到生成阶段
                             if in_thinking_phase && !content.is_empty() {
                                 in_thinking_phase = false;
-                                let _ = window.emit("ai-status", serde_json::json!({
-                                    "status": "generating"
-                                }));
+                                let _ = window.emit(
+                                    "ai-status",
+                                    serde_json::json!({
+                                        "status": "generating"
+                                    }),
+                                );
                             }
 
                             assistant_content.push_str(content);
-                            let _ = window.emit("ai-token", serde_json::json!({
-                                "text": content
-                            }));
+                            let _ = window.emit(
+                                "ai-token",
+                                serde_json::json!({
+                                    "text": content
+                                }),
+                            );
                         }
                     }
                 }
@@ -426,9 +467,12 @@ pub fn ai_send_message(
         }
 
         // 发送完成状态
-        let _ = window.emit("ai-status", serde_json::json!({
-            "status": "completed"
-        }));
+        let _ = window.emit(
+            "ai-status",
+            serde_json::json!({
+                "status": "completed"
+            }),
+        );
 
         ai_generating.store(false, Ordering::Relaxed);
     });

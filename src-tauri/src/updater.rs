@@ -1,8 +1,8 @@
+use serde::Serialize;
 use std::fs;
 use std::io::Write;
-use std::process::Command;
 use std::os::windows::process::CommandExt;
-use serde::Serialize;
+use std::process::Command;
 use tauri::Emitter;
 
 use crate::CREATE_NO_WINDOW;
@@ -14,7 +14,10 @@ const GITHUB_PREVIEW_API_URL: &str =
 
 #[tauri::command]
 pub fn get_app_version(app: tauri::AppHandle) -> String {
-    app.config().version.clone().unwrap_or_else(|| "unknown".to_string())
+    app.config()
+        .version
+        .clone()
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -52,18 +55,28 @@ fn is_newer_version(current: &str, latest: &str) -> bool {
 }
 
 #[tauri::command]
-pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result<UpdateInfo, String> {
+pub fn check_for_updates(
+    app: tauri::AppHandle,
+    preview: Option<bool>,
+) -> Result<UpdateInfo, String> {
     let is_preview = preview.unwrap_or(false);
     let current_version = app.config().version.clone().unwrap_or_default();
 
-    let api_url = if is_preview { GITHUB_PREVIEW_API_URL } else { GITHUB_API_URL };
+    let api_url = if is_preview {
+        GITHUB_PREVIEW_API_URL
+    } else {
+        GITHUB_API_URL
+    };
 
-    crate::logger::info("Updater", &format!(
-        "check for updates channel={} url={} current_version={}",
-        if is_preview { "preview" } else { "stable" },
-        api_url,
-        current_version
-    ));
+    crate::logger::info(
+        "Updater",
+        &format!(
+            "check for updates channel={} url={} current_version={}",
+            if is_preview { "preview" } else { "stable" },
+            api_url,
+            current_version
+        ),
+    );
 
     let release = crate::tools::get_latest_release(api_url, None)?;
 
@@ -106,10 +119,13 @@ pub fn check_for_updates(app: tauri::AppHandle, preview: Option<bool>) -> Result
         return Err("not found".to_string());
     }
 
-    crate::logger::info("Updater", &format!(
-        "latest_version={} download_url={} size={}",
-        latest_version, download_url, file_size
-    ));
+    crate::logger::info(
+        "Updater",
+        &format!(
+            "latest_version={} download_url={} size={}",
+            latest_version, download_url, file_size
+        ),
+    );
 
     let has_update = is_newer_version(&current_version, &latest_version);
 
@@ -160,10 +176,7 @@ fn do_download_and_install(app: &tauri::AppHandle, url: &str) -> Result<(), Stri
     let total = resp.content_length().unwrap_or(0);
 
     // 提取文件名
-    let file_name = url
-        .rsplit('/')
-        .next()
-        .unwrap_or("DynamicIsland_update.exe");
+    let file_name = url.rsplit('/').next().unwrap_or("DynamicIsland_update.exe");
 
     let temp_dir = std::env::temp_dir();
     let file_path = temp_dir.join(file_name);
@@ -175,8 +188,8 @@ fn do_download_and_install(app: &tauri::AppHandle, url: &str) -> Result<(), Stri
 
     // 写入文件并发送进度
     let chunk_size = 64 * 1024; // 64KB
-    let mut file = fs::File::create(&file_path)
-        .map_err(|e| format!("failed to create temp folder: {}", e))?;
+    let mut file =
+        fs::File::create(&file_path).map_err(|e| format!("failed to create temp folder: {}", e))?;
 
     let mut downloaded: u64 = 0;
     for chunk in bytes.chunks(chunk_size) {

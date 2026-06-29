@@ -1,10 +1,6 @@
 use libloading::{Library, Symbol};
 use serde::Serialize;
-use std::{
-    ffi::OsString,
-    os::windows::ffi::OsStringExt,
-    path::PathBuf,
-};
+use std::{ffi::OsString, os::windows::ffi::OsStringExt, path::PathBuf};
 
 use crate::get_exe_path;
 
@@ -53,7 +49,11 @@ fn dll_path() -> Result<PathBuf, String> {
     if bundled.exists() {
         return Ok(bundled);
     }
-    Err(format!("Everything64.dll not found in {} or {}", direct.display(), bundled.display()))
+    Err(format!(
+        "Everything64.dll not found in {} or {}",
+        direct.display(),
+        bundled.display()
+    ))
 }
 
 fn load_symbol<'lib, T>(lib: &'lib Library, name: &[u8]) -> Result<Symbol<'lib, T>, String> {
@@ -76,8 +76,7 @@ fn get_result_path(
     let mut buf = vec![0u16; 260];
 
     loop {
-        let written =
-            unsafe { get_full_path(index, buf.as_mut_ptr(), buf.len() as u32) as usize };
+        let written = unsafe { get_full_path(index, buf.as_mut_ptr(), buf.len() as u32) as usize };
 
         if written < buf.len().saturating_sub(1) {
             return widestr_to_path(&buf[..written]);
@@ -111,9 +110,7 @@ pub fn search_everything(keyword: &str, max: u32, offset: u32) -> Result<SearchP
     let get_full_path: Symbol<EverythingGetResultFullPathNameW> =
         load_symbol(&lib, b"Everything_GetResultFullPathNameW")?;
 
-    let search_text = format!("{keyword}\0")
-        .encode_utf16()
-        .collect::<Vec<u16>>();
+    let search_text = format!("{keyword}\0").encode_utf16().collect::<Vec<u16>>();
 
     unsafe {
         set_search(search_text.as_ptr());
@@ -177,7 +174,11 @@ pub struct SearchQueryResponse {
 
 /// 搜索文件，返回 count 条（默认 10），offset 翻页（子线程执行，不阻塞主线程）
 #[tauri::command]
-pub async fn search_query(query: String, offset: Option<usize>, count: Option<usize>) -> Result<SearchQueryResponse, String> {
+pub async fn search_query(
+    query: String,
+    offset: Option<usize>,
+    count: Option<usize>,
+) -> Result<SearchQueryResponse, String> {
     let count = count.unwrap_or(10);
     let offset = offset.unwrap_or(0);
 
@@ -188,22 +189,34 @@ pub async fn search_query(query: String, offset: Option<usize>, count: Option<us
         });
     }
 
-    println!("[Everything] search_query: query='{}' offset={} count={}", query, offset, count);
+    println!(
+        "[Everything] search_query: query='{}' offset={} count={}",
+        query, offset, count
+    );
 
     let response = tokio::task::spawn_blocking(move || -> Result<SearchQueryResponse, String> {
         let page = search_everything(&query, count as u32, offset as u32)?;
 
-        println!("[Everything] SDK returned {} entries (max={}, offset={}, has_next={})", page.entries.len(), count, offset, page.has_next);
+        println!(
+            "[Everything] SDK returned {} entries (max={}, offset={}, has_next={})",
+            page.entries.len(),
+            count,
+            offset,
+            page.has_next
+        );
 
-        let items: Vec<SearchResultItem> = page.entries
+        let items: Vec<SearchResultItem> = page
+            .entries
             .into_iter()
             .map(|entry| {
                 let full_path = entry.path.to_string_lossy().to_string();
-                let file_name = entry.path
+                let file_name = entry
+                    .path
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_else(|| full_path.clone());
-                let parent = entry.path
+                let parent = entry
+                    .path
                     .parent()
                     .map(|p| p.to_string_lossy().to_string())
                     .unwrap_or_default();
@@ -211,7 +224,8 @@ pub async fn search_query(query: String, offset: Option<usize>, count: Option<us
                     EntryType::Folder => "📁",
                     EntryType::Volume => "💿",
                     _ => "📄",
-                }.to_string();
+                }
+                .to_string();
                 SearchResultItem {
                     id: full_path.clone(),
                     title: file_name,
@@ -222,7 +236,13 @@ pub async fn search_query(query: String, offset: Option<usize>, count: Option<us
             })
             .collect();
 
-        println!("[Everything] returning {} items (offset={}, count={}, has_next={})", items.len(), offset, count, page.has_next);
+        println!(
+            "[Everything] returning {} items (offset={}, count={}, has_next={})",
+            items.len(),
+            offset,
+            count,
+            page.has_next
+        );
         Ok(SearchQueryResponse {
             items,
             has_next: page.has_next,

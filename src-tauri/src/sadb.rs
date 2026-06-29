@@ -4,21 +4,20 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use mdns_sd::{ServiceDaemon, ServiceEvent};
-use base64::engine::general_purpose::STANDARD as B64;
-use base64::Engine as _;
+use crate::logger;
 use crate::sadb_core::control::{
-    InjectKeycodeEvent, InjectScrollEvent, InjectTextEvent, InjectTouchEvent,
-    KeyEventAction, MotionEventAction, MotionEventButtons, POINTER_ID_MOUSE,
-    SetClipboard,
+    InjectKeycodeEvent, InjectScrollEvent, InjectTextEvent, InjectTouchEvent, KeyEventAction,
+    MotionEventAction, MotionEventButtons, SetClipboard, POINTER_ID_MOUSE,
 };
 use crate::sadb_core::protocol::VideoCodec;
 use crate::sadb_core::{Config, DeviceMessage, ScrcpyClient};
+use crate::IslandState;
+use base64::engine::general_purpose::STANDARD as B64;
+use base64::Engine as _;
+use mdns_sd::{ServiceDaemon, ServiceEvent};
 use serde::Serialize;
 use tauri::ipc::Channel;
-use tauri::{AppHandle, Manager, Emitter, State};
-use crate::logger;
-use crate::IslandState;
+use tauri::{AppHandle, Emitter, Manager, State};
 
 const TAG: &str = "SADB";
 /// Event emitted to the frontend over the IPC channel.
@@ -42,11 +41,14 @@ pub(crate) enum PacketEvent {
         config: bool,
         data: String,
     },
-    Error { message: String },
+    Error {
+        message: String,
+    },
     Closed,
-    Clipboard { text: String },
+    Clipboard {
+        text: String,
+    },
 }
-
 
 #[derive(Debug, Clone, Serialize)]
 pub struct AdbDevice {
@@ -80,7 +82,10 @@ fn resolve_server_jar(app: &AppHandle) -> PathBuf {
     if let Ok(r) = app.path().resource_dir() {
         let p = r.join("resources/scrcpy-server-v4.0");
         if p.exists() {
-            logger::info(TAG, &format!("using resource dir server jar: path={}", p.display()));
+            logger::info(
+                TAG,
+                &format!("using resource dir server jar: path={}", p.display()),
+            );
             return p;
         }
     }
@@ -88,12 +93,18 @@ fn resolve_server_jar(app: &AppHandle) -> PathBuf {
         for anc in exe.ancestors().take(8) {
             let p = anc.join("assets").join("scrcpy-server-v4.0");
             if p.exists() {
-                logger::info(TAG, &format!("using exe-relative server jar: path={}", p.display()));
+                logger::info(
+                    TAG,
+                    &format!("using exe-relative server jar: path={}", p.display()),
+                );
                 return p;
             }
         }
     }
-    logger::warn(TAG, "scrcpy-server jar not found in any standard location, using default path");
+    logger::warn(
+        TAG,
+        "scrcpy-server jar not found in any standard location, using default path",
+    );
     PathBuf::from("assets/scrcpy-server-v4.0")
 }
 
@@ -106,7 +117,13 @@ pub(crate) async fn sadb_start_mirroring(
     bitrate: Option<u32>,
     serial: Option<String>,
 ) -> Result<(), String> {
-    logger::info(TAG, &format!("sadb initialization requested: serial={:?}, max_size={:?}, bitrate={:?}", serial, max_size, bitrate));
+    logger::info(
+        TAG,
+        &format!(
+            "sadb initialization requested: serial={:?}, max_size={:?}, bitrate={:?}",
+            serial, max_size, bitrate
+        ),
+    );
     // 先杀掉已有 session（保证干净状态）
     {
         logger::debug(TAG, "checking existing sadb session before initialization");
@@ -126,20 +143,39 @@ pub(crate) async fn sadb_start_mirroring(
     logger::debug(TAG, "sadb mirroring state reset");
 
     let server_jar = resolve_server_jar(&app);
-    logger::info(TAG, &format!("resolved scrcpy-server jar: path={}, exists={}", server_jar.display(), server_jar.exists()));
+    logger::info(
+        TAG,
+        &format!(
+            "resolved scrcpy-server jar: path={}, exists={}",
+            server_jar.display(),
+            server_jar.exists()
+        ),
+    );
     if !server_jar.exists() {
-        logger::error(TAG, &format!("scrcpy-server jar not found: path={}", server_jar.display()));
-        return Err(format!("scrcpy-server jar not found at {}", server_jar.display()));
+        logger::error(
+            TAG,
+            &format!("scrcpy-server jar not found: path={}", server_jar.display()),
+        );
+        return Err(format!(
+            "scrcpy-server jar not found at {}",
+            server_jar.display()
+        ));
     }
 
     let bitrate_val = bitrate.or(Some(8_000_000));
     let adb_path = state.adb_path.lock().unwrap().trim().to_string();
     logger::debug(TAG, &format!("loaded adb path from settings: {}", adb_path));
     let adb_path = if adb_path.is_empty() {
-        logger::info(TAG, "no custom adb path configured, falling back to PATH adb");
+        logger::info(
+            TAG,
+            "no custom adb path configured, falling back to PATH adb",
+        );
         None
     } else {
-        logger::info(TAG, &format!("using custom adb path for sadb: adb_path={}", adb_path));
+        logger::info(
+            TAG,
+            &format!("using custom adb path for sadb: adb_path={}", adb_path),
+        );
         Some(adb_path)
     };
 
@@ -162,33 +198,66 @@ pub(crate) async fn sadb_start_mirroring(
         e.to_string()
     })?;
 
-    logger::info(TAG, &format!("ScrcpyClient created: scid={}", client.scid()));
-    logger::debug(TAG, &format!("starting scrcpy server: scid={}", client.scid()));
+    logger::info(
+        TAG,
+        &format!("ScrcpyClient created: scid={}", client.scid()),
+    );
+    logger::debug(
+        TAG,
+        &format!("starting scrcpy server: scid={}", client.scid()),
+    );
     client.start().await.map_err(|e| {
         logger::error(TAG, &format!("failed to start scrcpy: {}", e));
         e.to_string()
     })?;
-    logger::info(TAG, &format!("scrcpy server started: scid={}", client.scid()));
+    logger::info(
+        TAG,
+        &format!("scrcpy server started: scid={}", client.scid()),
+    );
 
-    logger::debug(TAG, &format!("reading device metadata: scid={}", client.scid()));
+    logger::debug(
+        TAG,
+        &format!("reading device metadata: scid={}", client.scid()),
+    );
     let device_meta = client.read_device_metadata().map_err(|e| {
         logger::error(TAG, &format!("failed to read device metadata: {}", e));
         e.to_string()
     })?;
-    logger::info(TAG, &format!("device metadata received: device_name={}", device_meta.name));
+    logger::info(
+        TAG,
+        &format!("device metadata received: device_name={}", device_meta.name),
+    );
 
-    logger::debug(TAG, &format!("reading video codec metadata: scid={}", client.scid()));
+    logger::debug(
+        TAG,
+        &format!("reading video codec metadata: scid={}", client.scid()),
+    );
     let codec_meta = client.read_video_codec_metadata().map_err(|e| {
         logger::error(TAG, &format!("failed to read video codec metadata: {}", e));
         e.to_string()
     })?;
-    logger::info(TAG, &format!("video codec metadata received: codec={:?}, width={}, height={}", codec_meta.codec, codec_meta.width, codec_meta.height));
+    logger::info(
+        TAG,
+        &format!(
+            "video codec metadata received: codec={:?}, width={}, height={}",
+            codec_meta.codec, codec_meta.width, codec_meta.height
+        ),
+    );
 
     // ── Audio metadata ──
     let audio_meta = client.read_audio_codec_metadata();
     match &audio_meta {
-        Ok(m) => logger::info(TAG, &format!("audio codec metadata received: codec={:?}", m.codec)),
-        Err(e) => logger::warn(TAG, &format!("audio metadata unavailable (device may not support audio capture): {}", e)),
+        Ok(m) => logger::info(
+            TAG,
+            &format!("audio codec metadata received: codec={:?}", m.codec),
+        ),
+        Err(e) => logger::warn(
+            TAG,
+            &format!(
+                "audio metadata unavailable (device may not support audio capture): {}",
+                e
+            ),
+        ),
     }
 
     channel
@@ -199,7 +268,10 @@ pub(crate) async fn sadb_start_mirroring(
             height: codec_meta.height,
         })
         .map_err(|e| {
-            logger::error(TAG, &format!("failed to send meta event to frontend: {}", e));
+            logger::error(
+                TAG,
+                &format!("failed to send meta event to frontend: {}", e),
+            );
             e.to_string()
         })?;
 
@@ -227,14 +299,23 @@ pub(crate) async fn sadb_start_mirroring(
             let mut packet_count: u64 = 0;
             loop {
                 if stop_video.load(Ordering::Relaxed) {
-                    logger::info(TAG, &format!("video reader stopping: packets={}", packet_count));
+                    logger::info(
+                        TAG,
+                        &format!("video reader stopping: packets={}", packet_count),
+                    );
                     break;
                 }
                 match video_stream.read_packet() {
                     Ok(Some(pkt)) => {
                         packet_count += 1;
                         if packet_count % 300 == 0 {
-                            logger::debug(TAG, &format!("video packet: packets={}, pts={}, key_frame={}", packet_count, pkt.header.pts, pkt.header.key_frame));
+                            logger::debug(
+                                TAG,
+                                &format!(
+                                    "video packet: packets={}, pts={}, key_frame={}",
+                                    packet_count, pkt.header.pts, pkt.header.key_frame
+                                ),
+                            );
                         }
                         let evt = PacketEvent::Packet {
                             pts: pkt.header.pts,
@@ -274,14 +355,26 @@ pub(crate) async fn sadb_start_mirroring(
                     let mut packet_count: u64 = 0;
                     loop {
                         if stop_audio.load(Ordering::Relaxed) {
-                            logger::info(TAG, &format!("audio reader stopping: packets={}", packet_count));
+                            logger::info(
+                                TAG,
+                                &format!("audio reader stopping: packets={}", packet_count),
+                            );
                             break;
                         }
                         match audio_stream.read_packet() {
                             Ok(Some(pkt)) => {
                                 packet_count += 1;
                                 if packet_count <= 5 || packet_count % 200 == 0 {
-                                    logger::debug(TAG, &format!("audio packet: packets={}, pts={}, config={}, size={}", packet_count, pkt.header.pts, pkt.header.config_packet, pkt.data.len()));
+                                    logger::debug(
+                                        TAG,
+                                        &format!(
+                                            "audio packet: packets={}, pts={}, config={}, size={}",
+                                            packet_count,
+                                            pkt.header.pts,
+                                            pkt.header.config_packet,
+                                            pkt.data.len()
+                                        ),
+                                    );
                                 }
                                 let evt = PacketEvent::AudioPacket {
                                     pts: pkt.header.pts,
@@ -289,7 +382,10 @@ pub(crate) async fn sadb_start_mirroring(
                                     data: B64.encode(&pkt.data),
                                 };
                                 if let Err(e) = channel_audio.send(evt) {
-                                    logger::error(TAG, &format!("audio channel send failed: {}", e));
+                                    logger::error(
+                                        TAG,
+                                        &format!("audio channel send failed: {}", e),
+                                    );
                                     break;
                                 }
                             }
@@ -308,7 +404,10 @@ pub(crate) async fn sadb_start_mirroring(
                 .expect("failed to spawn audio reader thread"),
         )
     } else {
-        logger::warn(TAG, "no audio stream available, skipping audio reader thread");
+        logger::warn(
+            TAG,
+            "no audio stream available, skipping audio reader thread",
+        );
         None
     };
 
@@ -448,7 +547,13 @@ pub(crate) async fn sadb_send_keycode(
             repeat: 0,
             metastate,
         };
-        logger::debug(TAG, &format!("send keycode: action={}, keycode={}, metastate={}", action, keycode, metastate));
+        logger::debug(
+            TAG,
+            &format!(
+                "send keycode: action={}, keycode={}, metastate={}",
+                action, keycode, metastate
+            ),
+        );
         session
             .client
             .send_control_msg(&msg.serialize())
@@ -490,17 +595,27 @@ pub(crate) async fn sadb_connect_device(
         .unwrap_or_else(|| state.adb_path.lock().unwrap().clone())
         .trim()
         .to_string();
-    let adb_path_opt = if adb_path.is_empty() { None } else { Some(adb_path) };
+    let adb_path_opt = if adb_path.is_empty() {
+        None
+    } else {
+        Some(adb_path)
+    };
 
-    logger::info(TAG, &format!(
-        "connecting to device via ADB: serial={}, adb_path={}",
-        serial,
-        adb_path_opt.as_deref().unwrap_or("adb")
-    ));
+    logger::info(
+        TAG,
+        &format!(
+            "connecting to device via ADB: serial={}, adb_path={}",
+            serial,
+            adb_path_opt.as_deref().unwrap_or("adb")
+        ),
+    );
     crate::sadb_core::adb::AdbClient::connect_with_adb_path(&serial, adb_path_opt.as_deref())
         .await
         .map_err(|e| {
-            logger::error(TAG, &format!("ADB connect failed: serial={}, error={}", serial, e));
+            logger::error(
+                TAG,
+                &format!("ADB connect failed: serial={}, error={}", serial, e),
+            );
             e.to_string()
         })?;
     logger::info(TAG, &format!("ADB connect succeeded: serial={}", serial));
@@ -517,17 +632,27 @@ pub(crate) async fn sadb_disconnect_device(
         .unwrap_or_else(|| state.adb_path.lock().unwrap().clone())
         .trim()
         .to_string();
-    let adb_path_opt = if adb_path.is_empty() { None } else { Some(adb_path) };
+    let adb_path_opt = if adb_path.is_empty() {
+        None
+    } else {
+        Some(adb_path)
+    };
 
-    logger::info(TAG, &format!(
-        "disconnecting device: serial={}, adb_path={}",
-        serial,
-        adb_path_opt.as_deref().unwrap_or("adb")
-    ));
+    logger::info(
+        TAG,
+        &format!(
+            "disconnecting device: serial={}, adb_path={}",
+            serial,
+            adb_path_opt.as_deref().unwrap_or("adb")
+        ),
+    );
     crate::sadb_core::adb::AdbClient::disconnect_with_adb_path(&serial, adb_path_opt.as_deref())
         .await
         .map_err(|e| {
-            logger::warn(TAG, &format!("ADB disconnect failed: serial={}, error={}", serial, e));
+            logger::warn(
+                TAG,
+                &format!("ADB disconnect failed: serial={}, error={}", serial, e),
+            );
             e.to_string()
         })?;
     logger::info(TAG, &format!("ADB disconnect succeeded: serial={}", serial));
@@ -542,7 +667,10 @@ pub(crate) async fn sadb_set_clipboard(
 ) -> Result<(), String> {
     let guard = state.sadb_session.lock().await;
     if let Some(ref session) = *guard {
-        logger::debug(TAG, &format!("set clipboard: text_len={}, paste={}", text.len(), paste));
+        logger::debug(
+            TAG,
+            &format!("set clipboard: text_len={}, paste={}", text.len(), paste),
+        );
         let msg = SetClipboard { text, paste };
         session
             .client
@@ -628,13 +756,15 @@ pub(crate) async fn sadb_stop_mirroring(state: State<'_, IslandState>) -> Result
     Ok(())
 }
 
-
-
 #[tauri::command]
 pub async fn scan_adb_devices(app: AppHandle) {
     tokio::spawn(async move {
-        let Ok(mdns) = ServiceDaemon::new() else { return };
-        let Ok(receiver) = mdns.browse("_adb-tls-connect._tcp.local.") else { return };
+        let Ok(mdns) = ServiceDaemon::new() else {
+            return;
+        };
+        let Ok(receiver) = mdns.browse("_adb-tls-connect._tcp.local.") else {
+            return;
+        };
 
         let max_timeout = Duration::from_secs(5);
         let idle_timeout = Duration::from_secs(2);
@@ -656,7 +786,7 @@ pub async fn scan_adb_devices(app: AppHandle) {
                     let ip = info
                         .get_addresses()
                         .iter()
-                        .find(|a| a.is_ipv4())  // 我自己测试ipv6有bug,以后会提供设置参数判断选取v6还是v4
+                        .find(|a| a.is_ipv4()) // 我自己测试ipv6有bug,以后会提供设置参数判断选取v6还是v4
                         .map(|a| a.to_string())
                         .unwrap_or_default();
 
@@ -665,7 +795,7 @@ pub async fn scan_adb_devices(app: AppHandle) {
                         .get("name")
                         .map(|p| p.val_str().to_string())
                         .unwrap_or_else(|| info.get_hostname().to_string());
-                        
+
                     let device = AdbDevice {
                         name,
                         ip,

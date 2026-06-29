@@ -85,7 +85,10 @@ pub fn set_filter(tags: Vec<String>, invert: bool) {
         .map(|tag| tag.trim().to_string())
         .filter(|tag| !tag.is_empty())
         .collect();
-    *LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).write().unwrap() = normalized;
+    *LOG_FILTER_TAGS
+        .get_or_init(|| RwLock::new(Vec::new()))
+        .write()
+        .unwrap() = normalized;
     LOG_FILTER_INVERT.store(if invert { 1 } else { 0 }, Ordering::Relaxed);
 }
 
@@ -152,7 +155,10 @@ fn write_log(tag: &str, level: LogLevel, message: &str) {
     if (level as u8) < LOG_LEVEL.load(Ordering::Relaxed) {
         return;
     }
-    let filter_tags = LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).read().unwrap();
+    let filter_tags = LOG_FILTER_TAGS
+        .get_or_init(|| RwLock::new(Vec::new()))
+        .read()
+        .unwrap();
     if !filter_tags.is_empty() {
         let matched = filter_tags.contains(&tag.to_string());
         let invert = LOG_FILTER_INVERT.load(Ordering::Relaxed) != 0;
@@ -216,9 +222,7 @@ pub fn open_log_dir() {
     info("Logger", "open_log_dir called");
     if let Some(path) = log_file_path() {
         if let Some(dir) = path.parent() {
-            let _ = std::process::Command::new("explorer")
-                .arg(dir)
-                .spawn();
+            let _ = std::process::Command::new("explorer").arg(dir).spawn();
         }
     }
 }

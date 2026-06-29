@@ -1,16 +1,16 @@
+use crate::link_handler::LinkHandler;
+use crate::tools::Aria2cRpc;
+use crate::window::{get_primary_monitor_info, MonitorInfo};
+use crate::{logger, IslandState, CREATE_NO_WINDOW};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::Ordering;
-use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
-use crate::{CREATE_NO_WINDOW, IslandState, logger};
-use crate::link_handler::LinkHandler;
-use crate::tools::Aria2cRpc;
 use windows::Win32::Foundation::HWND;
-use crate::window::{MonitorInfo, get_primary_monitor_info};
 /// 歌词补偿：按播放器保存时 clamp 的边界与步长（毫秒）
 pub(crate) const LYRIC_OFFSET_MIN_MS: i64 = -3000;
 pub(crate) const LYRIC_OFFSET_MAX_MS: i64 = 3000;
@@ -31,9 +31,7 @@ pub(crate) fn normalize_app_id(app_id: &str) -> String {
 }
 
 /// 对一份 map 做整体规范化（键小写 + 值 clamp），返回新 map
-pub(crate) fn normalize_lyric_offsets(
-    map: &HashMap<String, i64>,
-) -> HashMap<String, i64> {
+pub(crate) fn normalize_lyric_offsets(map: &HashMap<String, i64>) -> HashMap<String, i64> {
     let mut out = HashMap::with_capacity(map.len());
     for (k, v) in map.iter() {
         let key = normalize_app_id(k);
@@ -165,7 +163,12 @@ fn default_log_level() -> String {
 }
 
 fn default_log_filter_tags() -> Vec<String> {
-    vec!["SADB".to_string(), "HitTest".to_string(), "Email".to_string(), "rAF".to_string()]
+    vec![
+        "SADB".to_string(),
+        "HitTest".to_string(),
+        "Email".to_string(),
+        "rAF".to_string(),
+    ]
 }
 
 fn default_log_filter_invert() -> bool {
@@ -192,7 +195,6 @@ fn default_lyric_mode() -> String {
     "lyric".to_string()
 }
 
-
 fn default_lyric_offset_enabled() -> bool {
     true
 }
@@ -201,9 +203,13 @@ pub(crate) fn default_agent_window_size() -> String {
     "medium".to_string()
 }
 
-fn default_blacklist_enabled() -> bool { true }
+fn default_blacklist_enabled() -> bool {
+    true
+}
 
-fn default_smtc_whitelist_enabled() -> bool { false }
+fn default_smtc_whitelist_enabled() -> bool {
+    false
+}
 
 fn default_smtc_app_whitelist() -> Vec<String> {
     vec![
@@ -214,7 +220,6 @@ fn default_smtc_app_whitelist() -> Vec<String> {
         "appleinc.applemusicwin_nzyj5cx40ttqa!app".to_string(),
     ]
 }
-
 
 fn default_blacklist_processes() -> Vec<String> {
     vec![
@@ -354,16 +359,19 @@ pub fn open_settings(app: tauri::AppHandle) {
         let _ = win.show();
         let _ = win.set_focus();
     } else {
-        let _ = tauri::WebviewWindowBuilder::new(&app, "settings", tauri::WebviewUrl::App("settings.html".into()))
-            .title("cIsland - 设置")
-            .inner_size(1100.0, 900.0)
-            .min_inner_size(800.0, 500.0)
-            .resizable(true)
-            .center()
-            .build();
+        let _ = tauri::WebviewWindowBuilder::new(
+            &app,
+            "settings",
+            tauri::WebviewUrl::App("settings.html".into()),
+        )
+        .title("cIsland - 设置")
+        .inner_size(1100.0, 900.0)
+        .min_inner_size(800.0, 500.0)
+        .resizable(true)
+        .center()
+        .build();
     }
 }
-
 
 #[tauri::command]
 pub fn get_settings(state: tauri::State<'_, IslandState>) -> serde_json::Value {
@@ -458,36 +466,42 @@ pub fn save_settings(
     let indicator_color_changed = indicator_color.is_some();
     let agent_window_size_changed = agent_window_size.is_some();
 
-    let clipboard_enabled = clipboard_enabled.unwrap_or_else(|| state.clipboard_enabled.load(Ordering::Relaxed));
+    let clipboard_enabled =
+        clipboard_enabled.unwrap_or_else(|| state.clipboard_enabled.load(Ordering::Relaxed));
     let shortcut_key = shortcut_key.unwrap_or_else(|| state.shortcut_key.lock().unwrap().clone());
-    let hide_and_see_key = hide_and_see_key.unwrap_or_else(|| state.hide_and_see_key.lock().unwrap().clone());
-    let search_shortcut = search_shortcut.unwrap_or_else(|| state.search_shortcut.lock().unwrap().clone());
+    let hide_and_see_key =
+        hide_and_see_key.unwrap_or_else(|| state.hide_and_see_key.lock().unwrap().clone());
+    let search_shortcut =
+        search_shortcut.unwrap_or_else(|| state.search_shortcut.lock().unwrap().clone());
     let lyric_mode = lyric_mode.unwrap_or_else(|| state.lyric_mode.lock().unwrap().clone());
-    let agent_window_size = agent_window_size.unwrap_or_else(|| state.agent_window_size.lock().unwrap().clone());
+    let agent_window_size =
+        agent_window_size.unwrap_or_else(|| state.agent_window_size.lock().unwrap().clone());
 
-    if let (Some(offset_x),Some(offset_y)) = (offset_x, offset_y) {
+    if let (Some(offset_x), Some(offset_y)) = (offset_x, offset_y) {
         state.offset_x.store(offset_x, Ordering::Relaxed);
         state.offset_y.store(offset_y, Ordering::Relaxed);
     }
     if let Some(monitor_id) = monitor_id {
         let monitors = state.monitor_info.lock().unwrap();
-        
+
         // 先拿主窗体~
         let main_window = app.get_webview_window("main").unwrap(); // 换成你主窗体的 label
-        
+
         for x in monitors.iter() {
             if x.name == monitor_id {
                 state.screen_w.store(x.width, Ordering::Relaxed);
                 state.screen_x.store(x.x, Ordering::Relaxed);
                 state.screen_y.store(x.y, Ordering::Relaxed);
-                
+
                 *state.primary_monitor_info.lock().unwrap() = x.clone();
-                
+
                 let scale = main_window.scale_factor().unwrap_or(1.0);
                 let capsule_w = state.capsule_w.load(Ordering::Relaxed) as f64;
-                
+
                 let _ = main_window.set_position(tauri::LogicalPosition::new(
-                    state.offset_x.load(Ordering::Relaxed) as f64 + x.x as f64 + (x.width as f64 / scale - capsule_w) / 2.0,
+                    state.offset_x.load(Ordering::Relaxed) as f64
+                        + x.x as f64
+                        + (x.width as f64 / scale - capsule_w) / 2.0,
                     state.offset_y.load(Ordering::Relaxed) as f64 + x.y as f64,
                 ));
             }
@@ -498,11 +512,15 @@ pub fn save_settings(
         crate::logger::set_level(level);
     }
     if log_filter_tags.is_some() || log_filter_invert.is_some() {
-        let tags = log_filter_tags.clone().unwrap_or_else(crate::logger::get_filter_tags);
+        let tags = log_filter_tags
+            .clone()
+            .unwrap_or_else(crate::logger::get_filter_tags);
         let invert = log_filter_invert.unwrap_or_else(crate::logger::get_filter_invert);
         crate::logger::set_filter(tags, invert);
     }
-    state.clipboard_enabled.store(clipboard_enabled, Ordering::Relaxed);
+    state
+        .clipboard_enabled
+        .store(clipboard_enabled, Ordering::Relaxed);
     *state.shortcut_key.lock().unwrap() = shortcut_key.clone();
     *state.hide_and_see_key.lock().unwrap() = hide_and_see_key.clone();
     *state.search_shortcut.lock().unwrap() = search_shortcut.clone();
@@ -525,7 +543,9 @@ pub fn save_settings(
     }
     let mut smtc_whitelist_changed = false;
     if let Some(enabled) = smtc_whitelist_enabled {
-        state.smtc_whitelist_enabled.store(enabled, Ordering::Relaxed);
+        state
+            .smtc_whitelist_enabled
+            .store(enabled, Ordering::Relaxed);
         smtc_whitelist_changed = true;
     }
     if let Some(ref app_ids) = smtc_app_whitelist {
@@ -559,58 +579,68 @@ pub fn save_settings(
             let _ = win.emit("lyric-mode-changed", &lyric_mode);
         }
     }
-    
+
     // 重新注册快捷键
     if shortcut_changed {
-    use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
-    let _ = app.global_shortcut().unregister_all();
-    let pending_url = state.pending_url.clone();
-    let shortcut_str = shortcut_key.clone();
-    let _ = app.global_shortcut().on_shortcut(shortcut_str.as_str(), move |_app, _shortcut, event| {
-        if event.state == ShortcutState::Pressed {
-            let urls = pending_url.lock().unwrap();
-            if let Some(url) = urls.first() {
-                crate::link_handler::open_url_in_browser(url);
-            }
-        }
-    });
-    {
         use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
-        let hide_key = hide_and_see_key.clone();
-        let hwnd_hk = state.hwnd.0 as usize;
-        let _ = app.global_shortcut().on_shortcut(hide_key.as_str(), move |_app, _shortcut, event| {
-            if event.state == ShortcutState::Pressed {
-                use windows::Win32::Foundation::HWND;
-                use windows::Win32::UI::WindowsAndMessaging::{
-                    ShowWindow, IsWindowVisible, SW_HIDE, SW_SHOWNOACTIVATE,
-                };
-                let hwnd = HWND(hwnd_hk as *mut _);
-                unsafe {
-                    if IsWindowVisible(hwnd).as_bool() {
-                        let _ = ShowWindow(hwnd, SW_HIDE);
-                    } else {
-                        let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+        let _ = app.global_shortcut().unregister_all();
+        let pending_url = state.pending_url.clone();
+        let shortcut_str = shortcut_key.clone();
+        let _ = app.global_shortcut().on_shortcut(
+            shortcut_str.as_str(),
+            move |_app, _shortcut, event| {
+                if event.state == ShortcutState::Pressed {
+                    let urls = pending_url.lock().unwrap();
+                    if let Some(url) = urls.first() {
+                        crate::link_handler::open_url_in_browser(url);
                     }
                 }
-            }
-        });
-    }
-    // 搜索快捷键（从设置读取键位）
-    {
-        let hwnd_val = state.hwnd;
-        let hwnd_search = hwnd_val.0 as usize;
-        let search_sc = search_shortcut.clone();
-        if let Some(win) = app.get_webview_window("main") {
-            let _ = app.global_shortcut().on_shortcut(search_sc.as_str(), move |_app, _shortcut, event| {
-                if event.state == ShortcutState::Pressed {
-                    let h = HWND(hwnd_search as *mut _);
-                    let fg = unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() };
-                    if fg != h {
-                        crate::window::force_foreground(h);
-                        let _ = win.set_focus();
+            },
+        );
+        {
+            use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+            let hide_key = hide_and_see_key.clone();
+            let hwnd_hk = state.hwnd.0 as usize;
+            let _ = app.global_shortcut().on_shortcut(
+                hide_key.as_str(),
+                move |_app, _shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        use windows::Win32::Foundation::HWND;
+                        use windows::Win32::UI::WindowsAndMessaging::{
+                            IsWindowVisible, ShowWindow, SW_HIDE, SW_SHOWNOACTIVATE,
+                        };
+                        let hwnd = HWND(hwnd_hk as *mut _);
                         unsafe {
-                            use windows::Win32::UI::WindowsAndMessaging::SetWindowPos;
-                            let _ = SetWindowPos(
+                            if IsWindowVisible(hwnd).as_bool() {
+                                let _ = ShowWindow(hwnd, SW_HIDE);
+                            } else {
+                                let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+                            }
+                        }
+                    }
+                },
+            );
+        }
+        // 搜索快捷键（从设置读取键位）
+        {
+            let hwnd_val = state.hwnd;
+            let hwnd_search = hwnd_val.0 as usize;
+            let search_sc = search_shortcut.clone();
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = app.global_shortcut().on_shortcut(
+                    search_sc.as_str(),
+                    move |_app, _shortcut, event| {
+                        if event.state == ShortcutState::Pressed {
+                            let h = HWND(hwnd_search as *mut _);
+                            let fg = unsafe {
+                                windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow()
+                            };
+                            if fg != h {
+                                crate::window::force_foreground(h);
+                                let _ = win.set_focus();
+                                unsafe {
+                                    use windows::Win32::UI::WindowsAndMessaging::SetWindowPos;
+                                    let _ = SetWindowPos(
                                 h, None, 0, 0, 0, 0,
                                 windows::Win32::UI::WindowsAndMessaging::SWP_NOMOVE
                                     | windows::Win32::UI::WindowsAndMessaging::SWP_NOSIZE
@@ -618,24 +648,28 @@ pub fn save_settings(
                                     | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
                                     | windows::Win32::UI::WindowsAndMessaging::SWP_FRAMECHANGED,
                             );
+                                }
+                            }
+                            let _ = win.emit("activate-search", ());
                         }
-                    }
-                    let _ = win.emit("activate-search", ());
-                }
-            });
-        }
-    }
-
-    // 邮件快捷键
-    {
-        let app_h = app.clone();
-        let sc_str = state.email_shortcut.lock().unwrap().clone();
-        let _ = app.global_shortcut().on_shortcut(sc_str.as_str(), move |_app, _shortcut, event| {
-            if event.state == ShortcutState::Pressed {
-                crate::window::open_email_window(app_h.clone(), None);
+                    },
+                );
             }
-        });
-    }
+        }
+
+        // 邮件快捷键
+        {
+            let app_h = app.clone();
+            let sc_str = state.email_shortcut.lock().unwrap().clone();
+            let _ = app.global_shortcut().on_shortcut(
+                sc_str.as_str(),
+                move |_app, _shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        crate::window::open_email_window(app_h.clone(), None);
+                    }
+                },
+            );
+        }
     }
 
     // 持久化到文件
@@ -682,7 +716,9 @@ pub fn save_settings(
     if let Some(secs) = email_poll_interval_secs {
         let secs = secs.max(1);
         settings_data.email_poll_interval_secs = secs;
-        state.email_poll_interval_secs.store(secs, Ordering::Relaxed);
+        state
+            .email_poll_interval_secs
+            .store(secs, Ordering::Relaxed);
     }
     {
         let mut cfg = state.email_config.lock().unwrap();
@@ -754,7 +790,7 @@ pub fn save_tools_settings(
     aria2c_path: Option<String>,
     aria2c_rpc_secret: Option<String>,
     aria2c_rpc_port: Option<u16>,
-    sadb_ip: Option<String>,    
+    sadb_ip: Option<String>,
 ) {
     let mut settings_data = build_settings_data(&state);
     if let Some(aria2c_thread) = aria2c_thread {
@@ -792,26 +828,31 @@ pub fn save_tools_settings(
             format!("--rpc-secret={}", rpc_secret),
             "--continue=true".into(),
         ];
-        
 
         let (aria2c_process, aria2c_rpc) = match Command::new(&settings_data.aria2c_path)
             .args(&args)
             .creation_flags(CREATE_NO_WINDOW)
             .spawn()
         {
-            Ok(c) => (Some(c), Some(Aria2cRpc{ client: reqwest::Client::new(), port: rpc_port, secret: rpc_secret, thread })),
+            Ok(c) => (
+                Some(c),
+                Some(Aria2cRpc {
+                    client: reqwest::Client::new(),
+                    port: rpc_port,
+                    secret: rpc_secret,
+                    thread,
+                }),
+            ),
             Err(e) => {
                 logger::debug("Aria2c", &e.to_string());
                 (None, None)
-            },
+            }
         };
         *aria2c_process_guard = aria2c_process;
         *state.aria2c_rpc.lock().unwrap() = aria2c_rpc;
     }
     let _ = save_settings_to_file(&settings_data);
 }
-
-
 
 /// 返回 settings 页子页需要的状态：开关、步进、范围、各播放器 offset、当前命中 app_id
 #[tauri::command]
@@ -931,7 +972,9 @@ pub fn set_smtc_whitelist_enabled(
     state: tauri::State<'_, IslandState>,
     enabled: bool,
 ) -> Result<(), String> {
-    state.smtc_whitelist_enabled.store(enabled, Ordering::Relaxed);
+    state
+        .smtc_whitelist_enabled
+        .store(enabled, Ordering::Relaxed);
     let mut settings_data = build_settings_data(&state);
     settings_data.smtc_whitelist_enabled = enabled;
     save_settings_to_file(&settings_data)?;
@@ -1076,10 +1119,7 @@ pub(crate) fn apply_auto_start(enabled: bool) -> Result<(), String> {
 
 /// Tauri command: 设置开机自启
 #[tauri::command]
-pub fn set_auto_start(
-    state: tauri::State<'_, IslandState>,
-    enabled: bool,
-) -> Result<(), String> {
+pub fn set_auto_start(state: tauri::State<'_, IslandState>, enabled: bool) -> Result<(), String> {
     apply_auto_start(enabled)?;
     state.auto_start.store(enabled, Ordering::Relaxed);
 
@@ -1149,7 +1189,8 @@ pub fn save_blacklist(
     state: tauri::State<'_, IslandState>,
     processes: Vec<String>,
 ) -> Result<(), String> {
-    let normalized: Vec<String> = processes.iter()
+    let normalized: Vec<String> = processes
+        .iter()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
         .collect();

@@ -16,8 +16,8 @@
 //!   bits 60..0 = PTS
 
 use super::error::{Error, Result};
-use bytes::{Bytes, BytesMut};
 use crate::logger;
+use bytes::{Bytes, BytesMut};
 
 const TAG: &str = "sadb_core::protocol";
 
@@ -33,7 +33,7 @@ const fn fourcc(s: &[u8; 4]) -> u32 {
 pub enum VideoCodec {
     H264 = fourcc(b"h264"),
     H265 = fourcc(b"h265"),
-    AV1  = fourcc(b"av01"),
+    AV1 = fourcc(b"av01"),
 }
 
 impl TryFrom<u32> for VideoCodec {
@@ -42,11 +42,11 @@ impl TryFrom<u32> for VideoCodec {
     fn try_from(value: u32) -> Result<Self> {
         const H264: u32 = fourcc(b"h264");
         const H265: u32 = fourcc(b"h265");
-        const AV1:  u32 = fourcc(b"av01");
+        const AV1: u32 = fourcc(b"av01");
         match value {
             H264 => Ok(VideoCodec::H264),
             H265 => Ok(VideoCodec::H265),
-            AV1  => Ok(VideoCodec::AV1),
+            AV1 => Ok(VideoCodec::AV1),
             _ => Err(Error::Protocol(format!(
                 "Unknown video codec: 0x{:08x} ('{}')",
                 value,
@@ -62,9 +62,9 @@ impl TryFrom<u32> for VideoCodec {
 #[repr(u32)]
 pub enum AudioCodec {
     OPUS = fourcc(b"opus"),
-    AAC  = fourcc(b"aac "),
+    AAC = fourcc(b"aac "),
     FLAC = fourcc(b"flac"),
-    RAW  = fourcc(b"raw "),
+    RAW = fourcc(b"raw "),
 }
 
 impl TryFrom<u32> for AudioCodec {
@@ -72,14 +72,14 @@ impl TryFrom<u32> for AudioCodec {
 
     fn try_from(value: u32) -> Result<Self> {
         const OPUS: u32 = fourcc(b"opus");
-        const AAC:  u32 = fourcc(b"aac ");
+        const AAC: u32 = fourcc(b"aac ");
         const FLAC: u32 = fourcc(b"flac");
-        const RAW:  u32 = fourcc(b"raw ");
+        const RAW: u32 = fourcc(b"raw ");
         match value {
             OPUS => Ok(AudioCodec::OPUS),
-            AAC  => Ok(AudioCodec::AAC),
+            AAC => Ok(AudioCodec::AAC),
             FLAC => Ok(AudioCodec::FLAC),
-            RAW  => Ok(AudioCodec::RAW),
+            RAW => Ok(AudioCodec::RAW),
             _ => Err(Error::Protocol(format!(
                 "Unknown audio codec: 0x{:08x} ('{}')",
                 value,
@@ -94,7 +94,13 @@ fn fourcc_to_string(v: u32) -> String {
     let bytes = v.to_be_bytes();
     bytes
         .iter()
-        .map(|&b| if b.is_ascii_graphic() || b == b' ' { b as char } else { '.' })
+        .map(|&b| {
+            if b.is_ascii_graphic() || b == b' ' {
+                b as char
+            } else {
+                '.'
+            }
+        })
         .collect()
 }
 
@@ -184,7 +190,11 @@ impl VideoCodecMetadata {
         let codec_id = u32::from_be_bytes(data[0..4].try_into().unwrap());
         let codec = VideoCodec::try_from(codec_id)?;
         logger::debug(TAG, &format!("Video codec: {:?}", codec));
-        Ok(Self { codec, width: 0, height: 0 })
+        Ok(Self {
+            codec,
+            width: 0,
+            height: 0,
+        })
     }
 
     /// Serialize to 4 bytes (codec id only, v4.0 wire format).
@@ -210,8 +220,18 @@ impl SessionMeta {
         let width = u32::from_be_bytes(data[4..8].try_into().unwrap());
         let height = u32::from_be_bytes(data[8..12].try_into().unwrap());
         let client_resized = (flags & 1) != 0;
-        logger::debug(TAG, &format!("Session meta: {}x{} (client_resized={})", width, height, client_resized));
-        Ok(Self { width, height, client_resized })
+        logger::debug(
+            TAG,
+            &format!(
+                "Session meta: {}x{} (client_resized={})",
+                width, height, client_resized
+            ),
+        );
+        Ok(Self {
+            width,
+            height,
+            client_resized,
+        })
     }
 }
 
@@ -227,7 +247,9 @@ impl AudioCodecMetadata {
     /// Parse from 4 bytes
     pub fn parse(data: &[u8]) -> Result<Self> {
         if data.len() < 4 {
-            return Err(Error::Protocol("Audio codec metadata too short".to_string()));
+            return Err(Error::Protocol(
+                "Audio codec metadata too short".to_string(),
+            ));
         }
 
         let codec_id = u32::from_be_bytes(data[0..4].try_into().unwrap());

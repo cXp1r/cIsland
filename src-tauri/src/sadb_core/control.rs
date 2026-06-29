@@ -35,7 +35,7 @@ pub const POINTER_ID_MOUSE: u64 = u64::MAX;
 #[repr(u8)]
 pub enum KeyEventAction {
     Down = 0,
-    Up   = 1,
+    Up = 1,
 }
 
 /// Common Android keycodes useful for control injection.
@@ -43,7 +43,7 @@ pub enum KeyEventAction {
 #[repr(i32)]
 pub enum AndroidKeycode {
     Enter = 66,
-    Del   = 67, // backspace
+    Del = 67, // backspace
     Escape = 111,
 }
 
@@ -56,7 +56,7 @@ pub enum AndroidKeycode {
 #[repr(u8)]
 pub enum MotionEventAction {
     Down = 0,
-    Up   = 1,
+    Up = 1,
     Move = 2,
 }
 
@@ -69,10 +69,10 @@ pub enum MotionEventAction {
 pub struct MotionEventButtons(pub u32);
 
 impl MotionEventButtons {
-    pub const NONE: Self      = Self(0);
-    pub const PRIMARY: Self   = Self(1); // left mouse button
+    pub const NONE: Self = Self(0);
+    pub const PRIMARY: Self = Self(1); // left mouse button
     pub const SECONDARY: Self = Self(2); // right
-    pub const TERTIARY: Self  = Self(4); // middle
+    pub const TERTIARY: Self = Self(4); // middle
 }
 
 // ---------------------------------------------------------------------------
@@ -419,8 +419,12 @@ mod tests {
     #[test]
     fn scroll_21_bytes() {
         let msg = InjectScrollEvent {
-            x: 0, y: 0, screen_width: 880, screen_height: 1920,
-            hscroll: 0.0, vscroll: -3.0,
+            x: 0,
+            y: 0,
+            screen_width: 880,
+            screen_height: 1920,
+            hscroll: 0.0,
+            vscroll: -3.0,
             buttons: MotionEventButtons::NONE,
         };
         let buf = msg.serialize();

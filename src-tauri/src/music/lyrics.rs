@@ -79,8 +79,7 @@ pub(crate) fn fetch_lyrics_from_lyrix(
             crate::logger::warn("Lyrics", &format!("rust-api: abort gen={} (stale)", gen));
             return None;
         }
-        let player =
-            lyrix::id2player(app_id).unwrap_or(lyrix::MusicPlayer::Netease);
+        let player = lyrix::id2player(app_id).unwrap_or(lyrix::MusicPlayer::Netease);
         lyrix::logger::set_level("debug");
         match lyrix
             .get_lyrics_with_player(

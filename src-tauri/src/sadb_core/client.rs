@@ -9,13 +9,13 @@ use super::control::{CopyKey, GetClipboard};
 use super::error::{Error, Result};
 use super::protocol::{AudioCodecMetadata, DeviceMetadata, VideoCodecMetadata};
 use super::stream::SyncPacketStream;
+use crate::logger;
 use std::io::{BufReader, Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::net::TcpListener;
 use tokio::process::{Child, Command as TokioCommand};
-use crate::logger;
 
 const TAG: &str = "sadb_core::client";
 
@@ -47,7 +47,11 @@ impl ScrcpyClient {
     /// server and open sockets.
     pub async fn new(config: Config) -> Result<Self> {
         let mut adb_client = AdbClient::new(config.serial.clone());
-        if let Some(adb_path) = config.adb_path.as_ref().filter(|path| !path.trim().is_empty()) {
+        if let Some(adb_path) = config
+            .adb_path
+            .as_ref()
+            .filter(|path| !path.trim().is_empty())
+        {
             adb_client = adb_client.with_adb_path(adb_path.trim());
         }
         let adb = Arc::new(adb_client);
@@ -78,7 +82,10 @@ impl ScrcpyClient {
     /// Push the scrcpy-server jar, set up a reverse tunnel, spawn the server
     /// process, and accept the video socket.
     pub async fn start(&mut self) -> Result<()> {
-        logger::info(TAG, &format!("Starting scrcpy server (scid={:08x})...", self.scid));
+        logger::info(
+            TAG,
+            &format!("Starting scrcpy server (scid={:08x})...", self.scid),
+        );
 
         // 1. Push the jar to the device
         self.adb
@@ -95,7 +102,10 @@ impl ScrcpyClient {
             None
         } else {
             let l = TcpListener::bind(("127.0.0.1", DEFAULT_VIDEO_PORT)).await?;
-            logger::debug(TAG, &format!("Listening on 127.0.0.1:{}", DEFAULT_VIDEO_PORT));
+            logger::debug(
+                TAG,
+                &format!("Listening on 127.0.0.1:{}", DEFAULT_VIDEO_PORT),
+            );
             Some(l)
         };
 
@@ -134,32 +144,30 @@ impl ScrcpyClient {
             .stdin(std::process::Stdio::null())
             .kill_on_drop(true);
 
-        let child = cmd.spawn().map_err(|e| {
-            Error::Adb(format!("Failed to spawn adb shell for server: {}", e))
-        })?;
+        let child = cmd
+            .spawn()
+            .map_err(|e| Error::Adb(format!("Failed to spawn adb shell for server: {}", e)))?;
         self.server_child = Some(child);
 
         // 5. Accept or connect video socket (and control socket if enabled)
         if let Some(ref listener) = listener {
             // Reverse tunnel: device connects to us
-            let (video_tok, _) = tokio::time::timeout(
-                std::time::Duration::from_secs(10),
-                listener.accept(),
-            )
-            .await
-            .map_err(|_| Error::Adb("Timed out waiting for video socket".to_string()))??;
+            let (video_tok, _) =
+                tokio::time::timeout(std::time::Duration::from_secs(10), listener.accept())
+                    .await
+                    .map_err(|_| Error::Adb("Timed out waiting for video socket".to_string()))??;
             let video = video_tok.into_std()?;
             video.set_nonblocking(false)?;
             logger::debug(TAG, "Accepted video socket");
             self.video_socket = Some(video);
 
             if self.config.audio {
-                let (audio_tok, _) = tokio::time::timeout(
-                    std::time::Duration::from_secs(10),
-                    listener.accept(),
-                )
-                .await
-                .map_err(|_| Error::Adb("Timed out waiting for audio socket".to_string()))??;
+                let (audio_tok, _) =
+                    tokio::time::timeout(std::time::Duration::from_secs(10), listener.accept())
+                        .await
+                        .map_err(|_| {
+                            Error::Adb("Timed out waiting for audio socket".to_string())
+                        })??;
                 let audio = audio_tok.into_std()?;
                 audio.set_nonblocking(false)?;
                 logger::debug(TAG, "Accepted audio socket");
@@ -167,12 +175,12 @@ impl ScrcpyClient {
             }
 
             if self.config.control {
-                let (ctrl_tok, _) = tokio::time::timeout(
-                    std::time::Duration::from_secs(10),
-                    listener.accept(),
-                )
-                .await
-                .map_err(|_| Error::Adb("Timed out waiting for control socket".to_string()))??;
+                let (ctrl_tok, _) =
+                    tokio::time::timeout(std::time::Duration::from_secs(10), listener.accept())
+                        .await
+                        .map_err(|_| {
+                            Error::Adb("Timed out waiting for control socket".to_string())
+                        })??;
                 let ctrl = ctrl_tok.into_std()?;
                 ctrl.set_nonblocking(false)?;
                 logger::debug(TAG, "Accepted control socket");
@@ -194,10 +202,7 @@ impl ScrcpyClient {
     /// Read the 64-byte device metadata header from the video socket.
     /// Must be called right after [`start`] and before reading codec metadata.
     pub fn read_device_metadata(&mut self) -> Result<DeviceMetadata> {
-        let socket = self
-            .video_socket
-            .as_mut()
-            .ok_or(Error::ServerNotStarted)?;
+        let socket = self.video_socket.as_mut().ok_or(Error::ServerNotStarted)?;
 
         let mut buf = [0u8; 64];
         socket.read_exact(&mut buf)?;
@@ -216,10 +221,7 @@ impl ScrcpyClient {
     ///
     /// Both are consumed here and combined into a [`VideoCodecMetadata`].
     pub fn read_video_codec_metadata(&mut self) -> Result<VideoCodecMetadata> {
-        let socket = self
-            .video_socket
-            .as_mut()
-            .ok_or(Error::ServerNotStarted)?;
+        let socket = self.video_socket.as_mut().ok_or(Error::ServerNotStarted)?;
 
         // 1. codec id (4 bytes)
         let mut codec_buf = [0u8; 4];
@@ -242,10 +244,7 @@ impl ScrcpyClient {
 
     /// Read the 4-byte audio codec metadata (codec id only).
     pub fn read_audio_codec_metadata(&mut self) -> Result<AudioCodecMetadata> {
-        let socket = self
-            .audio_socket
-            .as_mut()
-            .ok_or(Error::ServerNotStarted)?;
+        let socket = self.audio_socket.as_mut().ok_or(Error::ServerNotStarted)?;
 
         let mut buf = [0u8; 4];
         socket.read_exact(&mut buf)?;
@@ -361,8 +360,15 @@ impl ScrcpyClient {
 
 impl Drop for ScrcpyClient {
     fn drop(&mut self) {
-        if self.server_child.is_some() || self.video_socket.is_some() || self.audio_socket.is_some() || self.control_socket.is_some() {
-            logger::warn(TAG, "ScrcpyClient dropped without cleanup(); leaking tunnels may occur");
+        if self.server_child.is_some()
+            || self.video_socket.is_some()
+            || self.audio_socket.is_some()
+            || self.control_socket.is_some()
+        {
+            logger::warn(
+                TAG,
+                "ScrcpyClient dropped without cleanup(); leaking tunnels may occur",
+            );
         }
     }
 }

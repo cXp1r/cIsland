@@ -1,20 +1,17 @@
 #![allow(unused)]
-use interprocess::local_socket::{
-    GenericNamespaced, ListenerOptions,
-    tokio::prelude::*,
-};
-use tauri::Emitter;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, WriteHalf};
+use crate::logger;
+use interprocess::local_socket::{tokio::prelude::*, GenericNamespaced, ListenerOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::OnceLock;
+use tauri::Emitter;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, WriteHalf};
 use tokio::sync::Mutex;
 use uuid::Uuid;
-use crate::logger;
 
 use crate::model::agent::claude::{
-    CcHookData, CcHookEvent, CcDirective, CcPreToolUseResp, CcPermReqResp,
-    HookRequest, HookResponse, HookAction, CcPermBehavior,
+    CcDirective, CcHookData, CcHookEvent, CcPermBehavior, CcPermReqResp, CcPreToolUseResp,
+    HookAction, HookRequest, HookResponse,
 };
 
 const TAG: &str = "Hook";
@@ -46,7 +43,7 @@ pub async fn start_interprocess_server(window: tauri::WebviewWindow) {
         Err(e) => {
             logger::error(TAG, &format!("IPC 名称注册失败: {}", e));
             return;
-        },
+        }
     };
     let opts = ListenerOptions::new().name(name);
     let listener = match opts.create_tokio() {
@@ -54,7 +51,7 @@ pub async fn start_interprocess_server(window: tauri::WebviewWindow) {
         Err(e) => {
             logger::error(TAG, &e.to_string());
             return;
-        },
+        }
     };
 
     logger::info(TAG, &format!("IPC server started on '{}'", ipc_name));
@@ -81,7 +78,10 @@ pub async fn start_interprocess_server(window: tauri::WebviewWindow) {
             match serde_json::from_str::<IpcRequest>(&line) {
                 Ok(request) => {
                     let uuid = Uuid::new_v4().to_string();
-                    logger::debug(TAG, &format!("收到请求: name={}, uuid={}", request.name, uuid));
+                    logger::debug(
+                        TAG,
+                        &format!("收到请求: name={}, uuid={}", request.name, uuid),
+                    );
 
                     match request.name.as_str() {
                         "claude" => {
@@ -110,15 +110,19 @@ async fn handle_claude_hook(
         Ok(hook_data) => {
             let hook_event = hook_data.hook_event_name.clone();
             get_conn_map().lock().await.insert(uuid.to_string(), writer);
-            get_hook_event_map().lock().await.insert(uuid.to_string(), hook_event);
+            get_hook_event_map()
+                .lock()
+                .await
+                .insert(uuid.to_string(), hook_event);
             let hook_request = hook_data.to_request(uuid.to_string());
 
-            logger::info(TAG, &format!(
-                "Claude hook: event={:?}, tool={:?}, uuid={}",
-                hook_request.hook_event,
-                hook_request.tool_name,
-                uuid
-            ));
+            logger::info(
+                TAG,
+                &format!(
+                    "Claude hook: event={:?}, tool={:?}, uuid={}",
+                    hook_request.hook_event, hook_request.tool_name, uuid
+                ),
+            );
 
             if let Err(e) = win.emit("hook_request", hook_request) {
                 logger::error(TAG, &format!("发送事件失败: {}", e));
@@ -147,13 +151,19 @@ async fn handle_claude_hook_legacy(
             if let Some(hook_data) = claude.to_hook_data() {
                 let hook_event = hook_data.hook_event_name.clone();
                 get_conn_map().lock().await.insert(uuid.to_string(), writer);
-                get_hook_event_map().lock().await.insert(uuid.to_string(), hook_event);
+                get_hook_event_map()
+                    .lock()
+                    .await
+                    .insert(uuid.to_string(), hook_event);
                 let hook_request = hook_data.to_request(uuid.to_string());
 
-                logger::info(TAG, &format!(
-                    "Claude hook (legacy): event={}, tool={}, uuid={}",
-                    hook_event_str, tool_name, uuid
-                ));
+                logger::info(
+                    TAG,
+                    &format!(
+                        "Claude hook (legacy): event={}, tool={}, uuid={}",
+                        hook_event_str, tool_name, uuid
+                    ),
+                );
 
                 if let Err(e) = win.emit("hook_request", hook_request) {
                     logger::error(TAG, &format!("发送事件失败: {}", e));
@@ -189,49 +199,45 @@ async fn handle_request(uuid: &str, result: serde_json::Value) {
 
 fn build_directive(action: HookAction, hook_event: &CcHookEvent) -> Option<CcDirective> {
     match action {
-        HookAction::Allow => {
-            match hook_event {
-                CcHookEvent::PreToolUse => Some(CcDirective::PreToolUse(CcPreToolUseResp {
-                    permission_decision: Some(CcPermBehavior::Allow),
-                    permission_decision_reason: None,
-                    updated_input: None,
-                    additional_context: None,
-                })),
-                CcHookEvent::PermissionRequest => Some(CcDirective::PermissionRequest(CcPermReqResp {
-                    behavior: CcPermBehavior::Allow,
-                    updated_input: None,
-                    updated_permissions: None,
-                    message: None,
-                    interrupt: None,
-                })),
-                _ => None,
-            }
-        }
-        HookAction::Deny => {
-            match hook_event {
-                CcHookEvent::PreToolUse => Some(CcDirective::PreToolUse(CcPreToolUseResp {
-                    permission_decision: Some(CcPermBehavior::Deny),
-                    permission_decision_reason: Some("Denied by user".to_string()),
-                    updated_input: None,
-                    additional_context: None,
-                })),
-                CcHookEvent::PermissionRequest => Some(CcDirective::PermissionRequest(CcPermReqResp {
-                    behavior: CcPermBehavior::Deny,
-                    updated_input: None,
-                    updated_permissions: None,
-                    message: Some("Denied by user".to_string()),
-                    interrupt: Some(false),
-                })),
-                _ => None,
-            }
-        }
+        HookAction::Allow => match hook_event {
+            CcHookEvent::PreToolUse => Some(CcDirective::PreToolUse(CcPreToolUseResp {
+                permission_decision: Some(CcPermBehavior::Allow),
+                permission_decision_reason: None,
+                updated_input: None,
+                additional_context: None,
+            })),
+            CcHookEvent::PermissionRequest => Some(CcDirective::PermissionRequest(CcPermReqResp {
+                behavior: CcPermBehavior::Allow,
+                updated_input: None,
+                updated_permissions: None,
+                message: None,
+                interrupt: None,
+            })),
+            _ => None,
+        },
+        HookAction::Deny => match hook_event {
+            CcHookEvent::PreToolUse => Some(CcDirective::PreToolUse(CcPreToolUseResp {
+                permission_decision: Some(CcPermBehavior::Deny),
+                permission_decision_reason: Some("Denied by user".to_string()),
+                updated_input: None,
+                additional_context: None,
+            })),
+            CcHookEvent::PermissionRequest => Some(CcDirective::PermissionRequest(CcPermReqResp {
+                behavior: CcPermBehavior::Deny,
+                updated_input: None,
+                updated_permissions: None,
+                message: Some("Denied by user".to_string()),
+                interrupt: Some(false),
+            })),
+            _ => None,
+        },
         HookAction::Answer { answer: a } => Some(CcDirective::PermissionRequest(CcPermReqResp {
-                    behavior: CcPermBehavior::Allow,
-                    updated_input: Some(a),
-                    updated_permissions: None,
-                    message: None,
-                    interrupt: None,
-                })),
+            behavior: CcPermBehavior::Allow,
+            updated_input: Some(a),
+            updated_permissions: None,
+            message: None,
+            interrupt: None,
+        })),
         HookAction::Custom { directive } => Some(directive),
     }
 }
@@ -276,9 +282,14 @@ fn format_directive_for_claude(directive: &CcDirective) -> serde_json::Value {
 
 #[tauri::command]
 pub async fn respond_to_hook(uuid: String, action: HookAction) -> Result<(), String> {
-    logger::info(TAG, &format!("收到响应: uuid={}, action={:?}", uuid, action));
+    logger::info(
+        TAG,
+        &format!("收到响应: uuid={}, action={:?}", uuid, action),
+    );
 
-    let hook_event = get_hook_event_map().lock().await
+    let hook_event = get_hook_event_map()
+        .lock()
+        .await
         .remove(&uuid)
         .unwrap_or(CcHookEvent::PreToolUse);
 

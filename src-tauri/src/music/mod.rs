@@ -39,7 +39,7 @@ pub(crate) fn spawn_music_monitor(
         let mut fetch_pending = false;
         let mut no_session_count: u32 = 0;
         const NO_SESSION_GRACE_CYCLES: u32 = 63;
-        
+
         loop {
             thread::sleep(Duration::from_millis(80));
 
@@ -69,32 +69,33 @@ pub(crate) fn spawn_music_monitor(
 
             // 读取当前 SMTC 会话；短暂丢会话时给播放器切歌留宽限期。
             let info = media::get_smtc_media_info();
-            let (status, media_info, position_ms_raw, is_playing, raw_app_id, thumbnail) = match info {
-                Some(v) => {
-                    no_session_count = 0;
-                    v
-                }
-                None => {
-                    if was_playing {
-                        no_session_count = no_session_count.saturating_add(1);
-                        if no_session_count < NO_SESSION_GRACE_CYCLES {
-                            continue;
-                        }
-                        logger::warn(
-                            "Lyrics",
-                            "playback state=stopped reason=no_smtc_session (grace expired)",
-                        );
+            let (status, media_info, position_ms_raw, is_playing, raw_app_id, thumbnail) =
+                match info {
+                    Some(v) => {
                         no_session_count = 0;
-                        was_playing = false;
-                        last_is_playing = false;
-                        current_track.clear();
-                        is_music.store(false, Ordering::Relaxed);
-                        let _ = window.emit("lyric-update", serde_json::json!(null));
-                        let _ = window.emit("music-page", false);
+                        v
                     }
-                    continue;
-                }
-            };
+                    None => {
+                        if was_playing {
+                            no_session_count = no_session_count.saturating_add(1);
+                            if no_session_count < NO_SESSION_GRACE_CYCLES {
+                                continue;
+                            }
+                            logger::warn(
+                                "Lyrics",
+                                "playback state=stopped reason=no_smtc_session (grace expired)",
+                            );
+                            no_session_count = 0;
+                            was_playing = false;
+                            last_is_playing = false;
+                            current_track.clear();
+                            is_music.store(false, Ordering::Relaxed);
+                            let _ = window.emit("lyric-update", serde_json::json!(null));
+                            let _ = window.emit("music-page", false);
+                        }
+                        continue;
+                    }
+                };
 
             if status == 4 {
                 if was_playing {
@@ -403,11 +404,14 @@ pub(crate) fn spawn_music_monitor(
                 }
                 let _ = window.emit("lyric-update", payload);
             } else {
-                let _ = window.emit("lyric-update", serde_json::json!({
-                    "text": null,
-                    "position_ms": position_ms,
-                    "is_playing": is_playing
-                }));
+                let _ = window.emit(
+                    "lyric-update",
+                    serde_json::json!({
+                        "text": null,
+                        "position_ms": position_ms,
+                        "is_playing": is_playing
+                    }),
+                );
             }
         }
     });

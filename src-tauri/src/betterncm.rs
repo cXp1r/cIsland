@@ -34,17 +34,28 @@ fn patch_pluginmarket_source_text(input: &str) -> (String, bool) {
 }
 
 fn patch_pluginmarket_runtime(root: &Path) -> Result<bool, String> {
-    let runtime_main = root.join("plugins_runtime").join("PluginMarket").join("main.js");
+    let runtime_main = root
+        .join("plugins_runtime")
+        .join("PluginMarket")
+        .join("main.js");
     if !runtime_main.exists() {
         return Ok(false);
     }
 
-    let content = fs::read_to_string(&runtime_main)
-        .map_err(|e| format!("读取运行时 PluginMarket 失败 {}: {e}", runtime_main.display()))?;
+    let content = fs::read_to_string(&runtime_main).map_err(|e| {
+        format!(
+            "读取运行时 PluginMarket 失败 {}: {e}",
+            runtime_main.display()
+        )
+    })?;
     let (patched, changed) = patch_pluginmarket_source_text(&content);
     if changed {
-        fs::write(&runtime_main, patched)
-            .map_err(|e| format!("写入运行时 PluginMarket 失败 {}: {e}", runtime_main.display()))?;
+        fs::write(&runtime_main, patched).map_err(|e| {
+            format!(
+                "写入运行时 PluginMarket 失败 {}: {e}",
+                runtime_main.display()
+            )
+        })?;
     }
     Ok(changed)
 }
@@ -55,8 +66,12 @@ fn patch_pluginmarket_archive(root: &Path) -> Result<bool, String> {
         return Ok(false);
     }
 
-    let src_file = fs::File::open(&plugin_archive)
-        .map_err(|e| format!("读取 PluginMarket.plugin 失败 {}: {e}", plugin_archive.display()))?;
+    let src_file = fs::File::open(&plugin_archive).map_err(|e| {
+        format!(
+            "读取 PluginMarket.plugin 失败 {}: {e}",
+            plugin_archive.display()
+        )
+    })?;
     let mut src_zip =
         ZipArchive::new(src_file).map_err(|e| format!("解析 PluginMarket.plugin 失败: {e}"))?;
 
@@ -125,7 +140,9 @@ fn patch_pluginmarket_archive(root: &Path) -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub fn install_betterncm_support(install_root: Option<String>) -> Result<serde_json::Value, String> {
+pub fn install_betterncm_support(
+    install_root: Option<String>,
+) -> Result<serde_json::Value, String> {
     let root = normalize_betterncm_root(install_root);
     if !root.exists() {
         return Err(format!("BetterNCM 目录不存在: {}", root.display()));

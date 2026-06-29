@@ -1,7 +1,7 @@
-﻿use std::path::PathBuf;
-use std::sync::{Mutex, OnceLock};
-use std::sync::atomic::{AtomicBool, Ordering};
 use crate::{get_config_path, logger};
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, OnceLock};
 use tokio::task;
 
 const TAG: &str = "Email";
@@ -16,8 +16,7 @@ pub fn is_email_configured() -> bool {
 }
 /// 邮件缓存目录：/email
 pub fn email_cache_dir() -> PathBuf {
-    let dir = get_config_path()
-        .join("email");
+    let dir = get_config_path().join("email");
     let _ = std::fs::create_dir_all(&dir);
     dir
 }
@@ -207,7 +206,10 @@ impl Email {
             logger::debug(TAG, "fetch_metas_by_uids: empty uids");
             return Ok(vec![]);
         }
-        logger::debug(TAG, &format!("fetch_metas_by_uids: start, {} uids", uids.len()));
+        logger::debug(
+            TAG,
+            &format!("fetch_metas_by_uids: start, {} uids", uids.len()),
+        );
         let config = self.clone_email();
         let cache_dir = email_cache_dir();
         let requested_len = uids.len();
@@ -226,7 +228,13 @@ impl Email {
                 let config_t = config.clone();
                 let cache_dir_t = cache_dir.clone();
                 handles.push(std::thread::spawn(move || {
-                    logger::debug(TAG, &format!("fetch_metas_by_uids: worker start, {} uids", chunk_uids.len()));
+                    logger::debug(
+                        TAG,
+                        &format!(
+                            "fetch_metas_by_uids: worker start, {} uids",
+                            chunk_uids.len()
+                        ),
+                    );
                     let tls = match native_tls::TlsConnector::builder().build() {
                         Ok(t) => t,
                         Err(_) => {
@@ -236,7 +244,8 @@ impl Email {
                     };
                     let client = match imap::connect(
                         (config_t.address.as_str(), config_t.port),
-                        config_t.address.as_str(), &tls,
+                        config_t.address.as_str(),
+                        &tls,
                     ) {
                         Ok(c) => c,
                         Err(_) => {
@@ -257,12 +266,18 @@ impl Email {
                         return Vec::new();
                     }
 
-                    let uid_query = chunk_uids.iter().map(|u| u.to_string()).collect::<Vec<_>>().join(",");
+                    let uid_query = chunk_uids
+                        .iter()
+                        .map(|u| u.to_string())
+                        .collect::<Vec<_>>()
+                        .join(",");
                     let mut metas = Vec::new();
                     match session.uid_fetch(&uid_query, "(UID ENVELOPE)") {
                         Ok(fetches) => {
                             for f in fetches.iter() {
-                                let Some(uid) = f.uid else { continue; };
+                                let Some(uid) = f.uid else {
+                                    continue;
+                                };
                                 let env = f.envelope();
                                 let subject_str = env
                                     .and_then(|e| e.subject.as_ref())
@@ -272,10 +287,26 @@ impl Email {
                                     .and_then(|e| e.from.as_ref())
                                     .and_then(|addrs| addrs.first())
                                     .map(|a| {
-                                        let name = a.name.as_ref().map(|n| decode_mime_str(n)).unwrap_or_default();
-                                        let mailbox = a.mailbox.as_ref().map(|m| String::from_utf8_lossy(m).to_string()).unwrap_or_default();
-                                        let host = a.host.as_ref().map(|h| String::from_utf8_lossy(h).to_string()).unwrap_or_default();
-                                        if name.is_empty() { format!("{}@{}", mailbox, host) } else { name }
+                                        let name = a
+                                            .name
+                                            .as_ref()
+                                            .map(|n| decode_mime_str(n))
+                                            .unwrap_or_default();
+                                        let mailbox = a
+                                            .mailbox
+                                            .as_ref()
+                                            .map(|m| String::from_utf8_lossy(m).to_string())
+                                            .unwrap_or_default();
+                                        let host = a
+                                            .host
+                                            .as_ref()
+                                            .map(|h| String::from_utf8_lossy(h).to_string())
+                                            .unwrap_or_default();
+                                        if name.is_empty() {
+                                            format!("{}@{}", mailbox, host)
+                                        } else {
+                                            name
+                                        }
                                     })
                                     .unwrap_or_default();
                                 let date_str = env
@@ -292,11 +323,17 @@ impl Email {
                             }
                         }
                         Err(_) => {
-                            logger::debug(TAG, &format!("fetch_metas_by_uids: uid_fetch failed for {}", uid_query));
+                            logger::debug(
+                                TAG,
+                                &format!("fetch_metas_by_uids: uid_fetch failed for {}", uid_query),
+                            );
                         }
                     }
                     session.logout().ok();
-                    logger::debug(TAG, &format!("fetch_metas_by_uids: worker done, {} metas", metas.len()));
+                    logger::debug(
+                        TAG,
+                        &format!("fetch_metas_by_uids: worker done, {} metas", metas.len()),
+                    );
                     metas
                 }));
             }
@@ -314,10 +351,25 @@ impl Email {
                 .enumerate()
                 .map(|(idx, uid)| (*uid, idx))
                 .collect();
-            metas.sort_by_key(|m| m.uid.parse::<u32>().ok().and_then(|uid| uid_order.get(&uid).copied()).unwrap_or(usize::MAX));
+            metas.sort_by_key(|m| {
+                m.uid
+                    .parse::<u32>()
+                    .ok()
+                    .and_then(|uid| uid_order.get(&uid).copied())
+                    .unwrap_or(usize::MAX)
+            });
             Ok(metas)
-        }).await.map_err(|e| e.to_string())??;
-        logger::debug(TAG, &format!("fetch_metas_by_uids: done, requested {} returned {}", requested_len, metas.len()));
+        })
+        .await
+        .map_err(|e| e.to_string())??;
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_metas_by_uids: done, requested {} returned {}",
+                requested_len,
+                metas.len()
+            ),
+        );
         Ok(metas)
     }
 
@@ -326,7 +378,10 @@ impl Email {
             logger::debug(TAG, "fetch_bodies_by_uids: empty uids");
             return Ok(vec![]);
         }
-        logger::debug(TAG, &format!("fetch_bodies_by_uids: start, {} uids", uids.len()));
+        logger::debug(
+            TAG,
+            &format!("fetch_bodies_by_uids: start, {} uids", uids.len()),
+        );
         let config = self.clone_email();
         let cache_dir = email_cache_dir();
         let requested_uids = uids.clone();
@@ -340,7 +395,14 @@ impl Email {
             .filter(|uid| !cache_dir.join(format!("{}.html", uid)).exists())
             .copied()
             .collect();
-        logger::debug(TAG, &format!("fetch_bodies_by_uids: cache hit {} missing {}", cached_uids.len(), missing_uids.len()));
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_bodies_by_uids: cache hit {} missing {}",
+                cached_uids.len(),
+                missing_uids.len()
+            ),
+        );
         if missing_uids.is_empty() {
             return Ok(cached_uids);
         }
@@ -399,23 +461,41 @@ impl Email {
             .map(|(idx, uid)| (*uid, idx))
             .collect();
         done_uids.sort_by_key(|uid| uid_order.get(uid).copied().unwrap_or(usize::MAX));
-        logger::debug(TAG, &format!("fetch_bodies_by_uids: done, {} bodies available", done_uids.len()));
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_bodies_by_uids: done, {} bodies available",
+                done_uids.len()
+            ),
+        );
         Ok(done_uids)
     }
 
-    pub async fn fetch_metas_and_bodies_by_uids(&self, uids: Vec<u32>) -> Result<Vec<EmailMeta>, String> {
+    pub async fn fetch_metas_and_bodies_by_uids(
+        &self,
+        uids: Vec<u32>,
+    ) -> Result<Vec<EmailMeta>, String> {
         if uids.is_empty() {
             logger::debug(TAG, "fetch_metas_and_bodies_by_uids: empty uids");
             return Ok(vec![]);
         }
-        logger::debug(TAG, &format!("fetch_metas_and_bodies_by_uids: start, {} uids", uids.len()));
+        logger::debug(
+            TAG,
+            &format!("fetch_metas_and_bodies_by_uids: start, {} uids", uids.len()),
+        );
         let _ = self.fetch_bodies_by_uids(uids.clone()).await?;
         let mut metas = self.fetch_metas_by_uids(uids).await?;
         let cache_dir = email_cache_dir();
         for meta in &mut metas {
             meta.cached = cache_dir.join(format!("{}.html", meta.uid)).exists();
         }
-        logger::debug(TAG, &format!("fetch_metas_and_bodies_by_uids: done, {} metas", metas.len()));
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_metas_and_bodies_by_uids: done, {} metas",
+                metas.len()
+            ),
+        );
         Ok(metas)
     }
 
@@ -424,7 +504,13 @@ impl Email {
     pub async fn fetch_latest_emails(&self) -> Vec<EmailMeta> {
         let config = self.clone_email();
         let cache_dir = email_cache_dir();
-        logger::debug(TAG, &format!("fetch_latest_emails: start cache_dir={}", cache_dir.to_string_lossy()));
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_latest_emails: start cache_dir={}",
+                cache_dir.to_string_lossy()
+            ),
+        );
 
         // 步骤名称
         const DONE: u8 = 8;
@@ -443,18 +529,39 @@ impl Email {
                 // 1 TLS
                 let tls = match native_tls::TlsConnector::builder().build() {
                     Ok(t) => t,
-                    Err(e) => { err_msg = format!("{e}"); logger::debug(TAG, &format!("fetch_latest_emails: TLS build failed: {}", err_msg)); return vec![]; }
+                    Err(e) => {
+                        err_msg = format!("{e}");
+                        logger::debug(
+                            TAG,
+                            &format!("fetch_latest_emails: TLS build failed: {}", err_msg),
+                        );
+                        return vec![];
+                    }
                 };
                 step = 1;
 
                 // 2 connect
-                logger::debug(TAG, &format!("fetch_latest_emails: connecting {}:{}", config.address, config.port));
+                logger::debug(
+                    TAG,
+                    &format!(
+                        "fetch_latest_emails: connecting {}:{}",
+                        config.address, config.port
+                    ),
+                );
                 let client = match imap::connect(
                     (config.address.as_str(), config.port),
-                    config.address.as_str(), &tls,
+                    config.address.as_str(),
+                    &tls,
                 ) {
                     Ok(c) => c,
-                    Err(e) => { err_msg = format!("{e}"); logger::debug(TAG, &format!("fetch_latest_emails: connect failed: {}", err_msg)); return vec![]; }
+                    Err(e) => {
+                        err_msg = format!("{e}");
+                        logger::debug(
+                            TAG,
+                            &format!("fetch_latest_emails: connect failed: {}", err_msg),
+                        );
+                        return vec![];
+                    }
                 };
                 step = 2;
 
@@ -462,7 +569,14 @@ impl Email {
                 logger::debug(TAG, "fetch_latest_emails: logging in");
                 let mut session = match client.login(&config.username, &config.auth) {
                     Ok(s) => s,
-                    Err((e, _)) => { err_msg = format!("{e}"); logger::debug(TAG, &format!("fetch_latest_emails: login failed: {}", err_msg)); return vec![]; }
+                    Err((e, _)) => {
+                        err_msg = format!("{e}");
+                        logger::debug(
+                            TAG,
+                            &format!("fetch_latest_emails: login failed: {}", err_msg),
+                        );
+                        return vec![];
+                    }
                 };
                 step = 3;
 
@@ -470,7 +584,10 @@ impl Email {
                 logger::debug(TAG, "fetch_latest_emails: selecting INBOX");
                 if let Err(e) = session.select("INBOX") {
                     err_msg = format!("{e}");
-                    logger::debug(TAG, &format!("fetch_latest_emails: select INBOX failed: {}", err_msg));
+                    logger::debug(
+                        TAG,
+                        &format!("fetch_latest_emails: select INBOX failed: {}", err_msg),
+                    );
                     session.logout().ok();
                     return vec![];
                 }
@@ -480,21 +597,43 @@ impl Email {
                 logger::debug(TAG, "fetch_latest_emails: uid_search ALL");
                 let uids = match session.uid_search("ALL") {
                     Ok(m) => m,
-                    Err(e) => { err_msg = format!("{e}"); logger::debug(TAG, &format!("fetch_latest_emails: uid_search failed: {}", err_msg)); session.logout().ok(); return vec![]; }
+                    Err(e) => {
+                        err_msg = format!("{e}");
+                        logger::debug(
+                            TAG,
+                            &format!("fetch_latest_emails: uid_search failed: {}", err_msg),
+                        );
+                        session.logout().ok();
+                        return vec![];
+                    }
                 };
                 let mut uid_list: Vec<u32> = uids.into_iter().collect();
                 uid_list.sort_unstable();
                 uid_list.reverse();
                 uid_list.truncate(10);
                 step = 5;
-                logger::debug(TAG, &format!("fetch_latest_emails: top {} UIDs: {:?}", uid_list.len(), uid_list));
+                logger::debug(
+                    TAG,
+                    &format!(
+                        "fetch_latest_emails: top {} UIDs: {:?}",
+                        uid_list.len(),
+                        uid_list
+                    ),
+                );
 
                 // 6 fetch bodies (逐封)
-                let need_fetch: Vec<u32> = uid_list.iter()
+                let need_fetch: Vec<u32> = uid_list
+                    .iter()
                     .filter(|u| !cache_dir.join(format!("{}.html", u)).exists())
                     .copied()
                     .collect();
-                logger::debug(TAG, &format!("fetch_latest_emails: need fetch {} bodies", need_fetch.len()));
+                logger::debug(
+                    TAG,
+                    &format!(
+                        "fetch_latest_emails: need fetch {} bodies",
+                        need_fetch.len()
+                    ),
+                );
                 if !need_fetch.is_empty() {
                     //logger::debug(TAG, &format!("fetch_latest: fetching {} bodies", need_fetch.len()));
                     for &uid in &need_fetch {
@@ -503,17 +642,36 @@ impl Email {
                             Ok(fetches) => {
                                 if let Some(f) = fetches.iter().next() {
                                     if let Some(body) = f.body() {
-                                        logger::debug(TAG, &format!("fetch_latest_emails: UID {} body {} bytes", uid, body.len()));
+                                        logger::debug(
+                                            TAG,
+                                            &format!(
+                                                "fetch_latest_emails: UID {} body {} bytes",
+                                                uid,
+                                                body.len()
+                                            ),
+                                        );
                                         let html = extract_html_from_rfc822(body);
                                         let path = cache_dir.join(format!("{}.html", uid));
                                         if let Err(e) = std::fs::write(&path, &html) {
-                                            logger::debug(TAG, &format!("fetch_latest_emails: write {}.html failed: {}", uid, e));
+                                            logger::debug(
+                                                TAG,
+                                                &format!(
+                                                    "fetch_latest_emails: write {}.html failed: {}",
+                                                    uid, e
+                                                ),
+                                            );
                                         }
                                     }
                                 }
                             }
                             Err(e) => {
-                                logger::debug(TAG, &format!("fetch_latest_emails: fetch body failed uid={} error={}", uid, e));
+                                logger::debug(
+                                    TAG,
+                                    &format!(
+                                        "fetch_latest_emails: fetch body failed uid={} error={}",
+                                        uid, e
+                                    ),
+                                );
                             }
                         }
                     }
@@ -537,10 +695,26 @@ impl Email {
                                     .and_then(|e| e.from.as_ref())
                                     .and_then(|addrs| addrs.first())
                                     .map(|a| {
-                                        let name = a.name.as_ref().map(|n| decode_mime_str(n)).unwrap_or_default();
-                                        let mailbox = a.mailbox.as_ref().map(|m| String::from_utf8_lossy(m).to_string()).unwrap_or_default();
-                                        let host = a.host.as_ref().map(|h| String::from_utf8_lossy(h).to_string()).unwrap_or_default();
-                                        if name.is_empty() { format!("{}@{}", mailbox, host) } else { name }
+                                        let name = a
+                                            .name
+                                            .as_ref()
+                                            .map(|n| decode_mime_str(n))
+                                            .unwrap_or_default();
+                                        let mailbox = a
+                                            .mailbox
+                                            .as_ref()
+                                            .map(|m| String::from_utf8_lossy(m).to_string())
+                                            .unwrap_or_default();
+                                        let host = a
+                                            .host
+                                            .as_ref()
+                                            .map(|h| String::from_utf8_lossy(h).to_string())
+                                            .unwrap_or_default();
+                                        if name.is_empty() {
+                                            format!("{}@{}", mailbox, host)
+                                        } else {
+                                            name
+                                        }
                                     })
                                     .unwrap_or_default();
                                 let date_str = env
@@ -557,7 +731,13 @@ impl Email {
                             }
                         }
                         Err(e) => {
-                            logger::debug(TAG, &format!("fetch_latest_emails: envelope fetch failed uid={} error={}", uid, e));
+                            logger::debug(
+                                TAG,
+                                &format!(
+                                    "fetch_latest_emails: envelope fetch failed uid={} error={}",
+                                    uid, e
+                                ),
+                            );
                         }
                     }
                 }
@@ -570,14 +750,23 @@ impl Email {
 
             // 唯一一条 INFO 汇总
             if step >= DONE {
-                logger::debug(TAG, &format!("fetch_latest_emails: ok, {} emails", result.len()));
+                logger::debug(
+                    TAG,
+                    &format!("fetch_latest_emails: ok, {} emails", result.len()),
+                );
             } else {
-                logger::debug(TAG, &format!("fetch_latest_emails: failed at step {} - {}", step, err_msg));
+                logger::debug(
+                    TAG,
+                    &format!("fetch_latest_emails: failed at step {} - {}", step, err_msg),
+                );
             }
 
             let mut sorted = result;
             sorted.sort_by(|a, b| b.uid.cmp(&a.uid));
-            logger::debug(TAG, &format!("fetch_latest_emails: sorted {} metas", sorted.len()));
+            logger::debug(
+                TAG,
+                &format!("fetch_latest_emails: sorted {} metas", sorted.len()),
+            );
             sorted
         })
         .await
@@ -632,7 +821,13 @@ fn scan_cached_email_body_metas() -> Vec<EmailMeta> {
         let bu = b.uid.parse::<u32>().unwrap_or_default();
         bu.cmp(&au)
     });
-    logger::debug(TAG, &format!("scan_cached_email_body_metas: found {} html bodies", metas.len()));
+    logger::debug(
+        TAG,
+        &format!(
+            "scan_cached_email_body_metas: found {} html bodies",
+            metas.len()
+        ),
+    );
     metas
 }
 
@@ -679,15 +874,27 @@ pub fn load_email_metas() -> Vec<EmailMeta> {
         Ok(s) => {
             let metas: Vec<EmailMeta> = serde_json::from_str(&s).unwrap_or_default();
             if metas.is_empty() {
-                logger::debug(TAG, "load_email_metas: meta json empty, scanning cached bodies");
+                logger::debug(
+                    TAG,
+                    "load_email_metas: meta json empty, scanning cached bodies",
+                );
                 scan_cached_email_body_metas()
             } else {
-                logger::debug(TAG, &format!("load_email_metas: loaded {} metas from json", metas.len()));
+                logger::debug(
+                    TAG,
+                    &format!("load_email_metas: loaded {} metas from json", metas.len()),
+                );
                 metas
             }
         }
         Err(e) => {
-            logger::debug(TAG, &format!("load_email_metas: meta json unavailable {}, scanning cached bodies", e));
+            logger::debug(
+                TAG,
+                &format!(
+                    "load_email_metas: meta json unavailable {}, scanning cached bodies",
+                    e
+                ),
+            );
             scan_cached_email_body_metas()
         }
     }
@@ -704,7 +911,14 @@ pub fn save_email_metas(metas: &[EmailMeta]) {
     let path = email_meta_path();
     let existing = read_email_meta_json_file(&path).unwrap_or_default();
     if metas.is_empty() && !existing.is_empty() {
-        logger::debug(TAG, &format!("save_email_metas: skip empty overwrite, existing {} metas at {}", existing.len(), path.to_string_lossy()));
+        logger::debug(
+            TAG,
+            &format!(
+                "save_email_metas: skip empty overwrite, existing {} metas at {}",
+                existing.len(),
+                path.to_string_lossy()
+            ),
+        );
         return;
     }
     let json = match serde_json::to_string_pretty(metas) {
@@ -717,32 +931,77 @@ pub fn save_email_metas(metas: &[EmailMeta]) {
     let backup_path = path.with_extension("json.bak");
     if path.exists() {
         if let Err(e) = std::fs::copy(&path, &backup_path) {
-            logger::debug(TAG, &format!("save_email_metas: backup failed {} -> {} error={}", path.to_string_lossy(), backup_path.to_string_lossy(), e));
+            logger::debug(
+                TAG,
+                &format!(
+                    "save_email_metas: backup failed {} -> {} error={}",
+                    path.to_string_lossy(),
+                    backup_path.to_string_lossy(),
+                    e
+                ),
+            );
         }
     }
     let tmp_path = path.with_extension("json.tmp");
     if let Err(e) = std::fs::write(&tmp_path, json) {
-        logger::debug(TAG, &format!("save_email_metas: tmp write failed {} error={}", tmp_path.to_string_lossy(), e));
+        logger::debug(
+            TAG,
+            &format!(
+                "save_email_metas: tmp write failed {} error={}",
+                tmp_path.to_string_lossy(),
+                e
+            ),
+        );
         return;
     }
     if path.exists() {
         if let Err(e) = std::fs::remove_file(&path) {
-            logger::debug(TAG, &format!("save_email_metas: remove old file failed {} error={}", path.to_string_lossy(), e));
+            logger::debug(
+                TAG,
+                &format!(
+                    "save_email_metas: remove old file failed {} error={}",
+                    path.to_string_lossy(),
+                    e
+                ),
+            );
             let _ = std::fs::remove_file(&tmp_path);
             return;
         }
     }
     if let Err(e) = std::fs::rename(&tmp_path, &path) {
-        logger::debug(TAG, &format!("save_email_metas: rename failed {} -> {} error={}", tmp_path.to_string_lossy(), path.to_string_lossy(), e));
+        logger::debug(
+            TAG,
+            &format!(
+                "save_email_metas: rename failed {} -> {} error={}",
+                tmp_path.to_string_lossy(),
+                path.to_string_lossy(),
+                e
+            ),
+        );
         let _ = std::fs::remove_file(&tmp_path);
         if backup_path.exists() && !path.exists() {
             if let Err(restore_err) = std::fs::copy(&backup_path, &path) {
-                logger::debug(TAG, &format!("save_email_metas: restore backup failed {} -> {} error={}", backup_path.to_string_lossy(), path.to_string_lossy(), restore_err));
+                logger::debug(
+                    TAG,
+                    &format!(
+                        "save_email_metas: restore backup failed {} -> {} error={}",
+                        backup_path.to_string_lossy(),
+                        path.to_string_lossy(),
+                        restore_err
+                    ),
+                );
             }
         }
         return;
     }
-    logger::debug(TAG, &format!("save_email_metas: saved {} metas to {}", metas.len(), path.to_string_lossy()));
+    logger::debug(
+        TAG,
+        &format!(
+            "save_email_metas: saved {} metas to {}",
+            metas.len(),
+            path.to_string_lossy()
+        ),
+    );
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -777,11 +1036,17 @@ fn extract_html_from_rfc822(raw: &[u8]) -> String {
     match mailparse::parse_mail(raw) {
         Ok(parsed) => find_html_part(&parsed).unwrap_or_else(|| {
             let text = decode_body_smart(&parsed);
-            format!("<html><head><meta charset=\"utf-8\"></head><body><pre>{}</pre></body></html>", html_escape(&text))
+            format!(
+                "<html><head><meta charset=\"utf-8\"></head><body><pre>{}</pre></body></html>",
+                html_escape(&text)
+            )
         }),
         Err(_) => {
             let text = String::from_utf8_lossy(raw).to_string();
-            format!("<html><head><meta charset=\"utf-8\"></head><body><pre>{}</pre></body></html>", html_escape(&text))
+            format!(
+                "<html><head><meta charset=\"utf-8\"></head><body><pre>{}</pre></body></html>",
+                html_escape(&text)
+            )
         }
     }
 }
@@ -795,7 +1060,12 @@ fn decode_body_smart(mail: &mailparse::ParsedMail) -> String {
     };
 
     // 1. 从 Content-Type charset 参数获取编码
-    let mime_charset = mail.ctype.params.get("charset").map(|s| s.as_str()).unwrap_or("");
+    let mime_charset = mail
+        .ctype
+        .params
+        .get("charset")
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
     // 2. 如果 MIME 没声明，从 HTML meta 标签中探测
     let charset = if mime_charset.is_empty() {
@@ -810,7 +1080,11 @@ fn decode_body_smart(mail: &mailparse::ParsedMail) -> String {
 
 fn detect_charset_from_html(bytes: &[u8]) -> String {
     // 取前 2048 字节搜索 meta charset
-    let head = if bytes.len() > 2048 { &bytes[..2048] } else { bytes };
+    let head = if bytes.len() > 2048 {
+        &bytes[..2048]
+    } else {
+        bytes
+    };
     let lossy = String::from_utf8_lossy(head);
     let lower = lossy.to_lowercase();
 
@@ -918,7 +1192,9 @@ fn ensure_html_head_charset(html: &str) -> String {
 }
 
 fn html_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 fn decode_mime_str(raw: &[u8]) -> String {
@@ -926,19 +1202,31 @@ fn decode_mime_str(raw: &[u8]) -> String {
     match mailparse::parse_header(format!("X: {}", s).as_bytes()) {
         Ok((hdr, _)) => {
             let val = hdr.get_value();
-            if val.is_empty() { s } else { val }
+            if val.is_empty() {
+                s
+            } else {
+                val
+            }
         }
         Err(_) => s,
     }
 }
 
 #[tauri::command]
-pub async fn fetch_emails(state: tauri::State<'_, crate::IslandState>) -> Result<Vec<EmailMeta>, String> {
+pub async fn fetch_emails(
+    state: tauri::State<'_, crate::IslandState>,
+) -> Result<Vec<EmailMeta>, String> {
     logger::debug(TAG, "fetch_emails: start");
     let local_body_metas = scan_cached_email_body_metas();
     let mut metas = state.cached_email_metas.lock().unwrap().clone();
     if !local_body_metas.is_empty() {
-        logger::debug(TAG, &format!("fetch_emails: merging {} local body metas", local_body_metas.len()));
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_emails: merging {} local body metas",
+                local_body_metas.len()
+            ),
+        );
         upsert_email_metas(&mut metas, &local_body_metas);
     }
 
@@ -947,17 +1235,32 @@ pub async fn fetch_emails(state: tauri::State<'_, crate::IslandState>) -> Result
         .filter(|meta| meta.cached && is_blank_email_meta(meta))
         .filter_map(|meta| meta.uid.parse::<u32>().ok())
         .collect();
-    logger::debug(TAG, &format!("fetch_emails: {} cached bodies missing metas", missing_meta_uids.len()));
+    logger::debug(
+        TAG,
+        &format!(
+            "fetch_emails: {} cached bodies missing metas",
+            missing_meta_uids.len()
+        ),
+    );
 
     if !missing_meta_uids.is_empty() {
         let config = state.email_config.lock().unwrap().clone();
         match config.fetch_metas_by_uids(missing_meta_uids).await {
             Ok(fetched_metas) => {
-                logger::debug(TAG, &format!("fetch_emails: fetched {} missing metas", fetched_metas.len()));
+                logger::debug(
+                    TAG,
+                    &format!(
+                        "fetch_emails: fetched {} missing metas",
+                        fetched_metas.len()
+                    ),
+                );
                 upsert_email_metas(&mut metas, &fetched_metas);
             }
             Err(e) => {
-                logger::debug(TAG, &format!("fetch_emails: fetch missing metas failed: {}", e));
+                logger::debug(
+                    TAG,
+                    &format!("fetch_emails: fetch missing metas failed: {}", e),
+                );
             }
         }
     }
@@ -967,23 +1270,41 @@ pub async fn fetch_emails(state: tauri::State<'_, crate::IslandState>) -> Result
         *cached = metas.clone();
         save_email_metas(&cached);
     }
-    logger::debug(TAG, &format!("fetch_emails: returning {} cached metas", metas.len()));
+    logger::debug(
+        TAG,
+        &format!("fetch_emails: returning {} cached metas", metas.len()),
+    );
     Ok(metas)
 }
 
 #[tauri::command]
-pub async fn refresh_emails(state: tauri::State<'_, crate::IslandState>) -> Result<Vec<EmailMeta>, String> {
+pub async fn refresh_emails(
+    state: tauri::State<'_, crate::IslandState>,
+) -> Result<Vec<EmailMeta>, String> {
     logger::debug(TAG, "refresh_emails: start");
     let config = state.email_config.lock().unwrap().clone();
     let metas = config.fetch_latest_emails().await;
     let mut cached = state.cached_email_metas.lock().unwrap();
     if metas.is_empty() && !cached.is_empty() {
-        logger::debug(TAG, &format!("refresh_emails: fetched 0 metas, keeping existing {} cached metas", cached.len()));
+        logger::debug(
+            TAG,
+            &format!(
+                "refresh_emails: fetched 0 metas, keeping existing {} cached metas",
+                cached.len()
+            ),
+        );
         return Ok(cached.clone());
     }
     upsert_email_metas(&mut cached, &metas);
     save_email_metas(&cached);
-    logger::debug(TAG, &format!("refresh_emails: done, fetched {} metas, cached {} metas", metas.len(), cached.len()));
+    logger::debug(
+        TAG,
+        &format!(
+            "refresh_emails: done, fetched {} metas, cached {} metas",
+            metas.len(),
+            cached.len()
+        ),
+    );
     Ok(cached.clone())
 }
 
@@ -995,7 +1316,9 @@ pub fn get_email_cache_dir() -> String {
 }
 
 #[tauri::command]
-pub fn diagnose_email_cache(state: tauri::State<'_, crate::IslandState>) -> Result<EmailCacheDiagnostics, String> {
+pub fn diagnose_email_cache(
+    state: tauri::State<'_, crate::IslandState>,
+) -> Result<EmailCacheDiagnostics, String> {
     let cache_dir = email_cache_dir();
     let meta_path = email_meta_path();
     let backup_path = meta_path.with_extension("json.bak");
@@ -1023,7 +1346,10 @@ pub fn diagnose_email_cache(state: tauri::State<'_, crate::IslandState>) -> Resu
         meta_tmp_path: tmp_path.to_string_lossy().to_string(),
         html_count: html_uids.len(),
         meta_count: cached.len(),
-        blank_meta_count: cached.iter().filter(|meta| is_blank_email_meta(meta)).count(),
+        blank_meta_count: cached
+            .iter()
+            .filter(|meta| is_blank_email_meta(meta))
+            .count(),
         html_without_meta,
         meta_without_html,
         meta_file_exists: meta_path.exists(),
@@ -1050,7 +1376,10 @@ pub fn diagnose_email_cache(state: tauri::State<'_, crate::IslandState>) -> Resu
 #[tauri::command]
 pub fn clear_email_cache(state: tauri::State<'_, crate::IslandState>) -> Result<(), String> {
     let dir = email_cache_dir();
-    logger::debug(TAG, &format!("clear_email_cache: start dir={}", dir.to_string_lossy()));
+    logger::debug(
+        TAG,
+        &format!("clear_email_cache: start dir={}", dir.to_string_lossy()),
+    );
     let mut removed = 0usize;
     if dir.exists() {
         for entry in std::fs::read_dir(&dir).map_err(|e| e.to_string())? {
@@ -1063,13 +1392,18 @@ pub fn clear_email_cache(state: tauri::State<'_, crate::IslandState>) -> Result<
         }
     }
     state.cached_email_metas.lock().unwrap().clear();
-    logger::debug(TAG, &format!("clear_email_cache: removed {} files", removed));
+    logger::debug(
+        TAG,
+        &format!("clear_email_cache: removed {} files", removed),
+    );
     Ok(())
 }
 
 /// 获取所有邮件 UID 列表（新→旧），供前端无限滚动用
 #[tauri::command]
-pub async fn fetch_email_uid_list(state: tauri::State<'_, crate::IslandState>) -> Result<Vec<u32>, String> {
+pub async fn fetch_email_uid_list(
+    state: tauri::State<'_, crate::IslandState>,
+) -> Result<Vec<u32>, String> {
     logger::debug(TAG, "fetch_email_uid_list: start");
     let config = state.email_config.lock().unwrap().clone();
     let uid_list = task::spawn_blocking(move || {
@@ -1077,14 +1411,25 @@ pub async fn fetch_email_uid_list(state: tauri::State<'_, crate::IslandState>) -
             logger::debug(TAG, "fetch_email_uid_list: not configured");
             return Err("邮箱未配置".to_string());
         }
-        logger::debug(TAG, &format!("fetch_email_uid_list: connecting {}:{}", config.address, config.port));
-        let tls = native_tls::TlsConnector::builder().build().map_err(|e| e.to_string())?;
+        logger::debug(
+            TAG,
+            &format!(
+                "fetch_email_uid_list: connecting {}:{}",
+                config.address, config.port
+            ),
+        );
+        let tls = native_tls::TlsConnector::builder()
+            .build()
+            .map_err(|e| e.to_string())?;
         let client = imap::connect(
             (config.address.as_str(), config.port),
-            config.address.as_str(), &tls,
-        ).map_err(|e| e.to_string())?;
+            config.address.as_str(),
+            &tls,
+        )
+        .map_err(|e| e.to_string())?;
         logger::debug(TAG, "fetch_email_uid_list: logging in");
-        let mut session = client.login(&config.username, &config.auth)
+        let mut session = client
+            .login(&config.username, &config.auth)
             .map_err(|(e, _)| e.to_string())?;
         logger::debug(TAG, "fetch_email_uid_list: selecting INBOX");
         session.select("INBOX").map_err(|e| e.to_string())?;
@@ -1095,13 +1440,21 @@ pub async fn fetch_email_uid_list(state: tauri::State<'_, crate::IslandState>) -
         uid_list.sort_unstable();
         uid_list.reverse();
         Ok(uid_list)
-    }).await.map_err(|e| e.to_string())??;
-    logger::debug(TAG, &format!("fetch_email_uid_list: done, {} uids", uid_list.len()));
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    logger::debug(
+        TAG,
+        &format!("fetch_email_uid_list: done, {} uids", uid_list.len()),
+    );
     Ok(uid_list)
 }
 
 #[tauri::command]
-pub async fn fetch_email_metas_by_uids(state: tauri::State<'_, crate::IslandState>, uids: Vec<u32>) -> Result<Vec<EmailMeta>, String> {
+pub async fn fetch_email_metas_by_uids(
+    state: tauri::State<'_, crate::IslandState>,
+    uids: Vec<u32>,
+) -> Result<Vec<EmailMeta>, String> {
     let config = state.email_config.lock().unwrap().clone();
     let metas = config.fetch_metas_by_uids(uids).await?;
     {
@@ -1113,13 +1466,19 @@ pub async fn fetch_email_metas_by_uids(state: tauri::State<'_, crate::IslandStat
 }
 
 #[tauri::command]
-pub async fn fetch_email_bodies_by_uids(state: tauri::State<'_, crate::IslandState>, uids: Vec<u32>) -> Result<Vec<u32>, String> {
+pub async fn fetch_email_bodies_by_uids(
+    state: tauri::State<'_, crate::IslandState>,
+    uids: Vec<u32>,
+) -> Result<Vec<u32>, String> {
     let config = state.email_config.lock().unwrap().clone();
     config.fetch_bodies_by_uids(uids).await
 }
 
 #[tauri::command]
-pub async fn fetch_email_metas_and_bodies_by_uids(state: tauri::State<'_, crate::IslandState>, uids: Vec<u32>) -> Result<Vec<EmailMeta>, String> {
+pub async fn fetch_email_metas_and_bodies_by_uids(
+    state: tauri::State<'_, crate::IslandState>,
+    uids: Vec<u32>,
+) -> Result<Vec<EmailMeta>, String> {
     let config = state.email_config.lock().unwrap().clone();
     let metas = config.fetch_metas_and_bodies_by_uids(uids).await?;
     {
@@ -1131,7 +1490,10 @@ pub async fn fetch_email_metas_and_bodies_by_uids(state: tauri::State<'_, crate:
 }
 
 #[tauri::command]
-pub async fn fetch_email_body_by_uid(state: tauri::State<'_, crate::IslandState>, uid: u32) -> Result<bool, String> {
+pub async fn fetch_email_body_by_uid(
+    state: tauri::State<'_, crate::IslandState>,
+    uid: u32,
+) -> Result<bool, String> {
     let config = state.email_config.lock().unwrap().clone();
     let done = config.fetch_bodies_by_uids(vec![uid]).await?;
     Ok(done.contains(&uid))
@@ -1140,11 +1502,28 @@ pub async fn fetch_email_body_by_uid(state: tauri::State<'_, crate::IslandState>
 #[tauri::command]
 pub fn read_email_body_by_uid(uid: u32) -> Result<String, String> {
     let path = email_cache_dir().join(format!("{}.html", uid));
-    logger::debug(TAG, &format!("read_email_body_by_uid: start uid={} path={}", uid, path.to_string_lossy()));
+    logger::debug(
+        TAG,
+        &format!(
+            "read_email_body_by_uid: start uid={} path={}",
+            uid,
+            path.to_string_lossy()
+        ),
+    );
     let html = std::fs::read_to_string(&path).map_err(|e| {
-        logger::debug(TAG, &format!("read_email_body_by_uid: failed uid={} error={}", uid, e));
+        logger::debug(
+            TAG,
+            &format!("read_email_body_by_uid: failed uid={} error={}", uid, e),
+        );
         e.to_string()
     })?;
-    logger::debug(TAG, &format!("read_email_body_by_uid: done uid={} bytes={}", uid, html.len()));
+    logger::debug(
+        TAG,
+        &format!(
+            "read_email_body_by_uid: done uid={} bytes={}",
+            uid,
+            html.len()
+        ),
+    );
     Ok(html)
 }

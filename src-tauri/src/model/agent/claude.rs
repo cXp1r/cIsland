@@ -1,4 +1,4 @@
-﻿#![allow(unused)]
+#![allow(unused)]
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -248,7 +248,14 @@ impl CcHookData {
         let input = self.tool_input.as_ref()?;
         let obj = input.as_object()?;
 
-        let keys = ["command", "file_path", "pattern", "query", "prompt", "description"];
+        let keys = [
+            "command",
+            "file_path",
+            "pattern",
+            "query",
+            "prompt",
+            "description",
+        ];
         for key in keys {
             if let Some(val) = obj.get(key).and_then(|v| v.as_str()) {
                 if !val.is_empty() {

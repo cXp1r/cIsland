@@ -7,8 +7,8 @@
 //! - Clean up connections
 
 use super::error::{Error, Result};
-use tokio::process::Command as TokioCommand;
 use crate::logger;
+use tokio::process::Command as TokioCommand;
 
 const TAG: &str = "sadb_core::adb";
 
@@ -82,7 +82,10 @@ impl AdbClient {
 
     /// Create reverse tunnel (device connects to PC)
     pub async fn reverse(&self, remote: &str, local: &str) -> Result<()> {
-        logger::debug(TAG, &format!("Creating reverse tunnel: {} -> {}", remote, local));
+        logger::debug(
+            TAG,
+            &format!("Creating reverse tunnel: {} -> {}", remote, local),
+        );
 
         let output = self
             .build_async_command()
@@ -100,7 +103,10 @@ impl AdbClient {
 
     /// Create forward tunnel (PC connects to device)
     pub async fn forward(&self, local: &str, remote: &str) -> Result<()> {
-        logger::debug(TAG, &format!("Creating forward tunnel: {} -> {}", local, remote));
+        logger::debug(
+            TAG,
+            &format!("Creating forward tunnel: {} -> {}", local, remote),
+        );
 
         let output = self
             .build_async_command()
@@ -178,7 +184,10 @@ impl AdbClient {
 
     pub async fn connect_with_adb_path(host: &str, adb_path: Option<&str>) -> Result<()> {
         logger::debug(TAG, &format!("Connecting to {} via TCP/IP", host));
-        let adb_path = adb_path.map(str::trim).filter(|path| !path.is_empty()).unwrap_or("adb");
+        let adb_path = adb_path
+            .map(str::trim)
+            .filter(|path| !path.is_empty())
+            .unwrap_or("adb");
         let mut cmd = TokioCommand::new(adb_path);
         #[cfg(windows)]
         cmd.creation_flags(CREATE_NO_WINDOW);
@@ -206,7 +215,10 @@ impl AdbClient {
     pub async fn disconnect_with_adb_path(host: &str, adb_path: Option<&str>) -> Result<()> {
         let label = if host.is_empty() { "all" } else { host };
         logger::debug(TAG, &format!("Disconnecting from {}", label));
-        let adb_path = adb_path.map(str::trim).filter(|path| !path.is_empty()).unwrap_or("adb");
+        let adb_path = adb_path
+            .map(str::trim)
+            .filter(|path| !path.is_empty())
+            .unwrap_or("adb");
         let mut cmd = TokioCommand::new(adb_path);
         #[cfg(windows)]
         cmd.creation_flags(CREATE_NO_WINDOW);

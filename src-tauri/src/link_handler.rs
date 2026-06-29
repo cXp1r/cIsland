@@ -1,10 +1,10 @@
-use std::path::Path;
-use std::process::Command;
-use std::os::windows::process::CommandExt;
-use serde::{Deserialize, Serialize};
 use crate::{IslandState, CREATE_NO_WINDOW};
 use reqwest::header::{CONTENT_DISPOSITION, CONTENT_TYPE, RANGE};
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use std::os::windows::process::CommandExt;
+use std::path::Path;
+use std::process::Command;
 /// 链接处理器配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LinkHandler {
@@ -21,7 +21,9 @@ pub struct LinkHandler {
     pub enabled: bool,
 }
 
-fn default_enabled() -> bool { true }
+fn default_enabled() -> bool {
+    true
+}
 
 impl LinkHandler {
     /// 检查 URL 是否匹配此处理器
@@ -37,15 +39,13 @@ impl LinkHandler {
 }
 
 pub(crate) fn get_default_link_handlers() -> Vec<LinkHandler> {
-    vec![
-        LinkHandler {
-            id: "quark-default".to_string(),
-            name: "夸克网盘".to_string(),
-            pattern: r"https://pan\.quark\.cn/s/[a-zA-Z0-9]+".to_string(),
-            app_path: String::new(),
-            enabled: false,
-        },
-    ]
+    vec![LinkHandler {
+        id: "quark-default".to_string(),
+        name: "夸克网盘".to_string(),
+        pattern: r"https://pan\.quark\.cn/s/[a-zA-Z0-9]+".to_string(),
+        app_path: String::new(),
+        enabled: false,
+    }]
 }
 
 /// 在所有处理器中查找匹配项
@@ -56,8 +56,7 @@ pub(crate) fn find_matching_handler(url: &str, handlers: &[LinkHandler]) -> Opti
 /// 验证 URL 是否安全（协议白名单 + 可选域名白名单）
 pub(crate) fn validate_url(url: &str, allowed_domains: &[String]) -> Result<String, String> {
     // 解析 URL
-    let parsed = url::Url::parse(url)
-        .map_err(|e| format!("无效的 URL: {}", e))?;
+    let parsed = url::Url::parse(url).map_err(|e| format!("无效的 URL: {}", e))?;
 
     // 协议白名单
     match parsed.scheme() {
@@ -66,7 +65,8 @@ pub(crate) fn validate_url(url: &str, allowed_domains: &[String]) -> Result<Stri
     }
 
     // 必须有 host
-    let host = parsed.host_str()
+    let host = parsed
+        .host_str()
         .ok_or_else(|| "URL 缺少主机名".to_string())?;
 
     // 可选域名白名单
@@ -183,13 +183,7 @@ pub fn open_url(url: String) {
     }
 }
 
-
-
-pub async fn is_downloadable(
-    client: Client,
-    urls: Vec<String>,
-) -> Result<Vec<bool>, String> {
-
+pub async fn is_downloadable(client: Client, urls: Vec<String>) -> Result<Vec<bool>, String> {
     let mut result: Vec<bool> = Vec::with_capacity(urls.len());
 
     for url in urls {
@@ -204,7 +198,6 @@ pub async fn is_downloadable(
 
         let mut ok = false;
 
-
         if let Some(disposition) = res.headers().get(CONTENT_DISPOSITION) {
             if let Ok(v) = disposition.to_str() {
                 if v.contains("attachment") {
@@ -213,11 +206,9 @@ pub async fn is_downloadable(
             }
         }
 
-
         if res.status() == 206 {
             ok = true;
         }
-
 
         if let Some(ct) = res.headers().get(CONTENT_TYPE) {
             if let Ok(v) = ct.to_str() {
@@ -226,7 +217,6 @@ pub async fn is_downloadable(
                 }
             }
         }
-
 
         if final_url.contains(".zip")
             || final_url.contains(".pdf")
