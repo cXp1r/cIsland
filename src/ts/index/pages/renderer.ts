@@ -30,8 +30,9 @@ const r = (v: MaybeFn<number>) => typeof v === "function" ? v() : v;
 
 const handlers: Record<string, Record<string, sc>> = {};
 
-function renderByState(page: string, state: string): void {
-  const list = handlers[page]?.[state];
+function renderByState(page: string, to: string): void {
+  capsule.className = "";
+  const list = handlers[page]?.[to];
   if (!list) return;
 
   const classlist = list.classList;
@@ -39,17 +40,23 @@ function renderByState(page: string, state: string): void {
     console.log(classlist);
     capsule.classList.add(...classlist);
   }
-  const [w, h] = r(list.size);
-  if (w != -1) {
-    animateCapsule(w, h);
+
+  if (pageStateMachine.isHover && to == "collapsed") {
+    capsule.classList.add("hover");
+    animateCapsule(page === "music" ? 380 : 330, 74);
+  } else {
+    const [w, h] = r(list.size);
+    if (w != -1) {
+      animateCapsule(w, h);
+    }
   }
+  
   
 }
 
 function renderCurrentPageState(): void {
   const page = pageStateMachine.state;
   const substate = pageStateMachine.substates[page];
-  capsule.className = pageStateMachine.isHover ? "hover" : "";
   renderByState(page, substate.state);
   if (!substate.isConfigured) {
     capsule.classList.add("unconfigured");
@@ -65,7 +72,6 @@ function initPageSubstateRenderers(): void {
   handlers["downloader"] = downloaderList;
   Object.values(pageStateMachine.substates).forEach((machine) => {
     machine.onTransition = (_from: string, to: string) => {
-      capsule.className = "";
       renderByState(machine.page, to);
       if (!machine.isConfigured) {
         capsule.classList.add("unconfigured");
@@ -169,8 +175,6 @@ export function initPagesRenderer() {
   initEmailRenderers();
 
   pageStateMachine.onTransition = (from: PageState, to: PageState) => {
-    // 切换页面时清空旧样式，但保留 hover 态。
-    capsule.className = capsule.classList.contains("hover") ? "hover" : "";
     setView(from, to);
   };
 
