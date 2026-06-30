@@ -81,6 +81,7 @@ export function initShellDrag(): void {
       || target.closest("#sadb-resize-handle")
       || target.closest(".url-item")
       || target.closest("#notice-area")
+      || target.closest(".tutorial-actions")
       || target.closest(MUSIC_INTERACTIVE_SELECTOR)
       || target.closest(".view-dot")
       || target instanceof HTMLInputElement

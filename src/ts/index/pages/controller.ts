@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { capsule, viewSwitcher } from "../shell/dom";
+import { capsule, currentViewContainer, viewSwitcher } from "../shell/dom";
 import { PageState } from "./types";
 import { pageStateMachine } from "./machine";
 import { listen } from "@tauri-apps/api/event";
@@ -13,11 +13,11 @@ import { MUSIC_INTERACTIVE_SELECTOR } from "./music/selectors";
 
 
 export function initPagesController(){
-    capsule.addEventListener("click", (event: MouseEvent) => {
+    currentViewContainer.addEventListener("click", (event: MouseEvent) => {
         if (pageStateMachine.isDragging) {
             return;
         }
-        const target = event.target instanceof Element ? event.target : capsule;
+        const target = event.target instanceof Element ? event.target : currentViewContainer;
         if (
             target.closest("button")
             || target.closest("input")
@@ -25,7 +25,6 @@ export function initPagesController(){
             || target.closest("select")
             || target.closest("a")
             || target.closest("[role='button']")
-            || target.closest("#tutorial-area")
             || target.closest(MUSIC_INTERACTIVE_SELECTOR)
         ){
             logd("Components", "skip dispatch", target);
@@ -33,16 +32,14 @@ export function initPagesController(){
         }
         pageStateMachine.dispatch({
             tag: "click",
-            target: target instanceof HTMLElement ? target : capsule,
+            target: target instanceof HTMLElement ? target : currentViewContainer,
             event,
         });
     });
-    capsule.addEventListener("dblclick", (event: MouseEvent) => {
-        const target = event.target instanceof Element ? event.target : capsule;
+    currentViewContainer.addEventListener("dblclick", (event: MouseEvent) => {
+        const target = event.target instanceof Element ? event.target : currentViewContainer;
         if (
             target.closest(".url-item")
-            || target.closest("#notice-area")
-            || target.closest("#tutorial-area")
             || target.closest(MUSIC_INTERACTIVE_SELECTOR)
             || target.closest(".view-dot")
             || target.closest("#agent-input")
@@ -60,7 +57,7 @@ export function initPagesController(){
         event.stopPropagation();
         pageStateMachine.dispatch({
             tag: "dbclick",
-            target: target instanceof HTMLElement ? target : capsule,
+            target: target instanceof HTMLElement ? target : currentViewContainer,
             event: event,
         });
     });

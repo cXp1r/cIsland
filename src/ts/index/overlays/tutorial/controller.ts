@@ -2,7 +2,6 @@ import { animateCapsule } from "../../utils/rAF";
 import { capsule } from "../../shell/dom";
 import { overlayManager } from "../manager";
 import { OverlayPriority } from "../priority";
-import { stopOverlayPointerEvents } from "../events";
 import {
   getTutorialNextButton,
   getTutorialSkipButton,
@@ -74,7 +73,6 @@ export function hideTutorial(): void {
 }
 
 export function initTutorialOverlay(): void {
-  stopOverlayPointerEvents(tutorialArea);
   resetTutorialRenderer();
 
   getTutorialSkipButton()?.addEventListener("click", (event) => {
