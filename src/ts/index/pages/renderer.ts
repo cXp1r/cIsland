@@ -41,15 +41,18 @@ function renderByState(page: string, to: string): void {
     capsule.classList.add(...classlist);
   }
 
-  if (pageStateMachine.isHover && to == "collapsed") {
+  if (pageStateMachine.isHover) {
     capsule.classList.add("hover");
-    animateCapsule(page === "music" ? 380 : 330, 74);
-  } else {
-    const [w, h] = r(list.size);
-    if (w != -1) {
-      animateCapsule(w, h);
+    if (to == "collapsed") {
+      animateCapsule(page === "music" ? 380 : 330, 74);
+      return;
     }
+  } 
+  const [w, h] = r(list.size);
+  if (w != -1) {
+    animateCapsule(w, h);
   }
+  
   
   
 }
