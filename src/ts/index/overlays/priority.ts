@@ -4,8 +4,8 @@ export const OverlayPriority = {
   Notice: 1,
   Search: 2,
   AgentHandler: 3,
+  Tutorial: 4,
 } as const;
 
 export type OverlayPriority =
   (typeof OverlayPriority)[keyof typeof OverlayPriority];
-

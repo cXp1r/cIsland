@@ -8,3 +8,4 @@ export * from "./manager";
 export * from "./priority";
 export * from "./registry";
 export * from "./types";
+export * from "./tutorial";

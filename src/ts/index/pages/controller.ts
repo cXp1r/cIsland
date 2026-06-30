@@ -25,6 +25,7 @@ export function initPagesController(){
             || target.closest("select")
             || target.closest("a")
             || target.closest("[role='button']")
+            || target.closest("#tutorial-area")
             || target.closest(MUSIC_INTERACTIVE_SELECTOR)
         ){
             logd("Components", "skip dispatch", target);
@@ -41,6 +42,7 @@ export function initPagesController(){
         if (
             target.closest(".url-item")
             || target.closest("#notice-area")
+            || target.closest("#tutorial-area")
             || target.closest(MUSIC_INTERACTIVE_SELECTOR)
             || target.closest(".view-dot")
             || target.closest("#agent-input")

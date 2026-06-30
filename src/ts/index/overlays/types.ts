@@ -3,10 +3,10 @@ export type OverlayId =
   | "search"
   | "notice"
   | "privacy"
-  | "agent-handler";
+  | "agent-handler"
+  | "tutorial";
 
 export type OverlayRequest = {
   id: OverlayId;
   priority: number;
 };
-
