@@ -18,7 +18,7 @@
 
     z-index: 10;
 
-    pointer-events: none;
+    pointer-events: auto;
 
     opacity: 1;
 
@@ -26,6 +26,20 @@
 
                 transform 0.22s cubic-bezier(0.25, 1, 0.5, 1);
 
+}
+
+#view-switcher::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -16px;
+    width: 90px;
+    height: 40px;
+    transform: translateX(-50%);
+    background: transparent;
+    border: 1px solid rgba(255, 120, 120, 0.75);
+    box-shadow: 0 0 0 1px rgba(255, 120, 120, 0.15) inset;
+    pointer-events: auto;
 }
 
 #island-capsule.hover #view-switcher.has-views { display: flex; }
@@ -41,6 +55,8 @@
     gap: 5px;
 
     pointer-events: auto;
+    position: relative;
+    z-index: 1;
 
 }
 
