@@ -37,8 +37,6 @@
     height: 40px;
     transform: translateX(-50%);
     background: transparent;
-    border: 1px solid rgba(255, 120, 120, 0.75);
-    box-shadow: 0 0 0 1px rgba(255, 120, 120, 0.15) inset;
     pointer-events: auto;
 }
 
