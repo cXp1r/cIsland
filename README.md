@@ -1,7 +1,5 @@
 # cIsland
 
-***重构中, 请勿clone源码***
-
 基于 Tauri 2 + Rust + TypeScript 构建的Windows灵动岛
 
 ![Windows](https://img.shields.io/badge/platform-Windows_10%2F11-blue)
