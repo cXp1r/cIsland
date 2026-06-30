@@ -237,6 +237,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    margin: -10px -18px -12px;
+    padding: 10px 18px 12px;
 }
 
 .tutorial-dots {

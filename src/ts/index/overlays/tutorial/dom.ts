@@ -15,7 +15,7 @@ export function getTutorialNextButton(): HTMLButtonElement | null {
 }
 
 export function getTutorialPrevButton(): HTMLButtonElement | null {
-  return tutorialArea.querySelector('[data-tutorial-action="prev"]') as HTMLButtonElement | null;
+  return tutorialArea.querySelector('[data-tutorial-action="back"]') as HTMLButtonElement | null;
 }
 
 export function getTutorialBodyMain(): HTMLDivElement | null {

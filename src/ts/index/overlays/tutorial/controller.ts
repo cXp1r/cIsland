@@ -92,6 +92,20 @@ function createButton(label: string, action: TutorialAction): HTMLButtonElement 
   return button;
 }
 
+function handleTutorialWheel(event: WheelEvent): void {
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (event.deltaY > 0 || (event.deltaY === 0 && event.deltaX > 0)) {
+    nextTutorialStep();
+    return;
+  }
+
+  if (event.deltaY < 0 || (event.deltaY === 0 && event.deltaX < 0)) {
+    prevTutorialStep();
+  }
+}
+
 function buildTutorialLayout(): void {
   if (hasBuiltLayout) return;
 
@@ -149,6 +163,7 @@ function buildTutorialLayout(): void {
 
   buttonWrap.append(skipButton, prevButton, nextButton);
   actions.replaceChildren(dots, buttonWrap);
+  actions.addEventListener("wheel", handleTutorialWheel, { passive: false });
 
   hasBuiltLayout = true;
 }
@@ -201,6 +216,11 @@ function prevTutorialStep(): void {
   setTutorialStep(currentStepIndex - 1);
 }
 
+function finishTutorial(): void {
+  dispatchAction("finish");
+  hideTutorial();
+}
+
 export function showTutorial(): boolean {
   if (!overlayManager.request("tutorial", TUTORIAL_PRIORITY)) {
     return false;
@@ -241,7 +261,7 @@ export function initTutorialOverlay(): void {
   getTutorialNextButton()?.addEventListener("click", (event) => {
     event.stopPropagation();
     if (currentStepIndex >= TUTORIAL_STEP_COUNT - 1) {
-      dispatchAction("finish");
+      finishTutorial();
       return;
     }
     dispatchAction("next");
