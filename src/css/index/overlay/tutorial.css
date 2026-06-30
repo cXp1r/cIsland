@@ -123,6 +123,38 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.tutorial-step-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tutorial-step-pane {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tutorial-step-pane.active {
+    display: flex;
+}
+
+.tutorial-step-pane-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(241, 234, 217, 0.94);
+}
+
+.tutorial-step-pane-text {
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(241, 234, 217, 0.72);
+}
+
 .tutorial-side {
     display: flex;
     flex-direction: column;
@@ -202,8 +234,43 @@
 
 .tutorial-actions {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
+}
+
+.tutorial-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.tutorial-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.20);
+    cursor: pointer;
+    transition: width 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.tutorial-dot.active {
+    width: 18px;
+    background: rgba(241, 234, 217, 0.92);
+}
+
+.tutorial-dot:hover {
+    transform: translateY(-1px);
+}
+
+.tutorial-action-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
 }
 
 .tutorial-actions .oi-btn {

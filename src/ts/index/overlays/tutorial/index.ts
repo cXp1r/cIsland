@@ -4,6 +4,7 @@ import type { OverlayRequest } from "../types";
 export {
   hideTutorial,
   initTutorialOverlay,
+  setTutorialStep,
   showTutorial,
 } from "./controller";
 export type { TutorialAction, TutorialState, TutorialStep } from "./model";
