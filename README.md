@@ -5,7 +5,7 @@
 ![Windows](https://img.shields.io/badge/platform-Windows_10%2F11-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-orange)
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
-![Version](https://img.shields.io/badge/version-0.11.1-green)
+![Version](https://img.shields.io/badge/version-1.0.3-green)
 
 ## 功能
 
@@ -28,7 +28,7 @@
 
 ## TODO
 
-详见 [docs/TODO.md](docs/TODO.md)
+详见 [TODO.md](TODO.md)
 
 ## 技术栈
 
@@ -66,108 +66,9 @@ npx tauri build
 ```
 
 构建产物：
-- MSI: `src-tauri/target/release/bundle/msi/DynamicIsland_0.8.6_x64_en-US.msi`
-- NSIS: `src-tauri/target/release/bundle/nsis/DynamicIsland_0.8.6_x64-setup.exe`
+- MSI: `src-tauri/target/release/bundle/msi/DynamicIsland_a.b.c_x64_en-US.msi`
+- NSIS: `src-tauri/target/release/bundle/nsis/DynamicIsland_a.b.c_x64-setup.exe`
 
-## 项目结构
-
-```
-tauri-island/
-├── src/                              # 前端代码
-│   ├── assets/
-│   │   ├── icons/                    # 应用图标
-│   │   └── logo-bw-morph.svg         # Logo SVG
-│   ├── css/
-│   │   ├── index/                    # 主界面样式
-│   │   │   ├── base.css
-│   │   │   ├── classic.css
-│   │   │   ├── glow-border.css
-│   │   │   ├── liquid-glass.css
-│   │   │   ├── panel-base.css
-│   │   │   ├── agent-base.css
-│   │   │   ├── downloader-base.css
-│   │   │   └── email-base.css
-│   │   └── settings/
-│   │       └── settings.css          # 设置页样式
-│   └── ts/
-│       ├── index/                    # 主界面逻辑
-│       │   ├── main.ts               # 入口
-│       │   ├── state.ts              # 状态管理
-│       │   ├── types.ts              # 类型定义
-│       │   ├── dom.ts                # DOM 工具
-│       │   ├── utils.ts              # 通用工具
-│       │   ├── logger.ts             # 前端日志
-│       │   └── highlight-setup.ts    # highlight.js 配置
-│       └── settings/                 # 设置页逻辑
-│           ├── settings.ts           # 设置页入口
-│           ├── settings-shared.ts    # 设置页共享逻辑
-│           ├── settings-ai.ts        # AI 配置
-│           ├── settings-blacklist.ts # 进程黑名单
-│           ├── settings-lyric-offset.ts
-│           ├── settings-weather.ts
-│           ├── settings-update.ts
-│           ├── settings-smtc-whitelist.ts
-│           ├── settings-link-handler.ts
-│           ├── settings-log-filter.ts
-│           ├── settings-betterncm.ts
-│           ├── settings-tools.ts
-│           ├── screens-frame.ts      # 屏幕镜像帧
-│           ├── downloader.ts         # 下载管理
-│           └── types.ts
-├── src-tauri/                        # Tauri 后端
-│   ├── Cargo.toml
-│   ├── tauri.conf.json
-│   ├── build.rs
-│   ├── capabilities/
-│   │   └── default.json             # 权限清单
-│   ├── icons/                        # 应用图标
-│   ├── resources/                    # 嵌入资源
-│   │   ├── Everything64.dll
-│   │   └── scrcpy-server-v4.0
-│   └── src/
-│       ├── main.rs                   # Tauri 入口点
-│       ├── lib.rs                    # 核心逻辑（状态、线程、命令注册）
-│       ├── media.rs                  # SMTC 媒体控制、音量控制
-│       ├── lyrics.rs                 # 歌词获取与解析
-│       ├── ai.rs                     # AI 对话 Agent
-│       ├── agent_hooks.rs            # Agent 钩子系统
-│       ├── clipboard.rs              # 剪贴板监控
-│       ├── window.rs                 # 窗口管理（拖拽、动画、命中穿透）
-│       ├── settings.rs               # 设置持久化
-│       ├── updater.rs                # 自动更新
-│       ├── email.rs                  # IMAP 邮件
-│       ├── ceverything.rs            # Everything 搜索集成
-│       ├── sadb.rs                   # ADB 屏幕镜像
-│       ├── link_handler.rs           # 自定义链接处理器
-│       ├── privacy.rs                # 麦克风/摄像头状态检测
-│       ├── betterncm.rs              # BetterNCM 插件安装
-│       ├── tools.rs                  # ADB 工具下载/检测
-│       ├── logger.rs                 # 日志系统
-│       └── model/
-│           └── mod.rs                # 数据模型定义
-├── sadb-core/                        # ADB 屏幕镜像核心库
-│   ├── Cargo.toml
-│   └── src/
-│       ├── lib.rs
-│       ├── adb.rs
-│       ├── client.rs
-│       ├── config.rs
-│       ├── control.rs
-│       ├── error.rs
-│       ├── protocol.rs
-│       └── stream.rs
-├── scripts/
-│   └── gen-icons.mjs                 # 图标生成脚本
-├── .github/
-│   ├── workflows/release.yml         # CI 发布流程
-│   └── ISSUE_TEMPLATE/
-├── index.html                        # 主界面 HTML
-├── settings.html                     # 设置页 HTML
-├── email.html                        # 邮件通知 HTML
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
-```
 
 ## 设置
 
