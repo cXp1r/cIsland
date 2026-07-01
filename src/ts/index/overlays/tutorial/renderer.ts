@@ -1,5 +1,5 @@
 import type { TutorialStep } from "./model";
-import { getTutorialBodyMain, getTutorialCard, getTutorialStepLabel, getTutorialSubtitle, getTutorialTitle, tutorialArea } from "./dom";
+import { tutorialArea, tutorialBodyMain, tutorialCard, tutorialStepLabel, tutorialSubtitle, tutorialTitle } from "./dom";
 
 function escapeHtml(text: string): string {
   const div = document.createElement("div");
@@ -8,13 +8,13 @@ function escapeHtml(text: string): string {
 }
 
 export function renderTutorialStep(step: TutorialStep): void {
-  const card = getTutorialCard();
+  const card = tutorialCard;
   if (!card) return;
 
-  const titleEl = getTutorialTitle();
-  const subtitleEl = getTutorialSubtitle();
-  const stepEl = getTutorialStepLabel();
-  const bodyMain = getTutorialBodyMain();
+  const titleEl = tutorialTitle;
+  const subtitleEl = tutorialSubtitle;
+  const stepEl = tutorialStepLabel;
+  const bodyMain = tutorialBodyMain;
 
   if (stepEl) stepEl.textContent = step.stepLabel;
   if (titleEl) titleEl.innerHTML = escapeHtml(step.title);

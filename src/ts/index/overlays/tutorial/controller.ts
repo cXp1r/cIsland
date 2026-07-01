@@ -3,15 +3,15 @@ import { capsule } from "../../shell/dom";
 import { overlayManager } from "../manager";
 import { OverlayPriority } from "../priority";
 import {
-  getTutorialActions,
-  getTutorialBodyMain,
+  tutorialActions,
+  tutorialBodyMain,
   getTutorialDots,
-  getTutorialNextButton,
   getTutorialPanes,
-  getTutorialPrevButton,
-  getTutorialSkipButton,
-  getTutorialStepLabel,
-  getTutorialSubtitle,
+  tutorialNextButton,
+  tutorialPrevButton,
+  tutorialSkipButton,
+  tutorialStepLabel,
+  tutorialSubtitle,
   tutorialArea,
 } from "./dom";
 import {
@@ -108,12 +108,12 @@ function handleTutorialWheel(event: WheelEvent): void {
 function buildTutorialLayout(): void {
   if (hasBuiltLayout) return;
 
-  const bodyMain = getTutorialBodyMain();
-  const actions = getTutorialActions();
+  const bodyMain = tutorialBodyMain;
+  const actions = tutorialActions;
   if (!bodyMain || !actions) return;
 
-  const subtitle = getTutorialSubtitle();
-  const stepLabel = getTutorialStepLabel();
+  const subtitle = tutorialSubtitle;
+  const stepLabel = tutorialStepLabel;
 
   if (subtitle) subtitle.textContent = "这里先放正文占位，后面可以替换成更完整的教程内容。";
   if (stepLabel) {
@@ -168,9 +168,9 @@ function buildTutorialLayout(): void {
 function updateTutorialStepDisplay(): void {
   const panes = getTutorialPanes();
   const dots = getTutorialDots();
-  const stepLabel = getTutorialStepLabel();
-  const prevButton = getTutorialPrevButton();
-  const nextButton = getTutorialNextButton();
+  const stepLabel = tutorialStepLabel;
+  const prevButton = tutorialPrevButton;
+  const nextButton = tutorialNextButton;
 
   panes.forEach((pane: HTMLDivElement, index: number) => {
     const active = index === currentStepIndex;
@@ -249,13 +249,13 @@ export function initTutorialOverlay(): void {
   buildTutorialLayout();
   resetTutorialRenderer();
 
-  getTutorialSkipButton()?.addEventListener("click", (event) => {
+  tutorialSkipButton?.addEventListener("click", (event) => {
     event.stopPropagation();
     dispatchAction("skip");
     hideTutorial();
   });
 
-  getTutorialNextButton()?.addEventListener("click", (event) => {
+  tutorialNextButton?.addEventListener("click", (event) => {
     event.stopPropagation();
     if (currentStepIndex >= TUTORIAL_STEP_COUNT - 1) {
       finishTutorial();
@@ -265,7 +265,7 @@ export function initTutorialOverlay(): void {
     nextTutorialStep();
   });
 
-  getTutorialPrevButton()?.addEventListener("click", (event) => {
+  tutorialPrevButton?.addEventListener("click", (event) => {
     event.stopPropagation();
     dispatchAction("back");
     prevTutorialStep();

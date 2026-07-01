@@ -2,15 +2,15 @@ import { $ } from "../../shared/dom";
 
 export const tutorialArea = $<HTMLDivElement>("tutorial-area");
 
-export const getTutorialCard = (): HTMLElement | null => $("tutorial-card");
+export const tutorialCard = $<HTMLElement>("tutorial-card");
 
-export const getTutorialSkipButton = (): HTMLButtonElement | null => $("tutorial-skip-button");
+export const tutorialSkipButton = $<HTMLButtonElement>("tutorial-skip-button");
 
-export const getTutorialNextButton = (): HTMLButtonElement | null => $("tutorial-next-button");
+export const tutorialNextButton = $<HTMLButtonElement>("tutorial-next-button");
 
-export const getTutorialPrevButton = (): HTMLButtonElement | null => $("tutorial-prev-button");
+export const tutorialPrevButton = $<HTMLButtonElement>("tutorial-prev-button");
 
-export const getTutorialBodyMain = (): HTMLDivElement | null => $("tutorial-body-main");
+export const tutorialBodyMain = $<HTMLDivElement>("tutorial-body-main");
 
 export const getTutorialPanes = (): HTMLDivElement[] =>
   Array.from(tutorialArea.querySelectorAll<HTMLDivElement>(".tutorial-step-pane"));
@@ -23,10 +23,10 @@ export const getTutorialStepPanes = (): HTMLDivElement[] => getTutorialPanes();
 export const getTutorialDots = (): HTMLButtonElement[] =>
   Array.from(tutorialArea.querySelectorAll<HTMLButtonElement>(".tutorial-dot"));
 
-export const getTutorialTitle = (): HTMLDivElement | null => $("tutorial-title");
+export const tutorialTitle = $<HTMLDivElement>("tutorial-title");
 
-export const getTutorialSubtitle = (): HTMLDivElement | null => $("tutorial-subtitle");
+export const tutorialSubtitle = $<HTMLDivElement>("tutorial-subtitle");
 
-export const getTutorialStepLabel = (): HTMLDivElement | null => $("tutorial-step");
+export const tutorialStepLabel = $<HTMLDivElement>("tutorial-step");
 
-export const getTutorialActions = (): HTMLDivElement | null => $("tutorial-actions");
+export const tutorialActions = $<HTMLDivElement>("tutorial-actions");
