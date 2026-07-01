@@ -32,6 +32,7 @@ type ConfiguredInfo = {
 
 export class PageStateMachine {
   state: PageState = PageState.Time;
+  private isFreeze = false;
   isHover = false;
   isDragging = false;
   private musicPageOffTimer: number | null = null;
@@ -46,6 +47,11 @@ export class PageStateMachine {
 
   constructor() {
     this.order.splice(1, 2);
+    document.addEventListener("overlay-changed", ((e: CustomEvent) => {
+      this.isFreeze = e.detail.state !== "idle"
+      logi("State", "isFreeze", this.isFreeze)
+    }) as EventListener);
+
     listen<boolean>("music-page", (event) => {
       const visible = event.payload;
       const index = this.order.indexOf(PageState.Music);
@@ -106,6 +112,7 @@ export class PageStateMachine {
   }
 
   dispatch(action: DispatchAction): void {
+    if (this.isFreeze) return;
     logi("pageStateMachine", action);
     switch (action.tag) {
       case "click":
