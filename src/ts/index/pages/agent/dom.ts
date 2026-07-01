@@ -1,6 +1,5 @@
 import { $ } from "../../shared/dom";
 
-export const agentArea = $<HTMLDivElement>("agent-area");
 export const agentMessages = $<HTMLDivElement>("agent-messages");
 export const agentInput = $<HTMLInputElement>("agent-input");
 export const agentSendBtn = $<HTMLButtonElement>("agent-send-btn");

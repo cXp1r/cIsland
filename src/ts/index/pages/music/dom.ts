@@ -1,6 +1,6 @@
 import { $ } from "../../shared/dom";
 
-export const lyricArea = $<HTMLDivElement>("lyric-area");
+
 export const lyricText = $<HTMLDivElement>("lyric-text");
 export const lyricTextInner = $<HTMLSpanElement>("lyric-text-inner");
 export const lyricMeta = $<HTMLDivElement>("lyric-meta");

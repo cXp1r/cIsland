@@ -1,6 +1,5 @@
 import { $ } from "../../shared/dom";
 
-export const emailArea = $<HTMLDivElement>("email-area");
 export const emailPanel = $<HTMLDivElement>("email-panel");
 export const emailListItems = $<HTMLDivElement>("email-list-items");
 export const emailContent = $<HTMLDivElement>("email-content");

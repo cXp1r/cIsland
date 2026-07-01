@@ -16,7 +16,6 @@ import {
   dayRing,
   ringText,
   timeText,
-  timeWrapper,
   weatherText,
 } from "./dom";
 
@@ -159,7 +158,7 @@ function initCollapsedRenderer(): void {
     void refreshWeather(true);
   });
 
-  timeWrapper.addEventListener("mouseenter", updateTimeAndDate);
+
   setInterval(updateTimeAndDate, 1000);
   updateTimeAndDate();
   void refreshWeather();

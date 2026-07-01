@@ -1,6 +1,6 @@
 import { $ } from "../../shared/dom";
 
-export const timeWrapper = $<HTMLDivElement>("time-area");
+
 export const timeText = $<HTMLDivElement>("time-text");
 export const dateText = $<HTMLDivElement>("date-text");
 export const weatherText = $<HTMLDivElement>("weather-text");

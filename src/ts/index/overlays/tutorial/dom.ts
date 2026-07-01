@@ -15,11 +15,6 @@ export const tutorialBodyMain = $<HTMLDivElement>("tutorial-body-main");
 export const getTutorialPanes = (): HTMLDivElement[] =>
   Array.from(tutorialArea.querySelectorAll<HTMLDivElement>(".tutorial-step-pane"));
 
-export const getTutorialPane = (stepIndex: number): HTMLDivElement | null =>
-  document.getElementById(String(stepIndex + 1)) as HTMLDivElement | null;
-
-export const getTutorialStepPanes = (): HTMLDivElement[] => getTutorialPanes();
-
 export const getTutorialDots = (): HTMLButtonElement[] =>
   Array.from(tutorialArea.querySelectorAll<HTMLButtonElement>(".tutorial-dot"));
 
