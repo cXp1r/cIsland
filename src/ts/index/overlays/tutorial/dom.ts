@@ -2,54 +2,31 @@ import { $ } from "../../shared/dom";
 
 export const tutorialArea = $<HTMLDivElement>("tutorial-area");
 
-export function getTutorialCard(): HTMLElement | null {
-  return tutorialArea.firstElementChild as HTMLElement | null;
-}
+export const getTutorialCard = (): HTMLElement | null => $("tutorial-card");
 
-export function getTutorialSkipButton(): HTMLButtonElement | null {
-  return tutorialArea.querySelector(".tutorial-actions .oi-btn-secondary") as HTMLButtonElement | null;
-}
+export const getTutorialSkipButton = (): HTMLButtonElement | null => $("tutorial-skip-button");
 
-export function getTutorialNextButton(): HTMLButtonElement | null {
-  return tutorialArea.querySelector('[data-tutorial-action="next"]') as HTMLButtonElement | null;
-}
+export const getTutorialNextButton = (): HTMLButtonElement | null => $("tutorial-next-button");
 
-export function getTutorialPrevButton(): HTMLButtonElement | null {
-  return tutorialArea.querySelector('[data-tutorial-action="back"]') as HTMLButtonElement | null;
-}
+export const getTutorialPrevButton = (): HTMLButtonElement | null => $("tutorial-prev-button");
 
-export function getTutorialBodyMain(): HTMLDivElement | null {
-  return tutorialArea.querySelector(".tutorial-body-main") as HTMLDivElement | null;
-}
+export const getTutorialBodyMain = (): HTMLDivElement | null => $("tutorial-body-main");
 
-export function getTutorialPanes(): HTMLDivElement[] {
-  return Array.from(tutorialArea.querySelectorAll<HTMLDivElement>(".tutorial-step-pane"));
-}
+export const getTutorialPanes = (): HTMLDivElement[] =>
+  Array.from(tutorialArea.querySelectorAll<HTMLDivElement>(".tutorial-step-pane"));
 
-export function getTutorialPane(stepIndex: number): HTMLDivElement | null {
-  return document.getElementById(String(stepIndex + 1)) as HTMLDivElement | null;
-}
+export const getTutorialPane = (stepIndex: number): HTMLDivElement | null =>
+  document.getElementById(String(stepIndex + 1)) as HTMLDivElement | null;
 
-export function getTutorialStepPanes(): HTMLDivElement[] {
-  return getTutorialPanes();
-}
+export const getTutorialStepPanes = (): HTMLDivElement[] => getTutorialPanes();
 
-export function getTutorialDots(): HTMLButtonElement[] {
-  return Array.from(tutorialArea.querySelectorAll<HTMLButtonElement>(".tutorial-dot"));
-}
+export const getTutorialDots = (): HTMLButtonElement[] =>
+  Array.from(tutorialArea.querySelectorAll<HTMLButtonElement>(".tutorial-dot"));
 
-export function getTutorialTitle(): HTMLDivElement | null {
-  return tutorialArea.querySelector(".tutorial-title") as HTMLDivElement | null;
-}
+export const getTutorialTitle = (): HTMLDivElement | null => $("tutorial-title");
 
-export function getTutorialSubtitle(): HTMLDivElement | null {
-  return tutorialArea.querySelector(".tutorial-subtitle") as HTMLDivElement | null;
-}
+export const getTutorialSubtitle = (): HTMLDivElement | null => $("tutorial-subtitle");
 
-export function getTutorialStepLabel(): HTMLDivElement | null {
-  return tutorialArea.querySelector(".tutorial-step") as HTMLDivElement | null;
-}
+export const getTutorialStepLabel = (): HTMLDivElement | null => $("tutorial-step");
 
-export function getTutorialActions(): HTMLDivElement | null {
-  return tutorialArea.querySelector(".tutorial-actions") as HTMLDivElement | null;
-}
+export const getTutorialActions = (): HTMLDivElement | null => $("tutorial-actions");

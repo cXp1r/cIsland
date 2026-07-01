@@ -12,7 +12,6 @@ import {
   getTutorialSkipButton,
   getTutorialStepLabel,
   getTutorialSubtitle,
-  getTutorialTitle,
   tutorialArea,
 } from "./dom";
 import {
@@ -113,11 +112,9 @@ function buildTutorialLayout(): void {
   const actions = getTutorialActions();
   if (!bodyMain || !actions) return;
 
-  const title = getTutorialTitle();
   const subtitle = getTutorialSubtitle();
   const stepLabel = getTutorialStepLabel();
 
-  if (title) title.textContent = "C 的教程";
   if (subtitle) subtitle.textContent = "这里先放正文占位，后面可以替换成更完整的教程内容。";
   if (stepLabel) {
     stepLabel.textContent = `Step 01 / ${String(TUTORIAL_STEP_COUNT).padStart(2, "0")}`;
