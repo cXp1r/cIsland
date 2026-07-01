@@ -1,5 +1,5 @@
 import type { TutorialStep } from "./model";
-import { tutorialArea, tutorialBodyMain, tutorialCard, tutorialStepLabel, tutorialSubtitle, tutorialTitle } from "./dom";
+import { tutorialArea, tutorialGsapSlot, tutorialStepLabel, tutorialText, tutorialTitle } from "./dom";
 
 function escapeHtml(text: string): string {
   const div = document.createElement("div");
@@ -8,30 +8,18 @@ function escapeHtml(text: string): string {
 }
 
 export function renderTutorialStep(step: TutorialStep): void {
-  const card = tutorialCard;
-  if (!card) return;
-
-  const titleEl = tutorialTitle;
-  const subtitleEl = tutorialSubtitle;
-  const stepEl = tutorialStepLabel;
-  const bodyMain = tutorialBodyMain;
-
-  if (stepEl) stepEl.textContent = step.stepLabel;
-  if (titleEl) titleEl.innerHTML = escapeHtml(step.title);
-  if (subtitleEl) subtitleEl.innerHTML = escapeHtml(step.subtitle);
-  if (bodyMain) {
-    bodyMain.innerHTML = step.bodyHtml;
-  }
+  if (tutorialStepLabel) tutorialStepLabel.textContent = step.stepLabel;
+  if (tutorialTitle) tutorialTitle.innerHTML = escapeHtml(step.title);
+  if (tutorialText) tutorialText.textContent = step.text;
+  if (tutorialGsapSlot) tutorialGsapSlot.textContent = `GSAP 动画 / Step ${step.stepIndex + 1}`;
 }
 
 export function resetTutorialRenderer(): void {
-  // Intentionally no-op for now.
-  // The tutorial shell stays authored in index.html until we swap in data-driven steps.
+  // Intentionally left blank for the tutorial shell.
 }
 
 export function playTutorialEnterAnimation(): void {
   // GSAP placeholder:
-  // import { gsap } from "gsap";
   // gsap.fromTo(tutorialArea, { autoAlpha: 0, y: 10, scale: 0.985 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.28, ease: "power3.out" });
   void tutorialArea;
 }

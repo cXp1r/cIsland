@@ -4,8 +4,7 @@ export type TutorialStep = {
   stepIndex: number;
   stepLabel: string;
   title: string;
-  subtitle: string;
-  bodyHtml: string;
+  text: string;
 };
 
 export type TutorialState = {
