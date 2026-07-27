@@ -1,6 +1,6 @@
 [package]
 name = "cisland"
-version = "1.0.3"
+version = "1.1.0"
 description = "a dynamic island for windows"
 authors = ["Coding_w", "cXp1r"]
 edition = "2021"

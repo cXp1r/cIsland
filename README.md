@@ -5,7 +5,7 @@
 ![Windows](https://img.shields.io/badge/platform-Windows_10%2F11-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-orange)
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
-![Version](https://img.shields.io/badge/version-1.0.3-green)
+![Version](https://img.shields.io/badge/version-1.1.0-green)
 
 ## 功能
 
