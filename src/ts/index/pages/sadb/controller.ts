@@ -7,7 +7,7 @@ import { resizeHandle, sadbBtnScan, sadbBtnStart, sadbBtnStop, sadbCanvas, sadbD
 import { resizeCapsule } from "../../utils/rAF";
 
 let sadbchannel = createSadbChannel();
-
+let deviceWrapperTimer: number | null = null;
 function machine() {
   return pageStateMachine.sadb;
 }
@@ -271,7 +271,7 @@ function onMdnsFound(e: { payload: AdbDevice }) {
   const btn = document.createElement("button");
   btn.className = "sadb-btn";
   btn.type = "button";
-  btn.textContent = "Connect";
+  btn.textContent = "连接";
   btn.addEventListener("click", () => {
     machine().selectIp = `${d.ip}:${d.port}`;
     setStatus(`Selected device ${title.textContent}`);
@@ -289,6 +289,10 @@ function onMdnsDone() {
   } else {
     setStatus("Scan complete.");
   }
+  if (deviceWrapperTimer) clearTimeout(deviceWrapperTimer);
+  deviceWrapperTimer = window.setTimeout(() => {
+    sadbDeviceWrapper.style.display = "none";
+  }, 1000)
 }
 
 export function initSadbComponents() {

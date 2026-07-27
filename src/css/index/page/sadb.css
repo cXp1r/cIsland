@@ -58,6 +58,9 @@
     padding: 2px 0;
     position: relative;
     z-index: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sadb-btn {
@@ -117,6 +120,9 @@
 }
 
 #sadb-status {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.45);
     margin-left: 2px;
