@@ -51,6 +51,8 @@ use winreg::RegKey;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct SettingsData {
     #[serde(default)]
+    pub version: String,
+    #[serde(default)]
     pub offset_x: i32,
     #[serde(default)]
     pub offset_y: i32,
@@ -237,6 +239,7 @@ pub(crate) fn get_settings_path() -> PathBuf {
 }
 fn default_settings() -> SettingsData {
     SettingsData {
+        version: String::new(),
         offset_x: 0,
         offset_y: 0,
         primary_monitor_info: get_primary_monitor_info(),
@@ -309,6 +312,7 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
     let ec_port = ec.port;
     drop(ec);
     SettingsData {
+        version: state.version.lock().unwrap().clone(),
         offset_x: state.offset_x.load(Ordering::Relaxed),
         offset_y: state.offset_y.load(Ordering::Relaxed),
         primary_monitor_info: state.primary_monitor_info.lock().unwrap().clone(),
@@ -351,6 +355,19 @@ pub(crate) fn build_settings_data(state: &IslandState) -> SettingsData {
         aria2c_rpc_port: state.aria2c_rpc_port.load(Ordering::Relaxed),
         aria2c_rpc_secret: state.aria2c_rpc_secret.lock().unwrap().clone(),
     }
+}
+
+#[tauri::command]
+pub fn should_show_tutorial(state: tauri::State<'_, IslandState>) -> Result<bool, String> {
+    let should_show = {
+        let mut version = state.version.lock().map_err(|e| e.to_string())?;
+        let should_show = version.as_str() != env!("CARGO_PKG_VERSION");
+        *version = env!("CARGO_PKG_VERSION").to_string();
+        should_show
+    };
+
+    save_settings_to_file(&build_settings_data(&state))?;
+    Ok(should_show)
 }
 
 #[tauri::command]

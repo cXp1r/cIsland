@@ -272,7 +272,7 @@ pub fn run() {
             window::get_pending_urls, window::set_interacting, window::dismiss_island, window::set_current_view,
             window::sync_window_size, window::show_context_menu,
             window::set_capsule_current_rect, window::set_capsule_target_rect, window::open_email_window, window::set_expanded,
-            settings::open_settings, settings::get_settings, settings::save_settings,
+            settings::open_settings, settings::get_settings, settings::save_settings, settings::should_show_tutorial,
             settings::get_lyric_offset_players, settings::set_lyric_offset_for_player,
             settings::set_lyric_offset_enabled, settings::delete_lyric_offset_player,
             betterncm::install_betterncm_support,
@@ -354,6 +354,7 @@ pub fn run() {
             logger::set_level(&settings.log_level);
             logger::set_filter(settings.log_filter_tags.clone(), settings.log_filter_invert);
             let clipboard_enabled = Arc::new(AtomicBool::new(settings.clipboard_enabled));
+            let version = Arc::new(Mutex::new(settings.version.clone()));
             let pending_url: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
             let shortcut_key = Arc::new(Mutex::new(settings.shortcut_key.clone()));
             let hide_and_see_key = Arc::new(Mutex::new(settings.hide_and_see_key.clone()));
@@ -463,6 +464,7 @@ pub fn run() {
                 is_dragging: is_dragging.clone(),
                 is_interacting: is_interacting.clone(),
                 clipboard_enabled: clipboard_enabled.clone(),
+                version,
                 pending_url: pending_url.clone(),
                 shortcut_key: shortcut_key.clone(),
                 hide_and_see_key: hide_and_see_key.clone(),
@@ -1087,6 +1089,7 @@ pub struct IslandState {
     pub is_dragging: Arc<AtomicBool>,
     pub is_interacting: Arc<AtomicBool>,
     pub clipboard_enabled: Arc<AtomicBool>,
+    pub version: Arc<Mutex<String>>,
     pub pending_url: Arc<Mutex<Vec<String>>>,
     pub shortcut_key: Arc<Mutex<String>>,
     pub hide_and_see_key: Arc<Mutex<String>>,
