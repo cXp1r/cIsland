@@ -525,7 +525,7 @@ pub fn run() {
             let settings_item = MenuItemBuilder::with_id("settings", "设置").build(app)?;
             let menu = MenuBuilder::new(app).item(&settings_item).item(&quit_item).build()?;
             let _tray = TrayIconBuilder::new()
-                .icon(Image::new_owned(create_tray_icon(), 32, 32))
+                .icon(Image::from_bytes(include_bytes!("../../src/assets/icons/PyislandLogo.png"))?)
                 .menu(&menu).tooltip("cIsland")
                 .on_menu_event(move |app, event| {
                     match event.id().as_ref() {
@@ -1071,29 +1071,6 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-fn create_tray_icon() -> Vec<u8> {
-    let (size, center, radius) = (32u32, 16.0, 12.0);
-    let mut rgba = vec![0u8; (size * size * 4) as usize];
-    for y in 0..size {
-        for x in 0..size {
-            let dist = ((x as f64 - center).powi(2) + (y as f64 - center).powi(2)).sqrt();
-            let idx = ((y * size + x) * 4) as usize;
-            if dist <= radius {
-                let a = if dist > radius - 1.0 {
-                    ((radius - dist).max(0.0) * 255.0) as u8
-                } else {
-                    255
-                };
-                rgba[idx] = 255;
-                rgba[idx + 1] = 255;
-                rgba[idx + 2] = 255;
-                rgba[idx + 3] = a;
-            }
-        }
-    }
-    rgba
 }
 
 pub struct IslandState {
