@@ -122,6 +122,7 @@ async function startStream() {
       bitrate: 4_000_000,
       serial: null,
     });
+    imeInput.focus({ preventScroll: true });
     return;
   } catch (e) {
     setStatus(`USB mirroring failed: ${e}`, true);
@@ -145,6 +146,7 @@ async function startStream() {
         bitrate: 4_000_000,
         serial: selectIp,
       });
+      imeInput.focus({ preventScroll: true });
       return;
     } catch (e) {
       setStatus(`WiFi mirroring failed: ${e}`, true);
@@ -194,6 +196,14 @@ function onImeInput() {
   }
 }
 
+async function sendCtrlShortcut(keycode: number) {
+  const AMETA_CTRL_LEFT_ON = 0x00002000;
+  await invoke("sadb_send_keycode", { action: 0, keycode: 113, metastate: AMETA_CTRL_LEFT_ON });
+  await invoke("sadb_send_keycode", { action: 0, keycode, metastate: AMETA_CTRL_LEFT_ON });
+  await invoke("sadb_send_keycode", { action: 1, keycode, metastate: AMETA_CTRL_LEFT_ON });
+  await invoke("sadb_send_keycode", { action: 1, keycode: 113, metastate: 0 });
+}
+
 function onImeKeydown(e: KeyboardEvent) {
   if (!machine().deviceW) return;
   const key = e.key;
@@ -209,41 +219,22 @@ function onImeKeydown(e: KeyboardEvent) {
     return;
   }
   if (e.ctrlKey || e.metaKey) {
-    const AMETA_CTRL_LEFT_ON = 0x00002000;
-    const ctrlDown = () =>
-      invoke("sadb_send_keycode", { action: 0, keycode: 113, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-    const ctrlUp = () =>
-      invoke("sadb_send_keycode", { action: 1, keycode: 113, metastate: 0 }).catch(() => {});
-
     switch (e.code) {
       case "KeyA":
         e.preventDefault();
-        ctrlDown();
-        invoke("sadb_send_keycode", { action: 0, keycode: 29, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-        invoke("sadb_send_keycode", { action: 1, keycode: 29, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-        ctrlUp();
+        void sendCtrlShortcut(29).catch(() => {});
         return;
       case "KeyC":
         e.preventDefault();
-        ctrlDown();
-        invoke("sadb_send_keycode", { action: 0, keycode: 31, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-        invoke("sadb_send_keycode", { action: 1, keycode: 31, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-        ctrlUp();
+        void sendCtrlShortcut(31).catch(() => {});
         return;
       case "KeyX":
         e.preventDefault();
-        ctrlDown();
-        invoke("sadb_send_keycode", { action: 0, keycode: 52, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-        invoke("sadb_send_keycode", { action: 1, keycode: 52, metastate: AMETA_CTRL_LEFT_ON }).catch(() => {});
-        ctrlUp();
+        void sendCtrlShortcut(52).catch(() => {});
         return;
       case "KeyV":
         e.preventDefault();
-        navigator.clipboard.readText()
-          .then((text) => {
-            // TODO 复制粘贴统一由后端处理
-            invoke("sadb_set_clipboard", { text: { text, timestamp: Date.now() }, paste: true }).catch(() => {});
-          });
+        invoke("sadb_paste_pc_clipboard").catch(() => {});
         return;
     }
   }
@@ -252,11 +243,7 @@ function onImeKeydown(e: KeyboardEvent) {
 function onImePaste(e: ClipboardEvent) {
   if (!machine().deviceW) return;
   e.preventDefault();
-  const text = e.clipboardData?.getData("text/plain") || "";
-  if (text) {
-    machine().lastSyncedText = text;
-    invoke("sadb_set_clipboard", { text, paste: true }).catch(() => {});
-  }
+  invoke("sadb_paste_pc_clipboard").catch(() => {});
 }
 
 function onMdnsFound(e: { payload: AdbDevice }) {
@@ -386,6 +373,7 @@ export function initSadbComponents() {
     if (!isMirroring()) return;
     e.preventDefault();
     e.stopPropagation();
+    imeInput.focus({ preventScroll: true });
     machine().mouseButtons |= (1 << e.button);
     sendTouchEvent(0, e);
   });

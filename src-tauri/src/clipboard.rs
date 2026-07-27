@@ -64,3 +64,42 @@ pub(crate) fn read_clipboard_text() -> Option<String> {
         result
     }
 }
+
+pub(crate) fn write_clipboard_text(text: &str) -> Result<(), String> {
+    use windows::Win32::Foundation::{GlobalFree, HANDLE};
+    use windows::Win32::System::DataExchange::{
+        CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
+    };
+    use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
+
+    let mut utf16: Vec<u16> = text.encode_utf16().collect();
+    utf16.push(0);
+
+    unsafe {
+        let memory = GlobalAlloc(GMEM_MOVEABLE, std::mem::size_of_val(utf16.as_slice()))
+            .map_err(|e| format!("allocate clipboard memory failed: {}", e))?;
+        let ptr = GlobalLock(memory) as *mut u16;
+        if ptr.is_null() {
+            let _ = GlobalFree(Some(memory));
+            return Err("lock clipboard memory failed".to_string());
+        }
+        std::ptr::copy_nonoverlapping(utf16.as_ptr(), ptr, utf16.len());
+        let _ = GlobalUnlock(memory);
+
+        if let Err(e) = OpenClipboard(None) {
+            let _ = GlobalFree(Some(memory));
+            return Err(format!("open clipboard failed: {}", e));
+        }
+        let result = (|| {
+            EmptyClipboard().map_err(|e| format!("empty clipboard failed: {}", e))?;
+            SetClipboardData(13, Some(HANDLE(memory.0)))
+                .map_err(|e| format!("set clipboard data failed: {}", e))?;
+            Ok(())
+        })();
+        CloseClipboard().ok();
+        if result.is_err() {
+            let _ = GlobalFree(Some(memory));
+        }
+        result
+    }
+}

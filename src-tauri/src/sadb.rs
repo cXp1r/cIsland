@@ -443,6 +443,9 @@ pub(crate) async fn sadb_start_mirroring(
                                             buf.drain(..consumed);
                                             if let DeviceMessage::Clipboard { text } = msg {
                                                 logger::debug(TAG, &format!("clipboard message from device: text_len={}", text.len()));
+                                                if let Err(e) = crate::clipboard::write_clipboard_text(&text) {
+                                                    logger::warn(TAG, &format!("failed to update PC clipboard: {}", e));
+                                                }
                                                 let _ = channel_ctrl.send(PacketEvent::Clipboard { text });
                                             }
                                         }
@@ -681,6 +684,13 @@ pub(crate) async fn sadb_set_clipboard(
             })?;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn sadb_paste_pc_clipboard(state: State<'_, IslandState>) -> Result<(), String> {
+    let text = crate::clipboard::read_clipboard_text()
+        .ok_or_else(|| "PC clipboard does not contain text".to_string())?;
+    sadb_set_clipboard(state, text, true).await
 }
 
 #[tauri::command]
