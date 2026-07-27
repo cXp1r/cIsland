@@ -133,7 +133,7 @@
     position: absolute;
     top: 6px;
     right: 6px;
-    width: 45%;
+    width: 60%;
     height: 60%;
     display: flex;
     align-items: center;
@@ -141,6 +141,263 @@
     color: rgba(241, 234, 217, 0.78);
     letter-spacing: 0.3px;
     overflow: hidden;
+}
+
+.tutorial-demo-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.tutorial-demo-logo {
+    display: block;
+    width: min(180px, 80%);
+    max-height: 90%;
+    object-fit: contain;
+}
+
+.tutorial-demo-shortcut {
+    position: absolute;
+    top: 52%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translate(-50%, -50%);
+}
+
+.tutorial-demo-keycap {
+    display: grid;
+    min-width: 52px;
+    height: 42px;
+    padding: 0 12px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
+    color: rgba(255, 255, 255, 0.92);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.tutorial-demo-slash-key {
+    min-width: 42px;
+    padding: 0;
+}
+
+.tutorial-demo-island {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: min(184px, 88%);
+    height: 64px;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 32px;
+    background: #0a0a0c;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.tutorial-demo-time {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.tutorial-demo-page {
+    position: absolute;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.tutorial-demo-click {
+    position: absolute;
+    left: calc(50% - 8px);
+    top: calc(52% - 8px);
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.tutorial-demo-context-click {
+    left: calc(50% - 2px);
+    top: calc(52% + 8px);
+}
+
+.tutorial-demo-cursor {
+    position: absolute;
+    left: calc(50% - 2px);
+    top: calc(52% - 2px);
+    width: 22px;
+    height: 30px;
+    background: #f4f4f5;
+    clip-path: polygon(0 0, 0 100%, 26% 77%, 43% 100%, 60% 91%, 43% 68%, 86% 68%);
+    filter: drop-shadow(1px 0 #111) drop-shadow(-1px 0 #111) drop-shadow(0 1px #111) drop-shadow(0 -1px #111) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.65));
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+
+.tutorial-demo-context-cursor {
+    top: calc(52% - 6px);
+    z-index: 2;
+}
+
+.tutorial-demo-settings-menu {
+    position: absolute;
+    z-index: 1;
+    top: calc(52% + 8px);
+    left: calc(50% + 4px);
+    width: 118px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #fff;
+    color: #111;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.tutorial-demo-settings-menu span {
+    padding-left: 23px;
+    font-family: SimSun, "Songti SC", serif;
+    font-size: 16px;
+}
+
+.tutorial-demo-hover-frame {
+    position: absolute;
+    left: 50%;
+    top: calc(52% - 32px);
+    width: min(184px, 88%);
+    height: 64px;
+    transform: translateX(-50%);
+}
+
+.tutorial-demo-hover-island {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    height: 100%;
+    transform: none;
+}
+
+.tutorial-demo-dots {
+    position: absolute;
+    left: 50%;
+    top: calc(52% + 31px);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tutorial-demo-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: background 0.2s, width 0.2s, border-radius 0.2s;
+}
+
+.tutorial-demo-dot.active {
+    width: 14px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.tutorial-demo-hover-cursor {
+    top: calc(52% - 40px);
+}
+
+.tutorial-demo-dot-click {
+    left: calc(50% - 12px);
+    top: calc(52% + 26px);
+}
+
+.tutorial-demo-screen-edge {
+    position: absolute;
+    top: calc(52% - 42px);
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: rgba(241, 234, 217, 0.32);
+}
+
+.tutorial-demo-hover-zone {
+    position: absolute;
+    top: calc(52% - 42px);
+    left: 50%;
+    width: min(184px, 88%);
+    height: 10px;
+    transform: translateX(-50%);
+    border-right: 1px solid rgba(91, 192, 235, 0.9);
+    border-left: 1px solid rgba(91, 192, 235, 0.9);
+    background: rgba(91, 192, 235, 0.28);
+    box-shadow: 0 0 12px rgba(91, 192, 235, 0.32);
+}
+
+.tutorial-demo-exit-zone {
+    position: absolute;
+    top: calc(52% - 42px);
+    left: 50%;
+    width: 330px;
+    height: 84px;
+    box-sizing: border-box;
+    transform: translateX(-50%);
+    border: 1px solid rgba(255, 90, 90, 0.95);
+    box-shadow: 0 0 10px rgba(255, 70, 70, 0.35);
+    pointer-events: none;
+}
+
+.tutorial-demo-expanded-frame {
+    width: 330px;
+    height: 74px;
+}
+
+.tutorial-demo-expanded-zone {
+    width: 330px;
+}
+
+.tutorial-demo-dot-cursor {
+    top: calc(52% - 28px);
+}
+
+.tutorial-demo-wheel-mouse {
+    position: absolute;
+    top: 90px;
+    left: calc(50% - 5px);
+    width: 20px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    border-radius: 10px;
+    background: rgba(10, 10, 12, 0.72);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.tutorial-demo-wheel {
+    position: absolute;
+    top: 5px;
+    left: 8px;
+    width: 2px;
+    height: 7px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.88);
 }
 
 .tutorial-text {

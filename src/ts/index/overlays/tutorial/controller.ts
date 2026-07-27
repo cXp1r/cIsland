@@ -15,6 +15,7 @@ import {
 import {
   playTutorialEnterAnimation,
   playTutorialExitAnimation,
+  renderTutorialAnimation,
   resetTutorialRenderer,
 } from "./renderer";
 import type { TutorialAction } from "./model";
@@ -31,11 +32,11 @@ const LABEL_GSAP = "动画";
 
 const TUTORIAL_STEP_TEXTS = [
   "欢迎来到cIsland岛的教程<br>此岛首字母(C)代表两位开发人员名字开头都为C, 而并非用C/C++编写",
-  "岛的第一个切换逻辑是双击空白主体切换",
+  "岛的第一个切换逻辑是双击 非交互区域 切换",
   "你可以将鼠标先移动到顶部的hover区域触发'展开'<br>'展开'在鼠标彻底移出岛主体后回到当前页面默认大小",
-  "在页面点出现后可将鼠标放置在点排列区域滚动切换页面",
+  "在页面点出现后可将鼠标放置在点排列区域  滚动/点击  切换页面",
   "右键岛主体或托盘可打开设置, 注意: 在岛里面右键会暂停岛的所有操作",
-  "更多操作可以在设置里面看支持的修改, 忠告: 由于岛拥有顶层, 而作者为了动画效果扩展了透明区域, 遇到点透明区域点不动了可以试着关掉cIsland"
+  "更多操作可以在设置里面看<br> 忠告: 作者扩展了透明区域, 遇到点不动透明区域可以试着按下隐藏快捷键"
 ];
 
 const buttonWrap = document.createElement("div");
@@ -116,6 +117,7 @@ function updateTutorialStepDisplay(): void {
   if (tutorialGsapSlot) {
     tutorialGsapSlot.textContent = `${LABEL_GSAP} / Step ${currentStepIndex + 1}`;
   }
+  renderTutorialAnimation(currentStepIndex);
 }
 
 export function setTutorialStep(nextIndex: number): void {
