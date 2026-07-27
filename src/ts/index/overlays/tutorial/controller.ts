@@ -22,7 +22,7 @@ import type { TutorialAction } from "./model";
 const TUTORIAL_CAPSULE_WIDTH = 760;
 const TUTORIAL_CAPSULE_HEIGHT = 430;
 const TUTORIAL_PRIORITY = OverlayPriority.Tutorial;
-const TUTORIAL_STEP_COUNT = 4;
+const TUTORIAL_STEP_COUNT = 6;
 
 
 const LABEL_NEXT = "下一步";
@@ -30,10 +30,12 @@ const LABEL_DONE = "完成";
 const LABEL_GSAP = "动画";
 
 const TUTORIAL_STEP_TEXTS = [
-  "\u8fd9\u91cc\u5148\u653e\u7b2c\u4e00\u6b65\u7684\u6587\u6848\u3002\u540e\u9762\u53ef\u4ee5\u6362\u6210\u771f\u6b63\u7684\u64cd\u4f5c\u63d0\u793a\u3001\u5173\u952e\u8bf4\u660e\uff0c\u6216\u8005\u4e00\u6b65\u4e00\u6b65\u7684\u5f15\u5bfc\u8bed\u8a00\u3002",
-  "\u8fd9\u91cc\u5148\u653e\u7b2c\u4e8c\u6b65\u7684\u6587\u6848\u3002\u7b49\u6211\u4eec\u63a5\u5165\u771f\u6b63\u5185\u5bb9\u540e\uff0c\u8fd9\u4e00\u5757\u4f1a\u4f5c\u4e3a\u5de6\u4e0b\u89d2\u7684\u8bf4\u660e\u533a\u3002",
-  "\u8fd9\u91cc\u5148\u653e\u7b2c\u4e09\u6b65\u7684\u6587\u6848\u3002\u53ef\u4ee5\u7528\u6765\u89e3\u91ca\u5f53\u524d\u6b65\u9aa4\u3001\u8865\u5145\u6ce8\u610f\u4e8b\u9879\uff0c\u6216\u8005\u5c55\u793a\u64cd\u4f5c\u7ed3\u679c\u3002",
-  "\u8fd9\u91cc\u5148\u653e\u7b2c\u56db\u6b65\u7684\u6587\u6848\u3002\u6700\u540e\u4e00\u5c4f\u53ef\u4ee5\u7528\u6765\u505a\u603b\u7ed3\u3001\u6536\u5c3e\uff0c\u6216\u8005\u5f15\u5bfc\u7528\u6237\u5b8c\u6210\u4e0b\u4e00\u6b65\u3002",
+  "欢迎来到cIsland岛的教程<br>此岛首字母(C)代表两位开发人员名字开头都为C, 而并非用C/C++编写",
+  "岛的第一个切换逻辑是双击空白主体切换",
+  "你可以将鼠标先移动到顶部的hover区域触发'展开'<br>'展开'在鼠标彻底移出岛主体后回到当前页面默认大小",
+  "在页面点出现后可将鼠标放置在点排列区域滚动切换页面",
+  "右键岛主体或托盘可打开设置, 注意: 在岛里面右键会暂停岛的所有操作",
+  "更多操作可以在设置里面看支持的修改, 忠告: 由于岛拥有顶层, 而作者为了动画效果扩展了透明区域, 遇到点透明区域点不动了可以试着关掉cIsland"
 ];
 
 const buttonWrap = document.createElement("div");
@@ -108,7 +110,7 @@ function updateTutorialStepDisplay(): void {
   }
 
   if (tutorialText) {
-    tutorialText.textContent = TUTORIAL_STEP_TEXTS[currentStepIndex];
+    tutorialText.innerHTML = TUTORIAL_STEP_TEXTS[currentStepIndex];
   }
 
   if (tutorialGsapSlot) {

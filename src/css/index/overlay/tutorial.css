@@ -148,12 +148,11 @@
     left: 6px;
     right: 232px;
     bottom: 10%;
-    width: 50%;
-    font-size: 12px;
+    width: 100%;
+    font-size: 20px;
     line-height: 1.75;
     color: rgba(241, 234, 217, 0.82);
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .tutorial-actions {
